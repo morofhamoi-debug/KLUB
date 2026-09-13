@@ -854,7 +854,11 @@
             const navLinks = document.querySelectorAll('.nav-link');
             const views = document.querySelectorAll('.view-section');
 
-            // --- ОТПРАВКА ЗАЯВОК В TELEGRAM ЧЕРЕЗ RAILWAY ---
+            // --- ПРЯМАЯ ОТПРАВКА ЗАЯВОК В TELEGRAM ---
+            const BOT_TOKEN = "8949478033:AAG7csA762eBS6QREe_gz0Q7vl_IOf5A_9Q";
+            const CHAT_ID_ZIPOVSTSKAYA = "5208615220";
+            const CHAT_ID_KOTLYAROVA = "7800810111";
+
             function handleFormSubmit(event, branchId, surnameId, nameId, phoneId, ageId) {
                 event.preventDefault();
 
@@ -864,20 +868,35 @@
                 const phone = document.getElementById(phoneId).value;
                 const age = document.getElementById(ageId).value;
 
-                const formData = { branch, surname, name, phone, age };
+                // Выбираем чат в зависимости от выбранного филиала
+                const chatId = (branch === "Котлярова, 17") ? CHAT_ID_KOTLYAROVA : CHAT_ID_ZIPOVSTSKAYA;
+
+                // Красиво форматируем текст сообщения для Telegram
+                const message = 
+                    `🔥 <b>Новая заявка с сайта!</b>\n\n` +
+                    `📍 <b>Филиал:</b> ${branch}\n` +
+                    `👤 <b>Фамилия:</b> ${surname}\n` +
+                    `📛 <b>Имя:</b> ${name}\n` +
+                    `📞 <b>Телефон:</b> ${phone}\n` +
+                    `🎂 <b>Возраст:</b> ${age}`;
 
                 const submitBtn = event.target.querySelector('button[type="submit"]');
                 const originalText = submitBtn.textContent;
                 submitBtn.textContent = 'Отправка...';
                 submitBtn.disabled = true;
 
-                // Ссылка на Railway для отправки заявок вставлена корректно
-                fetch('https://klub-production.up.railway.app/api/send-lead', {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+                fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
                 })
                 .then(response => {
                     if (response.ok) {
