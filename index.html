@@ -180,8 +180,6 @@
             letter-spacing: 2px;
             margin-bottom: 20px;
             color: #111111;
-            position: relative;
-            z-index: 2;
         }
 
         .hero-content p {
@@ -189,8 +187,6 @@
             color: var(--text-secondary);
             margin-bottom: 40px;
             line-height: 1.6;
-            position: relative;
-            z-index: 2;
         }
 
         /* Buttons */
@@ -206,8 +202,6 @@
             cursor: pointer;
             border: none;
             transition: var(--transition);
-            position: relative;
-            z-index: 2;
         }
 
         .btn-primary:hover {
@@ -236,16 +230,12 @@
         .page-main {
             flex: 1;
             padding: 60px 20px;
-            position: relative;
-            z-index: 2;
         }
 
         .container {
             max-width: 1000px;
             margin: 0 auto;
             width: 100%;
-            position: relative;
-            z-index: 2;
         }
 
         .page-title {
@@ -264,8 +254,6 @@
             line-height: 1.8;
             color: var(--text-secondary);
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            position: relative;
-            z-index: 2;
         }
 
         .content-block p {
@@ -281,8 +269,6 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
-            position: relative;
-            z-index: 2;
         }
 
         .branch-card, .coach-card, .contact-box {
@@ -295,8 +281,6 @@
             gap: 15px;
             transition: var(--transition);
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            position: relative;
-            z-index: 2;
         }
 
         .branch-card:hover, .coach-card:hover, .contact-box:hover {
@@ -356,8 +340,6 @@
             border-radius: 8px;
             align-items: flex-start;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            position: relative;
-            z-index: 2;
         }
 
         .coach-detail-img {
@@ -396,8 +378,6 @@
             color: var(--text-secondary);
             line-height: 1.8;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            position: relative;
-            z-index: 2;
         }
 
         /* Directions */
@@ -407,8 +387,6 @@
             border-radius: 12px;
             padding: 40px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            position: relative;
-            z-index: 2;
         }
 
         .directions-list {
@@ -444,7 +422,6 @@
             color: #a0a0a0;
             font-size: 0.9rem;
             z-index: 10;
-            position: relative;
         }
 
         .footer-container {
@@ -492,7 +469,7 @@
 </head>
 <body>
     <header class="site-header">
-        <div class="header-container">
+        <div class="header-container" style="padding: 8px 20px;">
             <a data-target="index" class="logo-brand nav-link">
                 <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 45px; height: 45px; background-color: transparent; mix-blend-mode: screen;">
                 <span class="brand-name">Academy Of Champions</span>
@@ -520,8 +497,8 @@
         <section id="view-index" class="view-section active-view">
             <div class="hero-section">
                 <div class="hero-content">
-                    <h1 style="margin-top: 0;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
-                    <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 150px; height: 150px; object-fit: contain; margin: 0 auto 20px auto; display: block; background-color: transparent; position: relative; z-index: 2;">
+                    <h1 style="margin-top: -30px;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
+                    <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent;">
                     <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
                     <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
                 </div>
@@ -920,10 +897,10 @@
                 isSwiping = false;
             }, { passive: true });
 
-            function resetSwipeState() {
+            function resetSwipeState`()` {
                 if (currentActiveView && prevView) {
                     currentActiveView.style.transform = '';
-                    currentStyle.transition = '';
+                    currentActiveView.style.transition = '';
                     prevView.style.display = 'none';
                     prevView.style.transform = '';
                     prevView.style.transition = '';
