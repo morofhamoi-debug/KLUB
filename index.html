@@ -6,11 +6,11 @@
     <title>Academy Of Champions</title>
     <style>
         :root {
-            --bg-color: #0b0b0b;
-            --card-bg: #141414;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --border-color: #262626;
+            --bg-color: #ffffff;
+            --card-bg: #f8f9fa;
+            --text-primary: #111111;
+            --text-secondary: #555555;
+            --border-color: #e0e0e0;
             --transition: all 0.3s ease;
         }
 
@@ -27,12 +27,14 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 25%, rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 1) 50%, rgba(0, 0, 0, 0.03) 50%, rgba(0, 0, 0, 0.03) 75%, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 1) 100%), #ffffff;
+            background-size: 40px 40px;
         }
 
         /* Header */
         .site-header {
-            background-color: var(--card-bg);
-            border-bottom: 1px solid var(--border-color);
+            background-color: #0b0b0b;
+            border-bottom: 1px solid #262626;
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -52,13 +54,13 @@
             align-items: center;
             gap: 15px;
             text-decoration: none;
-            color: var(--text-primary);
+            color: #ffffff;
             cursor: pointer;
         }
 
         .site-logo {
-            width: 60px;
-            height: 60px;
+            width: 75px;
+            height: 75px;
             object-fit: contain;
             background-color: transparent;
             border-radius: 4px;
@@ -79,7 +81,7 @@
 
         .nav-list a {
             text-decoration: none;
-            color: var(--text-secondary);
+            color: #a0a0a0;
             font-size: 0.95rem;
             font-weight: 500;
             cursor: pointer;
@@ -88,7 +90,7 @@
 
         .nav-list a:hover,
         .nav-list a.active {
-            color: var(--text-primary);
+            color: #ffffff;
         }
 
         .hamburger {
@@ -105,7 +107,7 @@
             display: block;
             width: 25px;
             height: 2px;
-            background-color: var(--text-primary);
+            background-color: #ffffff;
             transition: var(--transition);
         }
 
@@ -128,8 +130,7 @@
             justify-content: center;
             text-align: center;
             padding: 60px 20px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 25%, rgba(22, 22, 22, 1) 25%, rgba(22, 22, 22, 1) 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, rgba(22, 22, 22, 1) 75%, rgba(22, 22, 22, 1) 100%), #0b0b0b;
-            background-size: 40px 40px;
+            background: transparent;
         }
 
         .hero-content {
@@ -141,6 +142,7 @@
             font-weight: 900;
             letter-spacing: 2px;
             margin-bottom: 20px;
+            color: #111111;
         }
 
         .hero-content p {
@@ -153,8 +155,8 @@
         /* Buttons */
         .btn-primary {
             display: inline-block;
-            background-color: var(--text-primary);
-            color: var(--bg-color);
+            background-color: #111111;
+            color: #ffffff;
             padding: 15px 35px;
             font-weight: 700;
             text-decoration: none;
@@ -166,14 +168,14 @@
         }
 
         .btn-primary:hover {
-            background-color: var(--text-secondary);
+            background-color: #555555;
         }
 
         .btn-secondary {
             display: inline-block;
             background-color: transparent;
-            color: var(--text-primary);
-            border: 1px solid var(--text-primary);
+            color: #111111;
+            border: 1px solid #111111;
             padding: 10px 20px;
             font-weight: 600;
             text-decoration: none;
@@ -183,8 +185,8 @@
         }
 
         .btn-secondary:hover {
-            background-color: var(--text-primary);
-            color: var(--bg-color);
+            background-color: #111111;
+            color: #ffffff;
         }
 
         /* Pages Layout */
@@ -203,6 +205,7 @@
             font-weight: 800;
             margin-bottom: 40px;
             letter-spacing: 1px;
+            color: #111111;
         }
 
         .content-block {
@@ -212,6 +215,7 @@
             border-radius: 8px;
             line-height: 1.8;
             color: var(--text-secondary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         .content-block p {
@@ -238,14 +242,16 @@
             flex-direction: column;
             gap: 15px;
             transition: var(--transition);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         .branch-card:hover, .coach-card:hover, .contact-box:hover {
-            border-color: var(--text-secondary);
+            border-color: #111111;
         }
 
         .branch-card h2, .coach-card h2, .contact-box h2 {
             font-size: 1.5rem;
+            color: #111111;
         }
 
         .address, .coach-name, .coach-role, .phone, .branch-ref {
@@ -268,14 +274,14 @@
         .coach-img-placeholder {
             width: 100%;
             height: 350px;
-            background-color: #1f1f1f;
+            background-color: #e0e0e0;
             border-radius: 4px;
         }
 
         .coach-soon-box {
             width: 100%;
             height: 350px;
-            background-color: #1a1a1a;
+            background-color: #eaeaea;
             border: 1px dashed var(--border-color);
             border-radius: 4px;
             display: flex;
@@ -295,6 +301,7 @@
             padding: 40px;
             border-radius: 8px;
             align-items: flex-start;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         .coach-detail-img {
@@ -313,10 +320,11 @@
 
         .branch-info h2 {
             font-size: 2rem;
+            color: #111111;
         }
 
         .branch-info a {
-            color: var(--text-primary);
+            color: #111111;
             text-decoration: underline;
         }
 
@@ -331,6 +339,7 @@
             gap: 20px;
             color: var(--text-secondary);
             line-height: 1.8;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         /* Directions */
@@ -348,15 +357,17 @@
             border-radius: 8px;
             font-size: 1.2rem;
             font-weight: 600;
+            color: #111111;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         /* Footer */
         .site-footer {
-            background-color: var(--card-bg);
-            border-top: 1px solid var(--border-color);
+            background-color: #0b0b0b;
+            border-top: 1px solid #262626;
             padding: 20px 0;
             text-align: center;
-            color: var(--text-secondary);
+            color: #a0a0a0;
             font-size: 0.9rem;
         }
 
@@ -374,8 +385,8 @@
                 top: 100%;
                 left: 0;
                 width: 100%;
-                background-color: var(--card-bg);
-                border-bottom: 1px solid var(--border-color);
+                background-color: #0b0b0b;
+                border-bottom: 1px solid #262626;
                 padding: 20px;
             }
 
@@ -407,7 +418,7 @@
     <header class="site-header">
         <div class="header-container">
             <a data-target="index" class="logo-brand nav-link">
-                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 55px; height: 55px; background-color: transparent; mix-blend-mode: screen;">
+                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 75px; height: 75px; background-color: transparent; mix-blend-mode: screen;">
                 <span class="brand-name">Academy Of Champions</span>
             </a>
             <nav class="main-nav">
@@ -432,8 +443,8 @@
     <section id="view-index" class="view-section active-view">
         <div class="hero-section">
             <div class="hero-content">
-                <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent; mix-blend-mode: screen;">
-                <h1>СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
+                <h1 style="margin-top: -30px;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
+                <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent;">
                 <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
                 <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
             </div>
@@ -533,14 +544,14 @@
                     <div class="contact-box">
                         <h2>Филиал Котлярова, 17</h2>
                         <p>Тренер: Кардашян Самсон Врежикович</p>
-                        <p><a href="tel:+79181851322">8 (918) 185-13-22</a></p>
-                        <p><a href="https://wa.me/79181851322" target="_blank" rel="noopener">WhatsApp чат</a></p>
+                        <p><a href="tel:+79181851322" style="color: #111111;">8 (918) 185-13-22</a></p>
+                        <p><a href="https://wa.me/79181851322" target="_blank" rel="noopener" style="color: #111111;">WhatsApp чат</a></p>
                     </div>
                     <div class="contact-box">
                         <h2>Филиал Зиповская, 42</h2>
                         <p>Тренер: Расоян Рудик Романович</p>
-                        <p><a href="tel:+79181275054">8 (918) 127-50-54</a></p>
-                        <p><a href="https://wa.me/79181275054" target="_blank" rel="noopener">WhatsApp чат</a></p>
+                        <p><a href="tel:+79181275054" style="color: #111111;">8 (918) 127-50-54</a></p>
+                        <p><a href="https://wa.me/79181275054" target="_blank" rel="noopener" style="color: #111111;">WhatsApp чат</a></p>
                     </div>
                 </div>
             </div>
