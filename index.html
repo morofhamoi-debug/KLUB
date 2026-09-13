@@ -871,8 +871,8 @@
                 submitBtn.textContent = 'Отправка...';
                 submitBtn.disabled = true;
 
-                // ⚠️ Замените 'https://ВАШ-САЙТ.up.railway.app' на реальный URL от Railway после деплоя
-                fetch('https://ВАШ-САЙТ.up.railway.app/api/send-lead', {
+                // Ссылка на Railway для отправки заявок вставлена корректно
+                fetch('https://klub-production.up.railway.app/api/send-lead', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
