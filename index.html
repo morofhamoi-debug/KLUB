@@ -141,6 +141,8 @@
             width: 100%;
             height: 100%;
             background-color: var(--bg-color);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 25%, rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 1) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05) 75%, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 1) 100%), #ffffff;
+            background-size: 40px 40px;
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: transform;
             z-index: 1;
@@ -844,7 +846,7 @@
 
             document.addEventListener('touchend', (e) => {
                 if (!isSwiping || !currentActiveView || !prevView) return;
-                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndX = e.changedTouches.currentX || e.changedTouches[0].clientX;
                 const diffX = touchEndX - touchStartX;
                 const screenWidth = window.innerWidth;
 
