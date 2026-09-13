@@ -443,7 +443,8 @@
             color: var(--text-primary);
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             padding: 12px 15px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -451,9 +452,11 @@
             outline: none;
             transition: var(--transition);
             background-color: #fff;
+            color: var(--text-primary);
         }
 
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             border-color: #111111;
             box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
         }
@@ -772,6 +775,14 @@
                     <h1 class="page-title">ЗАПИСЬ НА ТРЕНИРОВКУ</h1>
                     <form class="booking-form" onsubmit="event.preventDefault(); alert('Спасибо за заявку! Мы свяжемся с вами.');">
                         <div class="form-group">
+                            <label for="mob-branch">Филиал</label>
+                            <select id="mob-branch" required>
+                                <option value="" disabled selected>Выберите филиал</option>
+                                <option value="Котлярова, 17">Котлярова, 17</option>
+                                <option value="Зиповская, 42">Зиповская, 42</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="mob-surname">Фамилия</label>
                             <input type="text" id="mob-surname" required placeholder="Введите фамилию">
                         </div>
@@ -802,6 +813,14 @@
             <button class="drawer-close" id="drawerClose">&times;</button>
         </div>
         <form class="booking-form" onsubmit="event.preventDefault(); alert('Спасибо за заявку! Мы свяжемся с вами.');">
+            <div class="form-group">
+                <label for="pc-branch">Филиал</label>
+                <select id="pc-branch" required>
+                    <option value="" disabled selected>Выберите филиал</option>
+                    <option value="Котлярова, 17">Котлярова, 17</option>
+                    <option value="Зиповская, 42">Зиповская, 42</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="pc-surname">Фамилия</label>
                 <input type="text" id="pc-surname" required placeholder="Введите фамилию">
