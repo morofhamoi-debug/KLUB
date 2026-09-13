@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Указываем токен и настройки прямо в коде (теперь они будут храниться в репозитории)
+# Токен твоего Telegram-бота
 BOT_TOKEN = "ВАШ_ТОКЕН_БОТА_ЗДЕСЬ"
 
 class BookingData(BaseModel):
@@ -23,6 +23,22 @@ class BookingData(BaseModel):
     phone: str
     age: str
     chat_id: str
+
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "Academy Of Champions API работает!"}
+
+# Эндпоинт, который проверяет фронтенд (HTML) при инициализации
+@app.get("/api/data")
+async def get_api_data():
+    return {
+        "status": "success",
+        "club": "Academy Of Champions",
+        "branches": [
+            {"name": "Котлярова, 17", "coach": "Кардашян Самсон Врежикович"},
+            {"name": "Зиповская, 42", "coach": "Расоян Рудик Романович"}
+        ]
+    }
 
 @app.post("/send")
 async def send_booking(data: BookingData):
