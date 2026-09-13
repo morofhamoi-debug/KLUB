@@ -773,7 +773,7 @@
             <main class="page-main">
                 <div class="container">
                     <h1 class="page-title">ЗАПИСЬ НА ТРЕНИРОВКУ</h1>
-                    <form class="booking-form" onsubmit="event.preventDefault(); alert('Спасибо за заявку! Мы свяжемся с вами.');">
+                    <form class="booking-form">
                         <div class="form-group">
                             <label for="mob-branch">Филиал</label>
                             <select id="mob-branch" required>
@@ -812,7 +812,7 @@
             <h2 class="drawer-title">Запись</h2>
             <button class="drawer-close" id="drawerClose">&times;</button>
         </div>
-        <form class="booking-form" onsubmit="event.preventDefault(); alert('Спасибо за заявку! Мы свяжемся с вами.');">
+        <form class="booking-form">
             <div class="form-group">
                 <label for="pc-branch">Филиал</label>
                 <select id="pc-branch" required>
@@ -853,6 +853,69 @@
             const mainNav = document.querySelector('.main-nav');
             const navLinks = document.querySelectorAll('.nav-link');
             const views = document.querySelectorAll('.view-section');
+
+            // --- ОТПРАВКА ЗАЯВОК В TELEGRAM ЧЕРЕЗ RAILWAY ---
+            function handleFormSubmit(event, branchId, surnameId, nameId, phoneId, ageId) {
+                event.preventDefault();
+
+                const branch = document.getElementById(branchId).value;
+                const surname = document.getElementById(surnameId).value;
+                const name = document.getElementById(nameId).value;
+                const phone = document.getElementById(phoneId).value;
+                const age = document.getElementById(ageId).value;
+
+                const formData = { branch, surname, name, phone, age };
+
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Отправка...';
+                submitBtn.disabled = true;
+
+                // ⚠️ Замените 'https://ВАШ-САЙТ.up.railway.app' на реальный URL от Railway после деплоя
+                fetch('https://ВАШ-САЙТ.up.railway.app/api/send-lead', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Спасибо за заявку! Мы свяжемся с вами в ближайшее время.');
+                        event.target.reset();
+                        
+                        const phoneInput = document.getElementById(phoneId);
+                        if(phoneInput) phoneInput.value = '+7 (';
+                        
+                        if (typeof closeDesktopDrawer === 'function') {
+                            closeDesktopDrawer();
+                        }
+                    } else {
+                        alert('Ошибка при отправке. Пожалуйста, попробуйте еще раз.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка сети.');
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+            }
+
+            // Привязка формы для мобильных
+            const mobileForm = document.querySelector('#view-booking form');
+            if (mobileForm) {
+                mobileForm.addEventListener('submit', (e) => handleFormSubmit(e, 'mob-branch', 'mob-surname', 'mob-name', 'mob-phone', 'mob-age'));
+            }
+
+            // Привязка формы для десктопа (в шторке)
+            const pcForm = document.querySelector('#desktopDrawer form');
+            if (pcForm) {
+                pcForm.addEventListener('submit', (e) => handleFormSubmit(e, 'pc-branch', 'pc-surname', 'pc-name', 'pc-phone', 'pc-age'));
+            }
+            // -----------------------------------------------
 
             // --- ВАЛИДАЦИЯ ТЕЛЕФОНА И ВОЗРАСТА ---
             function setupFormValidation(phoneInputId, ageInputId) {
