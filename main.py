@@ -1,63 +1,57 @@
 import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 import requests
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-app = Flask(__name__)
-CORS(app)
+app = FastAPI()
 
-# Ваши реальные данные
-TELEGRAM_BOT_TOKEN = "8949478033:AAG7csA762eBS6QREe_gz0Q7vl_IOf5A_9Q"
-CHAT_ID_ZIPOVSTSKAYA = "5208615220"
-CHAT_ID_KOTLYAROVA = "7800810111"
+# Разрешаем CORS-запросы со всех доменов (или укажите ваш сайт/GitHub Pages)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/api/send-lead', methods=['POST'])
-def send_lead():
+# Токен бота берется из переменных окружения Railway (TELEGRAM_BOT_TOKEN)
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+class BookingData(BaseModel):
+    branch: str
+    surname: str
+    name: str
+    phone: str
+    age: str
+    chat_id: str
+
+@app.post("/send")
+async def send_booking(data: BookingData):
+    if not BOT_TOKEN:
+        raise HTTPException(status_code=500, detail="Bot token is not configured on server")
+
+    # Формируем красивое сообщение для тренера/администратора
+    message_text = (
+        f"📥 <b>Новая заявка на тренировку!</b>\n\n"
+        f"📍 <b>Филиал:</b> {data.branch}\n"
+        f"👤 <b>Фамилия и Имя:</b> {data.surname} {data.name}\n"
+        f"📞 <b>Телефон:</b> {data.phone}\n"
+        f"🎂 <b>Возраст:</b> {data.age}"
+    )
+
+    telegram_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": data.chat_id,
+        "text": message_text,
+        "parse_mode": "HTML"
+    }
+
     try:
-        data = request.get_json()
-        branch = data.get('branch')
-        surname = data.get('surname')
-        name = data.get('name')
-        phone = data.get('phone')
-        age = data.get('age')
-
-        # Выбираем ID чата в зависимости от выбранного филиала
-        if branch == "Зиповская, 42":
-            target_chat_id = CHAT_ID_ZIPOVSTSKAYA
-        elif branch == "Котлярова, 17":
-            target_chat_id = CHAT_ID_KOTLYAROVA
-        else:
-            target_chat_id = CHAT_ID_ZIPOVSTSKAYA
-
-        # Формируем текст сообщения
-        message = (
-            f"🔥 Новая заявка с сайта!\n\n"
-            f"📍 Филиал: {branch}\n"
-            f"👤 Фамилия: {surname}\n"
-            f"📛 Имя: {name}\n"
-            f"📞 Телефон: {phone}\n"
-            f"🎂 Возраст: {age}"
-        )
-
-        # Отправка в Telegram
-        telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": target_chat_id,
-            "text": message,
-            "parse_mode": "HTML"
-        }
-
-        response = requests.post(telegram_url, json=payload)
-
+        response = requests.post(telegram_url, json=payload, timeout=10)
         if response.status_code == 200:
-            return jsonify({"success": True}), 200
+            return {"status": "success", "message": "Заявка успешно отправлена"}
         else:
-            return jsonify({"success": False, "error": "Telegram API error"}), 500
-
+            raise HTTPException(status_code=500, detail=f"Telegram API Error: {response.text}")
     except Exception as e:
-        print(e)
-        return jsonify({"success": False, "error": "Server error"}), 500
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        raise HTTPException(status_code=500, detail=str(e))
