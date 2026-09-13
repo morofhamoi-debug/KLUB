@@ -44,7 +44,7 @@
         .header-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 8px 20px;
+            padding: 6px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -60,8 +60,8 @@
         }
 
         .site-logo {
-            width: 50px;
-            height: 50px;
+            width: 65px;
+            height: 65px;
             object-fit: contain;
             background-color: transparent;
             border-radius: 12px;
@@ -169,7 +169,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 60px 20px;
+            padding: 40px 20px;
             background: transparent;
         }
 
@@ -240,7 +240,7 @@
         /* Pages Layout */
         .page-main {
             flex: 1;
-            padding: 60px 20px;
+            padding: 40px 20px;
         }
 
         .container {
@@ -250,11 +250,12 @@
         }
 
         .page-title {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 800;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             letter-spacing: 1px;
             color: #111111;
+            text-align: center;
         }
 
         .content-block {
@@ -428,14 +429,15 @@
         .booking-form {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             max-width: 500px;
+            margin: 0 auto;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .form-group label {
@@ -446,7 +448,7 @@
 
         .form-group input,
         .form-group select {
-            padding: 12px 15px;
+            padding: 10px 15px;
             border: 1px solid var(--border-color);
             border-radius: 16px;
             font-size: 1rem;
@@ -507,7 +509,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .drawer-title {
@@ -531,7 +533,7 @@
         .site-footer {
             background-color: #0b0b0b;
             border-top: 1px solid #262626;
-            padding: 20px 0;
+            padding: 10px 0;
             text-align: center;
             color: #a0a0a0;
             font-size: 0.9rem;
@@ -587,7 +589,7 @@
     <header class="site-header">
         <div class="header-container">
             <a data-target="index" class="logo-brand nav-link">
-                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 50px; height: 50px; background-color: transparent; mix-blend-mode: screen;">
+                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 65px; height: 65px; background-color: transparent; mix-blend-mode: screen;">
                 <span class="brand-name">Academy Of Champions</span>
             </a>
             <nav class="main-nav">
@@ -614,7 +616,7 @@
             <div class="hero-section">
                 <div class="hero-content">
                     <h1 style="margin-top: -30px;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
-                    <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent;">
+                    <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 240px; height: 240px; object-fit: contain; margin: 0 auto 20px auto; display: block; background-color: transparent;">
                     <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
                     <div class="hero-buttons">
                         <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
@@ -776,9 +778,9 @@
 
         <!-- 9. Страница записи для мобильных устройств (booking) -->
         <section id="view-booking" class="view-section">
-            <main class="page-main">
+            <main class="page-main" style="padding-top: 15px;">
                 <div class="container">
-                    <h1 class="page-title">ЗАПИСЬ НА ТРЕНИРОВКУ</h1>
+                    <h1 class="page-title" style="margin-bottom: 15px;">ЗАПИСЬ НА ТРЕНИРОВКУ</h1>
                     <form class="booking-form">
                         <div class="form-group">
                             <label for="mob-branch">Филиал</label>
@@ -804,7 +806,7 @@
                             <label for="mob-age">Возраст</label>
                             <input type="text" id="mob-age" maxlength="2" inputmode="numeric" required placeholder="Укажите возраст">
                         </div>
-                        <button type="submit" class="btn-primary" style="margin-top: 10px;">Отправить заявку</button>
+                        <button type="submit" class="btn-primary" style="margin-top: 5px;">Отправить заявку</button>
                     </form>
                 </div>
             </main>
@@ -843,7 +845,7 @@
                 <label for="pc-age">Возраст</label>
                 <input type="text" id="pc-age" maxlength="2" inputmode="numeric" required placeholder="Укажите возраст">
             </div>
-            <button type="submit" class="btn-primary" style="margin-top: 10px;">Отправить заявку</button>
+            <button type="submit" class="btn-primary" style="margin-top: 5px;">Отправить заявку</button>
         </form>
     </div>
 
