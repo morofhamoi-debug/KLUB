@@ -6,11 +6,11 @@
     <title>Academy Of Champions</title>
     <style>
         :root {
-            --bg-color: #ffffff;
-            --card-bg: #f8f9fa;
-            --text-primary: #111111;
-            --text-secondary: #555555;
-            --border-color: #e0e0e0;
+            --bg-color: #0b0b0b;
+            --card-bg: #141414;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border-color: #262626;
             --transition: all 0.3s ease;
         }
 
@@ -27,14 +27,12 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 25%, rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 1) 50%, rgba(0, 0, 0, 0.03) 50%, rgba(0, 0, 0, 0.03) 75%, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 1) 100%), #ffffff;
-            background-size: 40px 40px;
         }
 
         /* Header */
         .site-header {
-            background-color: #0b0b0b;
-            border-bottom: 1px solid #262626;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -54,13 +52,13 @@
             align-items: center;
             gap: 15px;
             text-decoration: none;
-            color: #ffffff;
+            color: var(--text-primary);
             cursor: pointer;
         }
 
         .site-logo {
-            width: 75px;
-            height: 75px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
             background-color: transparent;
             border-radius: 4px;
@@ -81,7 +79,7 @@
 
         .nav-list a {
             text-decoration: none;
-            color: #a0a0a0;
+            color: var(--text-secondary);
             font-size: 0.95rem;
             font-weight: 500;
             cursor: pointer;
@@ -90,7 +88,7 @@
 
         .nav-list a:hover,
         .nav-list a.active {
-            color: #ffffff;
+            color: var(--text-primary);
         }
 
         .hamburger {
@@ -107,7 +105,7 @@
             display: block;
             width: 25px;
             height: 2px;
-            background-color: #ffffff;
+            background-color: var(--text-primary);
             transition: var(--transition);
         }
 
@@ -130,7 +128,8 @@
             justify-content: center;
             text-align: center;
             padding: 60px 20px;
-            background: transparent;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 25%, rgba(22, 22, 22, 1) 25%, rgba(22, 22, 22, 1) 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, rgba(22, 22, 22, 1) 75%, rgba(22, 22, 22, 1) 100%), #0b0b0b;
+            background-size: 40px 40px;
         }
 
         .hero-content {
@@ -142,7 +141,6 @@
             font-weight: 900;
             letter-spacing: 2px;
             margin-bottom: 20px;
-            color: #111111;
         }
 
         .hero-content p {
@@ -155,8 +153,8 @@
         /* Buttons */
         .btn-primary {
             display: inline-block;
-            background-color: #111111;
-            color: #ffffff;
+            background-color: var(--text-primary);
+            color: var(--bg-color);
             padding: 15px 35px;
             font-weight: 700;
             text-decoration: none;
@@ -168,14 +166,14 @@
         }
 
         .btn-primary:hover {
-            background-color: #555555;
+            background-color: var(--text-secondary);
         }
 
         .btn-secondary {
             display: inline-block;
             background-color: transparent;
-            color: #111111;
-            border: 1px solid #111111;
+            color: var(--text-primary);
+            border: 1px solid var(--text-primary);
             padding: 10px 20px;
             font-weight: 600;
             text-decoration: none;
@@ -185,8 +183,8 @@
         }
 
         .btn-secondary:hover {
-            background-color: #111111;
-            color: #ffffff;
+            background-color: var(--text-primary);
+            color: var(--bg-color);
         }
 
         /* Pages Layout */
@@ -205,7 +203,6 @@
             font-weight: 800;
             margin-bottom: 40px;
             letter-spacing: 1px;
-            color: #111111;
         }
 
         .content-block {
@@ -215,7 +212,6 @@
             border-radius: 8px;
             line-height: 1.8;
             color: var(--text-secondary);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         .content-block p {
@@ -242,16 +238,14 @@
             flex-direction: column;
             gap: 15px;
             transition: var(--transition);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         .branch-card:hover, .coach-card:hover, .contact-box:hover {
-            border-color: #111111;
+            border-color: var(--text-secondary);
         }
 
         .branch-card h2, .coach-card h2, .contact-box h2 {
             font-size: 1.5rem;
-            color: #111111;
         }
 
         .address, .coach-name, .coach-role, .phone, .branch-ref {
@@ -274,14 +268,14 @@
         .coach-img-placeholder {
             width: 100%;
             height: 350px;
-            background-color: #e0e0e0;
+            background-color: #1f1f1f;
             border-radius: 4px;
         }
 
         .coach-soon-box {
             width: 100%;
             height: 350px;
-            background-color: #eaeaea;
+            background-color: #1a1a1a;
             border: 1px dashed var(--border-color);
             border-radius: 4px;
             display: flex;
@@ -301,7 +295,6 @@
             padding: 40px;
             border-radius: 8px;
             align-items: flex-start;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         .coach-detail-img {
@@ -320,11 +313,10 @@
 
         .branch-info h2 {
             font-size: 2rem;
-            color: #111111;
         }
 
         .branch-info a {
-            color: #111111;
+            color: var(--text-primary);
             text-decoration: underline;
         }
 
@@ -339,10 +331,17 @@
             gap: 20px;
             color: var(--text-secondary);
             line-height: 1.8;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
         /* Directions */
+        .directions-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
         .directions-list {
             list-style: none;
             display: flex;
@@ -351,23 +350,24 @@
         }
 
         .directions-list li {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 20px 30px;
-            border-radius: 8px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
             font-size: 1.2rem;
             font-weight: 600;
-            color: #111111;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            color: var(--text-primary);
+        }
+
+        .directions-list li:last-child {
+            border-bottom: none;
         }
 
         /* Footer */
         .site-footer {
-            background-color: #0b0b0b;
-            border-top: 1px solid #262626;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
             padding: 20px 0;
             text-align: center;
-            color: #a0a0a0;
+            color: var(--text-secondary);
             font-size: 0.9rem;
         }
 
@@ -385,8 +385,8 @@
                 top: 100%;
                 left: 0;
                 width: 100%;
-                background-color: #0b0b0b;
-                border-bottom: 1px solid #262626;
+                background-color: var(--card-bg);
+                border-bottom: 1px solid var(--border-color);
                 padding: 20px;
             }
 
@@ -418,7 +418,7 @@
     <header class="site-header">
         <div class="header-container">
             <a data-target="index" class="logo-brand nav-link">
-                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 75px; height: 75px; background-color: transparent; mix-blend-mode: screen;">
+                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 55px; height: 55px; background-color: transparent; mix-blend-mode: screen;">
                 <span class="brand-name">Academy Of Champions</span>
             </a>
             <nav class="main-nav">
@@ -443,8 +443,8 @@
     <section id="view-index" class="view-section active-view">
         <div class="hero-section">
             <div class="hero-content">
-                <h1 style="margin-top: -30px;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
-                <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent;">
+                <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent; mix-blend-mode: screen;">
+                <h1>СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
                 <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
                 <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
             </div>
@@ -471,8 +471,7 @@
                 <h1 class="page-title">НАШИ ФИЛИАЛЫ</h1>
                 <div class="branches-grid">
                     <div class="branch-card">
-                        <h2>Филиал на Котлярова</h2>
-                        <p class="address">Котлярова, 17</p>
+                        <h2>Котлярова, 17</h2>
                         <p class="coach-name">Кардашян Самсон Врежикович</p>
                         <p class="phone">8 (918) 185-13-22</p>
                         <div class="card-actions">
@@ -480,8 +479,7 @@
                         </div>
                     </div>
                     <div class="branch-card">
-                        <h2>Филиал на Зиповской</h2>
-                        <p class="address">Зиповская, 42</p>
+                        <h2>Зиповская, 42</h2>
                         <p class="coach-name">Расоян Рудик Романович</p>
                         <p class="phone">8 (918) 127-50-54</p>
                         <div class="card-actions">
@@ -508,7 +506,7 @@
                     <div class="coach-card">
                         <img src="Trener .JPG" alt="Расоян Рудик Романович" class="coach-img">
                         <h2>Расоян Рудик Романович</h2>
-                        <p class="coach-role">Тренер по тхэквондо ИТФ</p>
+                        <p class="coach-role">Тренер по тхэквондо ИТФ и ГТФ</p>
                         <p class="branch-ref">Филиал: Зиповская, 42</p>
                         <button data-target="zipovskaya" class="btn-secondary nav-link">Подробнее</button>
                     </div>
@@ -522,15 +520,17 @@
         <main class="page-main">
             <div class="container">
                 <h1 class="page-title">НАПРАВЛЕНИЯ ТРЕНИРОВОК</h1>
-                <ul class="directions-list">
-                    <li>Тхэквондо ИТФ</li>
-                    <li>Тхэквондо ГТФ</li>
-                    <li>Физическая и функциональная подготовка</li>
-                    <li>Постановка техники</li>
-                    <li>Развитие скорости и координации</li>
-                    <li>Подготовка к соревнованиям</li>
-                    <li>Тренировки для детей и подростков</li>
-                </ul>
+                <div class="directions-card">
+                    <ul class="directions-list">
+                        <li>Тхэквондо ИТФ</li>
+                        <li>Тхэквондо ГТФ</li>
+                        <li>Физическая и функциональная подготовка</li>
+                        <li>Постановка техники</li>
+                        <li>Развитие скорости и координации</li>
+                        <li>Подготовка к соревнованиям</li>
+                        <li>Тренировки для детей и подростков</li>
+                    </ul>
+                </div>
             </div>
         </main>
     </section>
@@ -542,16 +542,16 @@
                 <h1 class="page-title">КОНТАКТЫ</h1>
                 <div class="contacts-grid">
                     <div class="contact-box">
-                        <h2>Филиал Котлярова, 17</h2>
+                        <h2>Котлярова, 17</h2>
                         <p>Тренер: Кардашян Самсон Врежикович</p>
-                        <p><a href="tel:+79181851322" style="color: #111111;">8 (918) 185-13-22</a></p>
-                        <p><a href="https://wa.me/79181851322" target="_blank" rel="noopener" style="color: #111111;">WhatsApp чат</a></p>
+                        <p><a href="tel:+79181851322">8 (918) 185-13-22</a></p>
+                        <p><a href="https://wa.me/79181851322" target="_blank" rel="noopener">WhatsApp чат</a></p>
                     </div>
                     <div class="contact-box">
-                        <h2>Филиал Зиповская, 42</h2>
+                        <h2>Зиповская, 42</h2>
                         <p>Тренер: Расоян Рудик Романович</p>
-                        <p><a href="tel:+79181275054" style="color: #111111;">8 (918) 127-50-54</a></p>
-                        <p><a href="https://wa.me/79181275054" target="_blank" rel="noopener" style="color: #111111;">WhatsApp чат</a></p>
+                        <p><a href="tel:+79181275054">8 (918) 127-50-54</a></p>
+                        <p><a href="https://wa.me/79181275054" target="_blank" rel="noopener">WhatsApp чат</a></p>
                     </div>
                 </div>
             </div>
@@ -562,7 +562,7 @@
     <section id="view-kotlyarova" class="view-section">
         <main class="page-main">
             <div class="container">
-                <h1 class="page-title">Филиал Котлярова, 17</h1>
+                <h1 class="page-title">Котлярова, 17</h1>
                 <div class="branch-detail-card">
                     <div class="coach-soon-box" style="max-width: 350px; width: 100%; height: 350px;">СКОРО</div>
                     <div class="branch-info">
@@ -580,20 +580,20 @@
     <section id="view-zipovskaya" class="view-section">
         <main class="page-main">
             <div class="container">
-                <h1 class="page-title">Филиал Зиповская, 42</h1>
+                <h1 class="page-title">Зиповская, 42</h1>
                 <div class="branch-detail-card">
                     <img src="Trener .JPG" alt="Расоян Рудик Романович" class="coach-detail-img">
                     <div class="branch-info">
                         <h2>Расоян Рудик Романович</h2>
-                        <p class="coach-role">Тренер по тхэквондо ИТФ</p>
+                        <p class="coach-role">Тренер по тхэквондо ИТФ и ГТФ</p>
                         <p class="address-line"><strong>Адрес:</strong> Зиповская, 42</p>
                         <p class="phone-line"><strong>Телефон:</strong> <a href="tel:+79181275054">8 (918) 127-50-54</a></p>
                         <p class="wa-line"><a href="https://wa.me/79181275054" target="_blank" rel="noopener" class="btn-secondary">Написать в WhatsApp</a></p>
                     </div>
                 </div>
                 <div class="coach-bio">
-                    <p>«Расоян Рудик Романович — тренер по тхэквондо ИТФ и действующий спортсмен, посвятивший себя развитию спортивной техники, физической подготовки и дисциплины.</p>
-                    <p>Рудик является победителем чемпионата и первенства Южного федерального округа по тхэквондо, где занял 1-е место в своей весовой категории. Также принимал участие в чемпионате Краснодарского края и Первенстве России по тхэквондо ИТФ.</p>
+                    <p>«Расоян Рудик Романович — тренер по тхэквондо ИТФ и ГТФ и действующий спортсмен, посвятивший себя развитию спортивной техники, физической подготовки и дисциплины.</p>
+                    <p>Рудик является победителем чемпионата и первенства Южного федерального округа по тхэквондо, где занял 1-е место в своей весовой категории. Также принимал участие в чемпионате Краснодарского края и Первенстве России по тхэквондо ИТФ и ГТФ.</p>
                     <p>В тренировочном процессе Рудик уделяет особое внимание правильной технике, физической и функциональной подготовке, скорости, координации и развитию спортивного характера. Его задача — помочь каждому ученику раскрыть свой потенциал, стать сильнее, увереннее в себе и дисциплинированнее.</p>
                     <p>Тренировки подходят как для начинающих спортсменов, так и для тех, кто хочет совершенствовать свою технику и готовиться к соревнованиям. В работе используется индивидуальный подход к каждому ученику с учётом его возраста, уровня подготовки и спортивных целей.»</p>
                 </div>
@@ -614,13 +614,21 @@
             const navLinks = document.querySelectorAll('.nav-link');
             const views = document.querySelectorAll('.view-section');
 
+            // История переходов для свайпа "назад" (как на iOS)
+            const historyStack = ['index'];
+
             if (hamburger && mainNav) {
                 hamburger.addEventListener('click', () => {
                     mainNav.classList.toggle('active');
                 });
             }
 
-            function switchView(targetId) {
+            function switchView(targetId, addHistory = true) {
+                const currentActive = document.querySelector('.view-section.active-view');
+                const currentActiveId = currentActive ? currentActive.id.replace('view-', '') : 'index';
+
+                if (targetId === currentActiveId) return;
+
                 views.forEach(view => {
                     view.classList.remove('active-view');
                 });
@@ -642,6 +650,22 @@
                 if (mainNav.classList.contains('active')) {
                     mainNav.classList.remove('active');
                 }
+
+                if (addHistory) {
+                    // Если уходим с главной или переходим глубже, обновляем стек истории
+                    if (targetId === 'index') {
+                        historyStack.length = 0;
+                        historyStack.push('index');
+                    } else {
+                        // Если уже есть в истории, обрезаем до него, иначе добавляем
+                        const indexInHistory = historyStack.indexOf(targetId);
+                        if (indexInHistory !== -1) {
+                            historyStack.length = indexInHistory + 1;
+                        } else {
+                            historyStack.push(targetId);
+                        }
+                    }
+                }
             }
 
             navLinks.forEach(link => {
@@ -649,10 +673,62 @@
                     e.preventDefault();
                     const targetId = link.getAttribute('data-target');
                     if (targetId) {
-                        switchView(targetId);
+                        switchView(targetId, true);
                     }
                 });
             });
+
+            // Реализация свайпа назад с левого края экрана (Back Swipe как на iOS)
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let isSwiping = false;
+
+            document.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                // Срабатывает только если свайп начинается в пределах 35px от левого края экрана
+                if (touchStartX < 35) {
+                    isSwiping = true;
+                } else {
+                    isSwiping = false;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isSwiping) return;
+                const currentX = e.touches[0].clientX;
+                const currentY = e.touches[0].clientY;
+                // Если пользователь сильно увёл палец по вертикали, отменяем жест свайпа назад
+                if (Math.abs(currentY - touchStartY) > 50) {
+                    isSwiping = false;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (!isSwiping) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const diffX = touchEndX - touchStartX;
+
+                // Если свайп вправо достаточно длинный (больше 70 пикселей)
+                if (diffX > 70) {
+                    const currentActive = document.querySelector('.view-section.active-view');
+                    const currentActiveId = currentActive ? currentActive.id.replace('view-', '') : 'index';
+
+                    if (currentActiveId !== 'index') {
+                        // Если мы не на главной, возвращаемся на предыдущую страницу в истории или на главную
+                        if (historyStack.length > 1) {
+                            historyStack.pop(); // удаляем текущую
+                            const previousId = historyStack[historyStack.length - 1];
+                            switchView(previousId, false);
+                        } else {
+                            switchView('index', false);
+                            historyStack.length = 0;
+                            historyStack.push('index');
+                        }
+                    }
+                }
+                isSwiping = false;
+            }, { passive: true });
         });
     </script>
 </body>
