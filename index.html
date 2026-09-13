@@ -57,8 +57,8 @@
         }
 
         .site-logo {
-            width: 45px;
-            height: 45px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
             background-color: transparent;
             border-radius: 4px;
@@ -272,6 +272,21 @@
             border-radius: 4px;
         }
 
+        .coach-soon-box {
+            width: 100%;
+            height: 350px;
+            background-color: #1a1a1a;
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+        }
+
         .branch-detail-card {
             display: flex;
             gap: 40px;
@@ -392,7 +407,7 @@
     <header class="site-header">
         <div class="header-container">
             <a data-target="index" class="logo-brand nav-link">
-                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="background-color: transparent; mix-blend-mode: screen;">
+                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 55px; height: 55px; background-color: transparent; mix-blend-mode: screen;">
                 <span class="brand-name">Academy Of Champions</span>
             </a>
             <nav class="main-nav">
@@ -417,7 +432,7 @@
     <section id="view-index" class="view-section active-view">
         <div class="hero-section">
             <div class="hero-content">
-                <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 150px; height: 150px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent; mix-blend-mode: screen;">
+                <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent; mix-blend-mode: screen;">
                 <h1>СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
                 <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
                 <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
@@ -474,7 +489,7 @@
                 <h1 class="page-title">НАШИ ТРЕНЕРЫ</h1>
                 <div class="coaches-grid">
                     <div class="coach-card">
-                        <img src="Trener .JPG" alt="Кардашян Самсон Врежикович" class="coach-img">
+                        <div class="coach-soon-box">СКОРО</div>
                         <h2>Кардашян Самсон Врежикович</h2>
                         <p class="branch-ref">Филиал: Котлярова, 17</p>
                         <button data-target="kotlyarova" class="btn-secondary nav-link">Подробнее</button>
@@ -538,7 +553,7 @@
             <div class="container">
                 <h1 class="page-title">Филиал Котлярова, 17</h1>
                 <div class="branch-detail-card">
-                    <img src="Trener .JPG" alt="Кардашян Самсон Врежикович" class="coach-detail-img">
+                    <div class="coach-soon-box" style="max-width: 350px; width: 100%; height: 350px;">СКОРО</div>
                     <div class="branch-info">
                         <h2>Кардашян Самсон Врежикович</h2>
                         <p class="address-line"><strong>Адрес:</strong> Котлярова, 17</p>
