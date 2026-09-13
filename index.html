@@ -191,6 +191,14 @@
             line-height: 1.6;
         }
 
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         /* Buttons */
         .btn-primary {
             display: inline-block;
@@ -285,7 +293,14 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
-        .branch-card:hover, .coach-card:hover, .contact-box:hover {
+        /* Стили при наведении и нажатии на карточку филиала (черная обводка с тенью) */
+        .branch-card:hover, 
+        .branch-card:active {
+            border-color: #111111;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .coach-card:hover, .contact-box:hover {
             border-color: #111111;
         }
 
@@ -308,13 +323,6 @@
             width: 100%;
             height: 350px;
             object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .coach-img-placeholder {
-            width: 100%;
-            height: 350px;
-            background-color: #e0e0e0;
             border-radius: 4px;
         }
 
@@ -415,6 +423,103 @@
             padding-top: 0;
         }
 
+        /* Форма записи */
+        .booking-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 500px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+            background-color: #fff;
+        }
+
+        .form-group input:focus {
+            border-color: #111111;
+            box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
+        }
+
+        /* Выпадающее боковое окно для ПК */
+        .desktop-drawer-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .desktop-drawer-backdrop.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .desktop-drawer {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 450px;
+            height: 100vh;
+            background-color: #ffffff;
+            z-index: 2001;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .desktop-drawer.open {
+            right: 0;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .drawer-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #111111;
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 5px;
+            line-height: 1;
+        }
+
         /* Footer */
         .site-footer {
             background-color: #0b0b0b;
@@ -502,7 +607,10 @@
                     <h1 style="margin-top: -30px;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
                     <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto 25px auto; display: block; background-color: transparent;">
                     <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
-                    <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
+                    <div class="hero-buttons">
+                        <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
+                        <button id="btn-booking" class="btn-secondary">ЗАПИСАТЬСЯ</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -656,6 +764,62 @@
                 </div>
             </main>
         </section>
+
+        <!-- 9. Страница записи для мобильных устройств (booking) -->
+        <section id="view-booking" class="view-section">
+            <main class="page-main">
+                <div class="container">
+                    <h1 class="page-title">ЗАПИСЬ НА ТРЕНИРОВКУ</h1>
+                    <form class="booking-form" onsubmit="event.preventDefault(); alert('Спасибо за заявку! Мы свяжемся с вами.');">
+                        <div class="form-group">
+                            <label for="mob-surname">Фамилия</label>
+                            <input type="text" id="mob-surname" required placeholder="Введите фамилию">
+                        </div>
+                        <div class="form-group">
+                            <label for="mob-name">Имя</label>
+                            <input type="text" id="mob-name" required placeholder="Введите имя">
+                        </div>
+                        <div class="form-group">
+                            <label for="mob-phone">Номер</label>
+                            <input type="tel" id="mob-phone" required placeholder="+7 (___) ___-__-__">
+                        </div>
+                        <div class="form-group">
+                            <label for="mob-age">Возраст</label>
+                            <input type="number" id="mob-age" required placeholder="Укажите возраст">
+                        </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 10px;">Отправить заявку</button>
+                    </form>
+                </div>
+            </main>
+        </section>
+    </div>
+
+    <!-- Боковое окно для ПК -->
+    <div class="desktop-drawer-backdrop" id="drawerBackdrop"></div>
+    <div class="desktop-drawer" id="desktopDrawer">
+        <div class="drawer-header">
+            <h2 class="drawer-title">Запись</h2>
+            <button class="drawer-close" id="drawerClose">&times;</button>
+        </div>
+        <form class="booking-form" onsubmit="event.preventDefault(); alert('Спасибо за заявку! Мы свяжемся с вами.');">
+            <div class="form-group">
+                <label for="pc-surname">Фамилия</label>
+                <input type="text" id="pc-surname" required placeholder="Введите фамилию">
+            </div>
+            <div class="form-group">
+                <label for="pc-name">Имя</label>
+                <input type="text" id="pc-name" required placeholder="Введите имя">
+            </div>
+            <div class="form-group">
+                <label for="pc-phone">Номер</label>
+                <input type="tel" id="pc-phone" required placeholder="+7 (___) ___-__-__">
+            </div>
+            <div class="form-group">
+                <label for="pc-age">Возраст</label>
+                <input type="number" id="pc-age" required placeholder="Укажите возраст">
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 10px;">Отправить заявку</button>
+        </form>
     </div>
 
     <footer class="site-footer">
@@ -781,13 +945,40 @@
                     const currentActiveId = currentActive ? currentActive.id.replace('view-', '') : 'index';
                     
                     if (targetId) {
-                        // Определяем, является ли это возвратом назад по логике истории
                         const historyIndex = historyStack.indexOf(targetId);
                         const isBack = historyIndex !== -1 && historyIndex < historyStack.indexOf(currentActiveId);
                         switchView(targetId, isBack);
                     }
                 });
             });
+
+            // Обработка кнопки «Записаться» (Разделение на ПК и Mobile)
+            const btnBooking = document.getElementById('btn-booking');
+            const desktopDrawer = document.getElementById('desktopDrawer');
+            const drawerBackdrop = document.getElementById('drawerBackdrop');
+            const drawerClose = document.getElementById('drawerClose');
+
+            if (btnBooking) {
+                btnBooking.addEventListener('click', () => {
+                    // Если экран шире 768px (ПК) — открываем правую панель, иначе — мобильную страницу
+                    if (window.innerWidth > 768) {
+                        desktopDrawer.classList.add('open');
+                        drawerBackdrop.classList.add('open');
+                    } else {
+                        switchView('booking', false);
+                    }
+                });
+            }
+
+            function closeDesktopDrawer() {
+                if (desktopDrawer && drawerBackdrop) {
+                    desktopDrawer.classList.remove('open');
+                    drawerBackdrop.classList.remove('open');
+                }
+            }
+
+            if (drawerClose) drawerClose.addEventListener('click', closeDesktopDrawer);
+            if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDesktopDrawer);
 
             // iOS-like Interactive Edge Swipe Back
             let touchStartX = 0;
@@ -801,7 +992,6 @@
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
 
-                // Срабатывает только если свайп начинается в пределах 40px от левого края и мы не на главной
                 currentActiveView = document.querySelector('.view-section.active-view');
                 const currentId = currentActiveView ? currentActiveView.id.replace('view-', '') : 'index';
 
@@ -827,7 +1017,6 @@
                 const currentX = e.touches[0].clientX;
                 const currentY = e.touches[0].clientY;
 
-                // Отменяем, если свайп уходит вертикально
                 if (Math.abs(currentY - touchStartY) > 60) {
                     isSwiping = false;
                     resetSwipeState();
@@ -846,7 +1035,7 @@
 
             document.addEventListener('touchend', (e) => {
                 if (!isSwiping || !currentActiveView || !prevView) return;
-                const touchEndX = e.changedTouches.currentX || e.changedTouches[0].clientX;
+                const touchEndX = e.changedTouches[0].clientX;
                 const diffX = touchEndX - touchStartX;
                 const screenWidth = window.innerWidth;
 
@@ -854,7 +1043,6 @@
                 prevView.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
 
                 if (diffX > screenWidth * 0.35 || diffX > 120) {
-                    // Завершаем жест свайпа назад
                     currentActiveView.style.transform = 'translateX(100%)';
                     prevView.style.transform = 'translateX(0)';
 
@@ -881,7 +1069,6 @@
                         });
                     }, 300);
                 } else {
-                    // Возвращаем на место, если свайп был недостаточно длинным
                     currentActiveView.style.transform = 'translateX(0)';
                     prevView.style.transform = 'translateX(-30%)';
 
