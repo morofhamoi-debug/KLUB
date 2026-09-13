@@ -623,7 +623,7 @@
             <main class="page-main">
                 <div class="container">
                     <h1 class="page-title">О КЛУБЕ</h1>
-                    <div class="content-block">
+                    <div class="content-block" id="about-content-block">
                         <p>Academy Of Champions объединяет преданных своему делу спортсменов и тренеров. Уже 8 лет опыта позволяют нам воспитывать чемпионов, развивать силу духа, координацию и выносливость у детей, подростков и взрослых.</p>
                         <p>Мы предлагаем профессиональный подход, современные методики тренировок, строгую дисциплину и безопасную спортивную среду в каждом из наших филиалов.</p>
                     </div>
@@ -636,7 +636,7 @@
             <main class="page-main">
                 <div class="container">
                     <h1 class="page-title">НАШИ ФИЛИАЛЫ</h1>
-                    <div class="branches-grid">
+                    <div class="branches-grid" id="branches-grid-container">
                         <div class="branch-card">
                             <h2>Котлярова, 17</h2>
                             <p class="coach-name">Кардашян Самсон Врежикович</p>
@@ -688,7 +688,7 @@
                 <div class="container">
                     <h1 class="page-title">НАПРАВЛЕНИЯ ТРЕНИРОВОК</h1>
                     <div class="directions-box">
-                        <ul class="directions-list">
+                        <ul class="directions-list" id="directions-list-container">
                             <li>Тхэквондо ИТФ</li>
                             <li>Тхэквондо ГТФ</li>
                             <li>Физическая и функциональная подготовка</li>
@@ -707,7 +707,7 @@
             <main class="page-main">
                 <div class="container">
                     <h1 class="page-title">КОНТАКТЫ</h1>
-                    <div class="contacts-grid">
+                    <div class="contacts-grid" id="contacts-grid-container">
                         <div class="contact-box">
                             <h2>Котлярова, 17</h2>
                             <p>Тренер: Кардашян Самсон Врежикович</p>
@@ -834,6 +834,7 @@
                 <input type="tel" id="pc-phone" value="+7 (" required placeholder="+7 (___) ___-__-__">
             </div>
             <div class="form-group">
+                <label-for="pc-age">Возраст</label>
                 <label for="pc-age">Возраст</label>
                 <input type="text" id="pc-age" maxlength="2" inputmode="numeric" required placeholder="Укажите возраст">
             </div>
@@ -853,6 +854,27 @@
             const mainNav = document.querySelector('.main-nav');
             const navLinks = document.querySelectorAll('.nav-link');
             const views = document.querySelectorAll('.view-section');
+
+            // --- ЗАГРУЗКА ИНФОРМАЦИИ ИЗ main.py ---
+            function loadDataFromBackend() {
+                // Укажи здесь роут на твоем Railway-сервере для получения данных (например, https://klub-production.up.railway.app/api/data)
+                const apiDataUrl = 'https://klub-production.up.railway.app/api/data';
+
+                fetch(apiDataUrl)
+                    .then(response => {
+                        if (response.ok) return response.json();
+                        throw new Error('Не удалось получить данные с сервера');
+                    })
+                    .then(data => {
+                        console.log('Данные с main.py успешно загружены:', data);
+                        // Здесь можно динамически обновлять элементы, если твой бэкенд отдает JSON с текстами/направлениями
+                    })
+                    .catch(error => {
+                        console.log('Бэкенд данных недоступен или используется статика:', error);
+                    });
+            }
+            loadDataFromBackend();
+            // ---------------------------------------
 
             // --- ОТПРАВКА ЗАЯВОК ЧЕРЕЗ RAILWAY (ТОКЕН СКРЫТ, ID ОСТАЮТСЯ В КОДЕ) ---
             const CHAT_ID_ZIPOVSTSKAYA = "5208615220";
