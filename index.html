@@ -854,26 +854,15 @@
             const navLinks = document.querySelectorAll('.nav-link');
             const views = document.querySelectorAll('.view-section');
 
-            // --- ЗАГРУЗКА ИНФОРМАЦИИ ИЗ main.py ---
+            // --- ЗАГРУЗКА ИНФОРМАЦИИ (Статическая заглушка для GitHub Pages) ---
             function loadDataFromBackend() {
-                const apiDataUrl = 'https://klub-production.up.railway.app/api/data';
-
-                fetch(apiDataUrl)
-                    .then(response => {
-                        if (response.ok) return response.json();
-                        throw new Error('Не удалось получить данные с сервера');
-                    })
-                    .then(data => {
-                        console.log('Данные с main.py успешно загружены:', data);
-                    })
-                    .catch(error => {
-                        console.log('Бэкенд данных недоступен или используется статика:', error);
-                    });
+                console.log('Сайт работает в статическом режиме на GitHub Pages.');
             }
             loadDataFromBackend();
             // ---------------------------------------
 
-            // --- ОТПРАВКА ЗАЯВОК ЧЕРЕЗ RAILWAY ---
+            // --- ОТПРАВКА ЗАЯВОК НАПРЯМУЮ В TELEGRAM ЧЕРЕЗ JS ---
+            const BOT_TOKEN = "8949478033:AAG7csA762eBS6QREe_gz0Q7vl_IOf5A_9Q";
             const CHAT_ID_ZIPOVSTSKAYA = "5208615220";
             const CHAT_ID_KOTLYAROVA = "7800810111";
 
@@ -894,20 +883,24 @@
                 submitBtn.textContent = 'Отправка...';
                 submitBtn.disabled = true;
 
-                const url = 'https://klub-production.up.railway.app/send';
+                const messageText = 
+                    `📥 <b>Новая заявка на тренировку!</b>\n\n` +
+                    `📍 <b>Филиал:</b> ${branch}\n` +
+                    `👤 <b>Фамилия и Имя:</b> ${surname} ${name}\n` +
+                    `📞 <b>Телефон:</b> ${phone}\n` +
+                    `🎂 <b>Возраст:</b> ${age}`;
 
-                fetch(url, {
+                const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+                fetch(telegramUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        branch: branch,
-                        surname: surname,
-                        name: name,
-                        phone: phone,
-                        age: age,
-                        chat_id: chatId
+                        chat_id: chatId,
+                        text: messageText,
+                        parse_mode: 'HTML'
                     })
                 })
                 .then(response => {
