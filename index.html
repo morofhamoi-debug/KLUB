@@ -27,7 +27,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 25%, rgba(240, 240, 240, 1) 25%, rgba(240, 240, 240, 1) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05) 75%, rgba(240, 240, 240, 1) 75%, rgba(240, 240, 240, 1) 100%), #f0f0f0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 25%, rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 1) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05) 75%, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 1) 100%), #ffffff;
             background-size: 40px 40px;
             overflow-x: hidden;
         }
@@ -53,15 +53,15 @@
         .logo-brand {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             text-decoration: none;
             color: #ffffff;
             cursor: pointer;
         }
 
         .site-logo {
-            width: 45px;
-            height: 45px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
             background-color: transparent;
             border-radius: 4px;
@@ -70,7 +70,7 @@
 
         .brand-name {
             font-weight: 800;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             letter-spacing: 1px;
         }
 
@@ -140,7 +140,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: transparent;
+            background-color: var(--bg-color);
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: transform;
             z-index: 1;
@@ -469,9 +469,9 @@
 </head>
 <body>
     <header class="site-header">
-        <div class="header-container" style="padding: 8px 20px;">
+        <div class="header-container">
             <a data-target="index" class="logo-brand nav-link">
-                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 45px; height: 45px; background-color: transparent; mix-blend-mode: screen;">
+                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 50px; height: 50px; background-color: transparent; mix-blend-mode: screen;">
                 <span class="brand-name">Academy Of Champions</span>
             </a>
             <nav class="main-nav">
@@ -897,7 +897,7 @@
                 isSwiping = false;
             }, { passive: true });
 
-            function resetSwipeState`()` {
+            function resetSwipeState() {
                 if (currentActiveView && prevView) {
                     currentActiveView.style.transform = '';
                     currentActiveView.style.transition = '';
