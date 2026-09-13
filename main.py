@@ -1,4 +1,3 @@
-import os
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +5,6 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Разрешаем CORS-запросы со всех доменов (или укажите ваш сайт/GitHub Pages)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,8 +13,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Токен бота берется из переменных окружения Railway (TELEGRAM_BOT_TOKEN)
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# Указываем токен и настройки прямо в коде (теперь они будут храниться в репозитории)
+BOT_TOKEN = "ВАШ_ТОКЕН_БОТА_ЗДЕСЬ"
 
 class BookingData(BaseModel):
     branch: str
@@ -28,10 +26,9 @@ class BookingData(BaseModel):
 
 @app.post("/send")
 async def send_booking(data: BookingData):
-    if not BOT_TOKEN:
-        raise HTTPException(status_code=500, detail="Bot token is not configured on server")
+    if not BOT_TOKEN or BOT_TOKEN == "ВАШ_ТОКЕН_БОТА_ЗДЕСЬ":
+        raise HTTPException(status_code=500, detail="Токен бота не заполнен в коде")
 
-    # Формируем красивое сообщение для тренера/администратора
     message_text = (
         f"📥 <b>Новая заявка на тренировку!</b>\n\n"
         f"📍 <b>Филиал:</b> {data.branch}\n"
