@@ -1,6 +1,8 @@
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -14,7 +16,7 @@ app.add_middleware(
 )
 
 # Токен твоего Telegram-бота
-BOT_TOKEN = "ВАШ_ТОКЕН_БОТА_ЗДЕСЬ"
+BOT_TOKEN = "8949478033:AAG7csA762eBS6QREe_gz0Q7vl_IOf5A_9Q"
 
 class BookingData(BaseModel):
     branch: str
@@ -26,7 +28,7 @@ class BookingData(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "message": "Academy Of Champions API работает!"}
+    return FileResponse("index.html")
 
 # Эндпоинт, который проверяет фронтенд (HTML) при инициализации
 @app.get("/api/data")
@@ -68,3 +70,6 @@ async def send_booking(data: BookingData):
             raise HTTPException(status_code=500, detail=f"Telegram API Error: {response.text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Подключаем раздачу статических файлов (картинки, стили и т.д., лежащие в корне проекта)
+app.mount("/", StaticFiles(directory="."), name="static")
