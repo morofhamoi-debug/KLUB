@@ -1,4 +1,6 @@
+import os
 import requests
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -73,3 +75,7 @@ async def send_booking(data: BookingData):
 
 # Подключаем раздачу статических файлов (картинки, стили и т.д., лежащие в корне проекта)
 app.mount("/", StaticFiles(directory="."), name="static")
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
