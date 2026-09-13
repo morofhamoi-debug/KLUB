@@ -6,12 +6,10 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-# Токен вашего бота (лучше через переменные окружения в Railway, но для примера можно так)
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "ВАШ_ТОКЕН_БОТА")
-
-# ID чатов для разных филиалов
-CHAT_ID_ZIPOVSTSKAYA = os.getenv("CHAT_ID_ZIPOVSTSKAYA", "ID_ЧАТА_ЗИПОВСКАЯ")
-CHAT_ID_KOTLYAROVA = os.getenv("CHAT_ID_KOTLYAROVA", "ID_ЧАТА_КОТЛЯРОВА")
+# Ваши реальные данные
+TELEGRAM_BOT_TOKEN = "8949478033:AAG7csA762eBS6QREe_gz0Q7vl_IOf5A_9Q"
+CHAT_ID_ZIPOVSTSKAYA = "5208615220"
+CHAT_ID_KOTLYAROVA = "7800810111"
 
 @app.route('/api/send-lead', methods=['POST'])
 def send_lead():
@@ -29,7 +27,6 @@ def send_lead():
         elif branch == "Котлярова, 17":
             target_chat_id = CHAT_ID_KOTLYAROVA
         else:
-            # Если филиал не выбран или другой, отправляем на Зиповскую (или куда укажете)
             target_chat_id = CHAT_ID_ZIPOVSTSKAYA
 
         # Формируем текст сообщения
