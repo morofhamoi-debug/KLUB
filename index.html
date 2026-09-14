@@ -295,12 +295,46 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
-        /* Стили при наведении и нажатии на карточку филиала (черная обводка с тенью) */
-        .branch-card:hover, 
-        .branch-card:active {
+        /* --- Эффект фонарика ночью для карточек филиалов --- */
+        .branches-grid {
+            position: relative;
+        }
+
+        .branch-card {
+            cursor: pointer;
+            position: relative;
+            /* Плавный переход для освещения и затемнения (700мс, ease-in-out) */
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        background-color 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Когда хотя бы один филиал выбран, включен ночной режим для сетки */
+        .branches-grid.flashlight-active .branch-card {
+            opacity: 0.35;
+            filter: brightness(0.8);
+        }
+
+        /* Активная карточка под «лучом фонарика» */
+        .branches-grid.flashlight-active .branch-card.flashlight-lit {
+            opacity: 1;
+            filter: brightness(1.05);
+            background-color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.8);
+            /* Глубокая мягкая тень и рассеянное свечение по краям без жесткой обводки */
+            box-shadow: 0 0 40px 10px rgba(255, 255, 255, 0.9), 
+                        0 20px 40px rgba(0, 0, 0, 0.18);
+            transform: translateY(-4px);
+        }
+
+        /* Стандартный hover, если режим фонарика не активирован */
+        .branches-grid:not(.flashlight-active) .branch-card:hover {
             border-color: #111111;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
         }
+        /* ---------------------------------------------------- */
 
         .coach-card:hover, .contact-box:hover {
             border-color: #111111;
@@ -645,7 +679,7 @@
                 <div class="container">
                     <h1 class="page-title">НАШИ ФИЛИАЛЫ</h1>
                     <div class="branches-grid" id="branches-grid-container">
-                        <div class="branch-card">
+                        <div class="branch-card" data-branch-index="0">
                             <h2>Котлярова, 17</h2>
                             <p class="coach-name">Кардашян Самсон Врежикович</p>
                             <p class="phone">8 (918) 185-13-22</p>
@@ -653,7 +687,7 @@
                                 <button data-target="kotlyarova" class="btn-secondary nav-link">Подробнее</button>
                             </div>
                         </div>
-                        <div class="branch-card">
+                        <div class="branch-card" data-branch-index="1">
                             <h2>Зиповская, 42</h2>
                             <p class="coach-name">Расоян Рудик Романович</p>
                             <p class="phone">8 (918) 127-50-54</p>
@@ -861,6 +895,31 @@
             const mainNav = document.querySelector('.main-nav');
             const navLinks = document.querySelectorAll('.nav-link');
             const views = document.querySelectorAll('.view-section');
+
+            // --- ИНТЕРАКТИВНЫЙ ЭФФЕКТ «ФОНАРИКА НОЧЬЮ» ДЛЯ ФИЛИАЛОВ ---
+            const branchesGridContainer = document.getElementById('branches-grid-container');
+            const branchCards = document.querySelectorAll('.branch-card');
+
+            if (branchesGridContainer && branchCards.length > 0) {
+                branchCards.forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        // Если кликнули на кнопку «Подробнее», не перехватываем стандартную навигацию
+                        if (e.target.closest('button')) return;
+
+                        // Если карточка уже освещена, снимаем эффект фонарика
+                        if (card.classList.contains('flashlight-lit')) {
+                            branchesGridContainer.classList.remove('flashlight-active');
+                            card.classList.remove('flashlight-lit');
+                        } else {
+                            // Переключаем свет фонарика на выбранную карточку с плавной анимацией
+                            branchesGridContainer.classList.add('flashlight-active');
+                            branchCards.forEach(c => c.classList.remove('flashlight-lit'));
+                            card.classList.add('flashlight-lit');
+                        }
+                    });
+                });
+            }
+            // -------------------------------------------------------------
 
             // --- ЗАГРУЗКА ИНФОРМАЦИИ (Статическая заглушка для GitHub Pages) ---
             function loadDataFromBackend() {
