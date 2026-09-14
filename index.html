@@ -329,10 +329,22 @@
             transform: translateY(-4px);
         }
 
-        /* Стандартный hover, если режим фонарика не активирован */
-        .branches-grid:not(.flashlight-active) .branch-card:hover {
-            border-color: #111111;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        /* Эффект при наведении на ПК, если режим фонарика не активирован кликом */
+        @media (hover: hover) {
+            .branches-grid:not(.flashlight-active) .branch-card:hover {
+                opacity: 1;
+                filter: brightness(1.05);
+                background-color: #ffffff;
+                border-color: rgba(255, 255, 255, 0.8);
+                box-shadow: 0 0 40px 10px rgba(255, 255, 255, 0.9), 
+                            0 20px 40px rgba(0, 0, 0, 0.18);
+                transform: translateY(-4px);
+            }
+            
+            .branches-grid:not(.flashlight-active):hover .branch-card:not(:hover) {
+                opacity: 0.35;
+                filter: brightness(0.8);
+            }
         }
         /* ---------------------------------------------------- */
 
