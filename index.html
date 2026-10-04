@@ -1,1366 +1,504 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academy Of Champions</title>
-    <style>
-        :root {
-            --bg-color: #ffffff;
-            --card-bg: #f8f9fa;
-            --text-primary: #111111;
-            --text-secondary: #555555;
-            --border-color: #e0e0e0;
-            --transition: all 0.3s ease;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 25%, rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 1) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05) 75%, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 1) 100%), #ffffff;
-            background-size: 40px 40px;
-            overflow-x: hidden;
-        }
-
-        /* Header */
-        .site-header {
-            background-color: #0b0b0b;
-            border-bottom: 1px solid #262626;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 6px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            color: #ffffff;
-            cursor: pointer;
-        }
-
-        .site-logo {
-            width: 65px;
-            height: 65px;
-            object-fit: contain;
-            background-color: transparent;
-            border-radius: 12px;
-            padding: 2px;
-        }
-
-        .brand-name {
-            font-weight: 800;
-            font-size: 1.05rem;
-            letter-spacing: 1px;
-        }
-
-        .nav-list {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .nav-list a {
-            text-decoration: none;
-            color: #a0a0a0;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .nav-list a:hover,
-        .nav-list a.active {
-            color: #ffffff;
-        }
-
-        .hamburger {
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 8px;
-        }
-
-        .hamburger span {
-            display: block;
-            width: 25px;
-            height: 2px;
-            background-color: #ffffff;
-            transition: var(--transition);
-        }
-
-        /* Views (Pages) Management & iOS Swipe Transition */
-        .view-section {
-            display: none;
-            flex: 1;
-            width: 100%;
-        }
-
-        .view-section.active-view {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Обертка для реализации плавного свайпа как на iOS */
-        #views-container {
-            position: relative;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .view-section {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 25%, rgba(255, 255, 255, 1) 25%, rgba(255, 255, 255, 1) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05) 75%, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 1) 100%), #ffffff;
-            background-size: 40px 40px;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-            will-change: transform;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .view-section.active-view {
-            display: flex;
-            z-index: 2;
-        }
-
-        .view-section.slide-prev {
-            z-index: 3;
-            box-shadow: -10px 0 25px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Hero Section */
-        .hero-section {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 40px 20px;
-            background: transparent;
-        }
-
-        .hero-content {
-            max-width: 800px;
-        }
-
-        .hero-content h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            color: #111111;
-        }
-
-        .hero-content p {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* Buttons */
-        .btn-primary {
-            display: inline-block;
-            background-color: #111111;
-            color: #ffffff;
-            padding: 15px 35px;
-            font-weight: 700;
-            text-decoration: none;
-            border-radius: 16px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            border: none;
-            transition: var(--transition);
-        }
-
-        .btn-primary:hover {
-            background-color: #555555;
-        }
-
-        .btn-secondary {
-            display: inline-block;
-            background-color: transparent;
-            color: #111111;
-            border: 1px solid #111111;
-            padding: 10px 20px;
-            font-weight: 600;
-            text-decoration: none;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-secondary:hover {
-            background-color: #111111;
-            color: #ffffff;
-        }
-
-        /* Pages Layout */
-        .page-main {
-            flex: 1;
-            padding: 40px 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .page-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-            color: #111111;
-            text-align: center;
-        }
-
-        .content-block {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 40px;
-            border-radius: 24px;
-            line-height: 1.8;
-            color: var(--text-secondary);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-
-        .content-block p {
-            margin-bottom: 20px;
-        }
-
-        .content-block p:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Grids */
-        .branches-grid, .coaches-grid, .contacts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .branch-card, .coach-card, .contact-box {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            transition: var(--transition);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-
-        /* --- Эффект фонарика ночью для карточек филиалов --- */
-        .branches-grid {
-            position: relative;
-        }
-
-        .branch-card {
-            cursor: pointer;
-            position: relative;
-            /* Плавный переход для освещения и затемнения (700мс, ease-in-out) */
-            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-                        box-shadow 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-                        background-color 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-                        opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-                        border-color 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Когда хотя бы один филиал выбран, включен ночной режим для сетки */
-        .branches-grid.flashlight-active .branch-card {
-            opacity: 0.35;
-            filter: brightness(0.8);
-        }
-
-        /* Активная карточка под «лучом фонарика» */
-        .branches-grid.flashlight-active .branch-card.flashlight-lit {
-            opacity: 1;
-            filter: brightness(1.05);
-            background-color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.8);
-            /* Глубокая мягкая тень и рассеянное свечение по краям без жесткой обводки */
-            box-shadow: 0 0 40px 10px rgba(255, 255, 255, 0.9), 
-                        0 20px 40px rgba(0, 0, 0, 0.18);
-            transform: translateY(-4px);
-        }
-
-        /* Эффект при наведении на ПК, если режим фонарика не активирован кликом */
-        @media (hover: hover) {
-            .branches-grid:not(.flashlight-active) .branch-card:hover {
-                opacity: 1;
-                filter: brightness(1.05);
-                background-color: #ffffff;
-                border-color: rgba(255, 255, 255, 0.8);
-                box-shadow: 0 0 40px 10px rgba(255, 255, 255, 0.9), 
-                            0 20px 40px rgba(0, 0, 0, 0.18);
-                transform: translateY(-4px);
-            }
-            
-            .branches-grid:not(.flashlight-active):hover .branch-card:not(:hover) {
-                opacity: 0.35;
-                filter: brightness(0.8);
-            }
-        }
-        /* ---------------------------------------------------- */
-
-        .coach-card:hover, .contact-box:hover {
-            border-color: #111111;
-        }
-
-        .branch-card h2, .coach-card h2, .contact-box h2 {
-            font-size: 1.5rem;
-            color: #111111;
-        }
-
-        .address, .coach-name, .coach-role, .phone, .branch-ref {
-            color: var(--text-secondary);
-        }
-
-        .card-actions {
-            margin-top: auto;
-            padding-top: 15px;
-        }
-
-        /* Coach specifics */
-        .coach-img {
-            width: 100%;
-            height: 350px;
-            object-fit: cover;
-            border-radius: 16px;
-        }
-
-        .coach-soon-box {
-            width: 100%;
-            height: 350px;
-            background-color: #eaeaea;
-            border: 1px dashed var(--border-color);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: var(--text-secondary);
-        }
-
-        .branch-detail-card {
-            display: flex;
-            gap: 40px;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 40px;
-            border-radius: 24px;
-            align-items: flex-start;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-
-        .coach-detail-img {
-            width: 100%;
-            max-width: 350px;
-            height: auto;
-            border-radius: 16px;
-            object-fit: cover;
-        }
-
-        .branch-info {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .branch-info h2 {
-            font-size: 2rem;
-            color: #111111;
-        }
-
-        .branch-info a {
-            color: #111111;
-            text-decoration: underline;
-        }
-
-        .coach-bio {
-            margin-top: 40px;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 40px;
-            border-radius: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            color: var(--text-secondary);
-            line-height: 1.8;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-
-        /* Directions */
-        .directions-box {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-
-        .directions-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .directions-list li {
-            padding: 15px 0;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #111111;
-        }
-
-        .directions-list li:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .directions-list li:first-child {
-            padding-top: 0;
-        }
-
-        /* Форма записи */
-        .booking-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: var(--text-primary);
-        }
-
-        .form-group input,
-        .form-group select {
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            font-size: 1rem;
-            outline: none;
-            transition: var(--transition);
-            background-color: #fff;
-            color: var(--text-primary);
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            border-color: #111111;
-            box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
-        }
-
-        /* Выпадающее боковое окно для ПК */
-        .desktop-drawer-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.4);
-            z-index: 2000;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .desktop-drawer-backdrop.open {
-            display: block;
-            opacity: 1;
-        }
-
-        .desktop-drawer {
-            position: fixed;
-            top: 0;
-            right: -450px;
-            width: 450px;
-            height: 100vh;
-            background-color: #ffffff;
-            z-index: 2001;
-            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
-            display: flex;
-            flex-direction: column;
-            transition: right 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-            padding: 40px;
-            overflow-y: auto;
-            border-top-left-radius: 24px;
-            border-bottom-left-radius: 24px;
-        }
-
-        .desktop-drawer.open {
-            right: 0;
-        }
-
-        .drawer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .drawer-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #111111;
-        }
-
-        .drawer-close {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            color: var(--text-primary);
-            padding: 5px;
-            line-height: 1;
-            border-radius: 8px;
-        }
-
-        /* Footer */
-        .site-footer {
-            background-color: #0b0b0b;
-            border-top: 1px solid #262626;
-            padding: 10px 0;
-            text-align: center;
-            color: #a0a0a0;
-            font-size: 0.9rem;
-            z-index: 10;
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-nav {
-                display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background-color: #0b0b0b;
-                border-bottom: 1px solid #262626;
-                padding: 20px;
-                border-bottom-left-radius: 20px;
-                border-bottom-right-radius: 20px;
-            }
-
-            .main-nav.active {
-                display: block;
-            }
-
-            .nav-list {
-                flex-direction: column;
-                gap: 15px;
-                align-items: center;
-            }
-
-            .hamburger {
-                display: flex;
-            }
-
-            .hero-content h1 {
-                font-size: 2.2rem;
-            }
-
-            .branch-detail-card {
-                flex-direction: column;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>GASPARD — конструктор бота</title>
+<style>
+  :root{
+    --bg:#0e1621; --panel:#17212b; --bubble-in:#182533; --bubble-out:#2b5278;
+    --accent:#5288c1; --accent-hover:#4a7ab0; --text:#e7eef5; --muted:#7d8e9e;
+    --danger:#e0534a; --border:#253340;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column}
+  .screen.active{display:flex}
+
+  /* --- Экран 1: ввод токена --- */
+  #screenToken{justify-content:center;align-items:center;padding:24px}
+  .logo{font-size:44px;font-weight:700;letter-spacing:6px;margin-bottom:8px}
+  .sub{color:var(--muted);margin-bottom:32px;font-size:14px;text-align:center}
+  .card{width:100%;max-width:380px;background:var(--panel);border-radius:16px;padding:24px}
+  .card h2{margin:0 0 6px;font-size:18px}
+  .card p{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.5}
+  input,textarea,select{width:100%;background:#0e1621;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:70px}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px;transition:.15s}
+  .btn:hover{background:var(--accent-hover)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:18px;text-align:center}
+
+  /* --- Экран 2: редактор --- */
+  .header{background:var(--panel);padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5288c1,#2b5278);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+  .header-info{flex:1;min-width:0}
+  .header-info .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-info .status{font-size:12px;color:var(--muted)}
+  .header-info .status.on{color:#57b85a}
+
+  .chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .chat::-webkit-scrollbar{width:6px}
+  .chat::-webkit-scrollbar-thumb{background:#253340;border-radius:3px}
+  .empty{color:var(--muted);text-align:center;font-size:14px;margin:auto;max-width:260px;line-height:1.6}
+
+  .msg{align-self:flex-start;max-width:88%;background:var(--bubble-in);border-radius:14px 14px 14px 4px;padding:10px 12px;font-size:14px;line-height:1.4;position:relative;animation:pop .2s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg .tag{display:inline-block;background:#2b5278;color:#a9c8e8;font-size:11px;padding:2px 8px;border-radius:6px;margin-bottom:6px;font-family:monospace}
+  .msg .text{white-space:pre-wrap;word-break:break-word}
+  .msg .kb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .msg .kb .kbtn{background:#233a52;color:#8ab4f8;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #2f4a66}
+
+  .msg-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed #253340}
+  .msg-actions button{background:transparent;border:1px solid #2f4a66;color:#8ab4f8;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:.15s}
+  .msg-actions button:hover{background:#233a52}
+  .msg-actions button.del{border-color:#5a2a2a;color:#e0534a}
+  .msg-actions button.del:hover{background:#3a1f1f}
+
+  /* --- Нижняя панель --- */
+  .bottombar{background:var(--panel);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .bottombar button{flex:1;padding:12px;border:none;border-radius:10px;background:#233a52;color:#a9c8e8;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  .bottombar button:hover{background:#2b5278;color:#fff}
+  .bottombar button.primary{background:var(--accent);color:#fff}
+  .bottombar button.primary:hover{background:var(--accent-hover)}
+  .bottombar button.on{background:#57b85a;color:#fff}
+
+  /* --- Bottom sheet --- */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.2s;z-index:50}
+  .overlay.show{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-radius:18px 18px 0 0;padding:20px;transform:translateY(100%);transition:.25s cubic-bezier(.2,.8,.2,1);z-index:51;max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .sheet.show{transform:none}
+  .sheet h3{margin:0 0 16px;font-size:17px}
+  .sheet-actions{display:flex;gap:10px;margin-top:20px}
+  .sheet-actions .btn{margin-top:0}
+  .btn.secondary{background:#233a52;color:#a9c8e8}
+  .btn.secondary:hover{background:#2b5278;color:#fff}
+  .btn.danger{background:var(--danger)}
+  .btn.danger:hover{background:#c94b42}
+
+  .btn-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;background:#0e1621;border:1px solid var(--border);border-radius:10px;padding:8px}
+  .btn-row input{flex:1;border:none;background:transparent;padding:6px 4px;font-size:13px}
+  .btn-row input:focus{border:none}
+  .btn-row .rm{background:transparent;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0 6px;line-height:1}
+  .add-btn{background:transparent;border:1px dashed #2f4a66;color:#8ab4f8;padding:10px;border-radius:10px;width:100%;font-size:13px;cursor:pointer;margin-top:4px}
+  .add-btn:hover{background:#1a2836}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#233a52;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:100;pointer-events:none;max-width:90%;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+</style>
 </head>
 <body>
-    <header class="site-header">
-        <div class="header-container">
-            <a data-target="index" class="logo-brand nav-link">
-                <img src="LOGO.png" alt="Логотип клуба" class="site-logo" style="width: 65px; height: 65px; background-color: transparent; mix-blend-mode: screen;">
-                <span class="brand-name">Academy Of Champions</span>
-            </a>
-            <nav class="main-nav">
-                <ul class="nav-list">
-                    <li><a data-target="index" class="nav-link active">Главная</a></li>
-                    <li><a data-target="about" class="nav-link">О клубе</a></li>
-                    <li><a data-target="branches" class="nav-link">Филиалы</a></li>
-                    <li><a data-target="coaches" class="nav-link">Тренеры</a></li>
-                    <li><a data-target="directions" class="nav-link">Направления</a></li>
-                    <li><a data-target="contacts" class="nav-link">Контакты</a></li>
-                </ul>
-            </nav>
-            <button class="hamburger" aria-label="Меню">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </header>
 
-    <div id="views-container">
-        <!-- 1. Главная (index) -->
-        <section id="view-index" class="view-section active-view">
-            <div class="hero-section">
-                <div class="hero-content">
-                    <h1 style="margin-top: -30px;">СИЛА. ДИСЦИПЛИНА. ХАРАКТЕР.</h1>
-                    <img src="LOGO.png" alt="Логотип Academy Of Champions" style="width: 240px; height: 240px; object-fit: contain; margin: 0 auto 20px auto; display: block; background-color: transparent;">
-                    <p>Клуб тхэквондо для детей, подростков и взрослых. Два филиала в городе — тренируйтесь там, где удобно.</p>
-                    <div class="hero-buttons">
-                        <button data-target="branches" class="btn-primary nav-link">НАШИ ФИЛИАЛЫ</button>
-                        <button id="btn-booking" class="btn-secondary">ЗАПИСАТЬСЯ</button>
-                    </div>
-                </div>
-            </div>
-        </section>
+<!-- ЭКРАН 1 -->
+<div id="screenToken" class="screen active">
+  <div class="logo">GASPARD</div>
+  <div class="sub">Конструктор Telegram-бота</div>
+  <div class="card">
+    <h2>Введите токен бота</h2>
+    <p>Получите его у <b>@BotFather</b> в Telegram → <code>/newbot</code> или <code>/mybots</code> → API Token.</p>
+    <label>Токен</label>
+    <input id="tokenInput" type="text" placeholder="1234567890:AA..." autocomplete="off" spellcheck="false">
+    <label>Ссылка на мини-приложение</label>
+    <input id="urlInput" type="text" value="https://morofhamoi-debug.github.io/GASPARD-/">
+    <button class="btn" id="confirmBtn">Подтвердить</button>
+    <div class="err" id="tokenErr"></div>
+  </div>
+</div>
 
-        <!-- 2. О клубе (about) -->
-        <section id="view-about" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">О КЛУБЕ</h1>
-                    <div class="content-block" id="about-content-block">
-                        <p>Academy Of Champions объединяет преданных своему делу спортсменов и тренеров. Уже 8 лет опыта позволяют нам воспитывать чемпионов, развивать силу духа, координацию и выносливость у детей, подростков и взрослых.</p>
-                        <p>Мы предлагаем профессиональный подход, современные методики тренировок, строгую дисциплину и безопасную спортивную среду в каждом из наших филиалов.</p>
-                    </div>
-                </div>
-            </main>
-        </section>
+<!-- ЭКРАН 2 -->
+<div id="screenEditor" class="screen">
+  <div class="header">
+    <div class="avatar" id="botAvatar">G</div>
+    <div class="header-info">
+      <div class="name" id="botName">@bot</div>
+      <div class="status" id="botStatus">Остановлен</div>
+    </div>
+  </div>
 
-        <!-- 3. Филиалы (branches) -->
-        <section id="view-branches" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">НАШИ ФИЛИАЛЫ</h1>
-                    <div class="branches-grid" id="branches-grid-container">
-                        <div class="branch-card" data-branch-index="0">
-                            <h2>Котлярова, 17</h2>
-                            <p class="coach-name">Кардашян Самсон Врежикович</p>
-                            <p class="phone">8 (918) 185-13-22</p>
-                            <div class="card-actions">
-                                <button data-target="kotlyarova" class="btn-secondary nav-link">Подробнее</button>
-                            </div>
-                        </div>
-                        <div class="branch-card" data-branch-index="1">
-                            <h2>Зиповская, 42</h2>
-                            <p class="coach-name">Расоян Рудик Романович</p>
-                            <p class="phone">8 (918) 127-50-54</p>
-                            <div class="card-actions">
-                                <button data-target="zipovskaya" class="btn-secondary nav-link">Подробнее</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </section>
+  <div class="chat" id="chat"></div>
 
-        <!-- 4. Тренеры (coaches) -->
-        <section id="view-coaches" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">НАШИ ТРЕНЕРЫ</h1>
-                    <div class="coaches-grid">
-                        <div class="coach-card">
-                            <div class="coach-soon-box">СКОРО</div>
-                            <h2>Кардашян Самсон Врежикович</h2>
-                            <p class="branch-ref">Филиал: Котлярова, 17</p>
-                            <button data-target="kotlyarova" class="btn-secondary nav-link">Подробнее</button>
-                        </div>
-                        <div class="coach-card">
-                            <img src="Trener .JPG" alt="Расоян Рудик Романович" class="coach-img">
-                            <h2>Расоян Рудик Романович</h2>
-                            <p class="coach-role">Тренер по тхэквондо ИТФ и ГТФ</p>
-                            <p class="branch-ref">Филиал: Зиповская, 42</p>
-                            <button data-target="zipovskaya" class="btn-secondary nav-link">Подробнее</button>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </section>
+  <div class="bottombar">
+    <button id="addMsgBtn">+ Сообщение</button>
+    <button id="startBtn" class="primary">▶ Запустить</button>
+  </div>
+</div>
 
-        <!-- 5. Направления (directions) -->
-        <section id="view-directions" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">НАПРАВЛЕНИЯ ТРЕНИРОВОК</h1>
-                    <div class="directions-box">
-                        <ul class="directions-list" id="directions-list-container">
-                            <li>Тхэквондо ИТФ</li>
-                            <li>Тхэквондо ГТФ</li>
-                            <li>Физическая и функциональная подготовка</li>
-                            <li>Постановка техники</li>
-                            <li>Развитие скорости и координации</li>
-                            <li>Подготовка к соревнованиям</li>
-                            <li>Тренировки для детей и подростков</li>
-                        </ul>
-                    </div>
-                </div>
-            </main>
-        </section>
+<!-- OVERLAY + SHEET -->
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet"></div>
 
-        <!-- 6. Контакты (contacts) -->
-        <section id="view-contacts" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">КОНТАКТЫ</h1>
-                    <div class="contacts-grid" id="contacts-grid-container">
-                        <div class="contact-box">
-                            <h2>Котлярова, 17</h2>
-                            <p>Тренер: Кардашян Самсон Врежикович</p>
-                            <p><a href="tel:+79181851322" style="color: #111111;">8 (918) 185-13-22</a></p>
-                            <p><a href="https://wa.me/79181851322" target="_blank" rel="noopener" style="color: #111111;">WhatsApp чат</a></p>
-                        </div>
-                        <div class="contact-box">
-                            <h2>Зиповская, 42</h2>
-                            <p>Тренер: Расоян Рудик Романович</p>
-                            <p><a href="tel:+79181275054" style="color: #111111;">8 (918) 127-50-54</a></p>
-                            <p><a href="https://wa.me/79181275054" target="_blank" rel="noopener" style="color: #111111;">WhatsApp чат</a></p>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </section>
+<div class="toast" id="toast"></div>
 
-        <!-- 7. Филиал Котлярова (kotlyarova) -->
-        <section id="view-kotlyarova" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">Котлярова, 17</h1>
-                    <div class="branch-detail-card">
-                        <div class="coach-soon-box" style="max-width: 350px; width: 100%; height: 350px;">СКОРО</div>
-                        <div class="branch-info">
-                            <h2>Кардашян Самсон Врежикович</h2>
-                            <p class="address-line"><strong>Адрес:</strong> Котлярова, 17</p>
-                            <p class="phone-line"><strong>Телефон:</strong> <a href="tel:+79181851322">8 (918) 185-13-22</a></p>
-                            <p class="wa-line"><a href="https://wa.me/79181851322" target="_blank" rel="noopener" class="btn-secondary">Написать в WhatsApp</a></p>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </section>
+<script>
+/* ============ STATE ============ */
+const state = {
+  token: localStorage.getItem('bot_token') || '',
+  menuUrl: localStorage.getItem('menu_url') || 'https://morofhamoi-debug.github.io/GASPARD-/',
+  botName: '',
+  messages: JSON.parse(localStorage.getItem('bot_messages') || '[]'),
+  polling: false,
+  offset: 0,
+  editingId: null
+};
 
-        <!-- 8. Филиал Зиповская (zipovskaya) -->
-        <section id="view-zipovskaya" class="view-section">
-            <main class="page-main">
-                <div class="container">
-                    <h1 class="page-title">Зиповская, 42</h1>
-                    <div class="branch-detail-card">
-                        <img src="Trener .JPG" alt="Расоян Рудик Романович" class="coach-detail-img">
-                        <div class="branch-info">
-                            <h2>Расоян Рудик Романович</h2>
-                            <p class="coach-role">Тренер по тхэквондо ИТФ и ГТФ</p>
-                            <p class="address-line"><strong>Адрес:</strong> Зиповская, 42</p>
-                            <p class="phone-line"><strong>Телефон:</strong> <a href="tel:+79181275054">8 (918) 127-50-54</a></p>
-                            <p class="wa-line"><a href="https://wa.me/79181275054" target="_blank" rel="noopener" class="btn-secondary">Написать в WhatsApp</a></p>
-                        </div>
-                    </div>
-                    <div class="coach-bio">
-                        <p>«Расоян Рудик Романович — тренер по тхэквондо ИТФ и ГТФ и действующий спортсмен, посвятивший себя развитию спортивной техники, физической подготовки и дисциплины.</p>
-                        <p>Рудик является победителем чемпионата и первенства Южного федерального округа по тхэквондо, где занял 1-е место в своей весовой категории. Также принимал участие в чемпионате Краснодарского края и Первенстве России по тхэквондо ИТФ и ГТФ.</p>
-                        <p>В тренировочном процессе Рудик уделяет особое внимание правильной технике, физической и функциональной подготовке, скорости, координации и развитию спортивного характера. Его задача — помочь каждому ученику раскрыть свой потенциал, стать сильнее, увереннее в себе и дисциплинированнее.</p>
-                        <p>Тренировки подходят как для начинающих спортсменов, так и для тех, кто хочет совершенствовать свою технику и готовиться к соревнованиям. В работе используется индивидуальный подход к каждому ученику с учётом его возраста, уровня подготовки и спортивных целей.»</p>
-                    </div>
-                </div>
-            </main>
-        </section>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
-        <!-- 9. Страница записи для мобильных устройств (booking) -->
-        <section id="view-booking" class="view-section">
-            <main class="page-main" style="padding-top: 15px;">
-                <div class="container">
-                    <h1 class="page-title" style="margin-bottom: 15px;">ЗАПИСЬ НА ТРЕНИРОВКУ</h1>
-                    <form class="booking-form">
-                        <div class="form-group">
-                            <label for="mob-branch">Филиал</label>
-                            <select id="mob-branch" required>
-                                <option value="" disabled selected>Выберите филиал</option>
-                                <option value="Котлярова, 17">Котлярова, 17</option>
-                                <option value="Зиповская, 42">Зиповская, 42</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="mob-surname">Фамилия</label>
-                            <input type="text" id="mob-surname" required placeholder="Введите фамилию">
-                        </div>
-                        <div class="form-group">
-                            <label for="mob-name">Имя</label>
-                            <input type="text" id="mob-name" required placeholder="Введите имя">
-                        </div>
-                        <div class="form-group">
-                            <label for="mob-phone">Номер</label>
-                            <input type="tel" id="mob-phone" value="+7 (" required placeholder="+7 (___) ___-__-__">
-                        </div>
-                        <div class="form-group">
-                            <label for="mob-age">Возраст</label>
-                            <input type="text" id="mob-age" maxlength="2" inputmode="numeric" required placeholder="Укажите возраст">
-                        </div>
-                        <button type="submit" class="btn-primary" style="margin-top: 5px;">Отправить заявку</button>
-                    </form>
-                </div>
-            </main>
-        </section>
+function save(){
+  localStorage.setItem('bot_token', state.token);
+  localStorage.setItem('menu_url', state.menuUrl);
+  localStorage.setItem('bot_messages', JSON.stringify(state.messages));
+}
+
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ TELEGRAM API ============ */
+async function tg(method, body){
+  const r = await fetch(`https://api.telegram.org/bot${state.token}/${method}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body || {})
+  });
+  return r.json();
+}
+
+/* ============ ЭКРАН 1 ============ */
+$('#tokenInput').value = state.token;
+$('#urlInput').value = state.menuUrl;
+
+$('#confirmBtn').onclick = async () => {
+  const tok = $('#tokenInput').value.trim();
+  const url = $('#urlInput').value.trim();
+  const err = $('#tokenErr');
+  err.textContent = '';
+
+  if(!tok){ err.textContent = 'Введите токен'; return; }
+  if(!/^https:\/\//.test(url)){ err.textContent = 'Ссылка должна начинаться с https://'; return; }
+
+  $('#confirmBtn').disabled = true;
+  $('#confirmBtn').textContent = 'Проверяем...';
+
+  state.token = tok;
+  state.menuUrl = url;
+
+  const me = await tg('getMe');
+  if(!me.ok){
+    err.textContent = 'Неверный токен: ' + (me.description || 'ошибка');
+    $('#confirmBtn').disabled = false;
+    $('#confirmBtn').textContent = 'Подтвердить';
+    return;
+  }
+
+  state.botName = me.result.username;
+  $('#botName').textContent = '@' + me.result.username;
+  $('#botAvatar').textContent = (me.result.first_name || 'G')[0].toUpperCase();
+
+  // Синяя кнопка меню
+  await tg('setChatMenuButton', {
+    menu_button: {
+      type: 'web_app',
+      text: '🛍️ Каталог',
+      web_app: { url: state.menuUrl }
+    }
+  });
+
+  save();
+  $('#screenToken').classList.remove('active');
+  $('#screenEditor').classList.add('active');
+  render();
+};
+
+/* ============ РЕНДЕР ЧАТА ============ */
+function render(){
+  const chat = $('#chat');
+  chat.innerHTML = '';
+
+  if(state.messages.length === 0){
+    chat.innerHTML = `<div class="empty">Пока нет сообщений.<br>Нажмите «+ Сообщение», чтобы добавить первое — например, ответ на <code>/start</code>.</div>`;
+    return;
+  }
+
+  state.messages.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'msg';
+
+    const tag = m.triggerType === 'any'
+      ? 'любое сообщение'
+      : m.triggerType === 'text'
+        ? '«' + m.trigger + '»'
+        : m.trigger;
+
+    let kbHTML = '';
+    if(m.buttons && m.buttons.length){
+      kbHTML = '<div class="kb">' + m.buttons.map(b =>
+        `<span class="kbtn">${esc(b.text)}${b.type==='url' ? ' 🔗' : ''}</span>`
+      ).join('') + '</div>';
+    }
+
+    el.innerHTML = `
+      <div class="tag">${esc(tag)}</div>
+      <div class="text">${esc(m.response)}</div>
+      ${kbHTML}
+      <div class="msg-actions">
+        <button data-act="edit">✏️ Изменить</button>
+        <button data-act="btn">➕ Кнопка</button>
+        <button data-act="del" class="del">🗑 Удалить</button>
+      </div>
+    `;
+
+    el.querySelector('[data-act="edit"]').onclick = e => { e.stopPropagation(); openEdit(m.id); };
+    el.querySelector('[data-act="btn"]').onclick = e => { e.stopPropagation(); openEdit(m.id, true); };
+    el.querySelector('[data-act="del"]').onclick = e => {
+      e.stopPropagation();
+      if(confirm('Удалить это сообщение?')){
+        state.messages = state.messages.filter(x => x.id !== m.id);
+        save(); render();
+      }
+    };
+
+    chat.appendChild(el);
+  });
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+/* ============ КНОПКА "+ СООБЩЕНИЕ" ============ */
+$('#addMsgBtn').onclick = () => {
+  const id = Date.now();
+  state.messages.push({
+    id,
+    triggerType: 'command',
+    trigger: '/start',
+    response: 'Здравствуйте! Нажмите на кнопку ниже, чтобы открыть каталог товаров в наличии 👇',
+    buttons: [
+      { text: '🛍️ Открыть каталог', type: 'url', value: state.menuUrl }
+    ]
+  });
+  save();
+  render();
+  openEdit(id);
+};
+
+/* ============ BOTTOM SHEET ============ */
+const overlay = $('#overlay');
+const sheet = $('#sheet');
+
+function closeSheet(){
+  overlay.classList.remove('show');
+  sheet.classList.remove('show');
+  state.editingId = null;
+}
+overlay.onclick = closeSheet;
+
+function openEdit(id, focusButtons){
+  const m = state.messages.find(x => x.id === id);
+  if(!m) return;
+  state.editingId = id;
+
+  sheet.innerHTML = `
+    <h3>Редактировать сообщение</h3>
+
+    <label>Тип триггера</label>
+    <select id="f_type">
+      <option value="command" ${m.triggerType==='command'?'selected':''}>Команда (например /start)</option>
+      <option value="text" ${m.triggerType==='text'?'selected':''}>Точный текст</option>
+      <option value="any" ${m.triggerType==='any'?'selected':''}>Любое сообщение</option>
+    </select>
+
+    <div id="triggerWrap" style="display:${m.triggerType==='any'?'none':'block'}">
+      <label>Триггер</label>
+      <input id="f_trigger" value="${esc(m.trigger)}" placeholder="/start">
     </div>
 
-    <!-- Боковое окно для ПК -->
-    <div class="desktop-drawer-backdrop" id="drawerBackdrop"></div>
-    <div class="desktop-drawer" id="desktopDrawer">
-        <div class="drawer-header">
-            <h2 class="drawer-title">Запись</h2>
-            <button class="drawer-close" id="drawerClose">&times;</button>
-        </div>
-        <form class="booking-form">
-            <div class="form-group">
-                <label for="pc-branch">Филиал</label>
-                <select id="pc-branch" required>
-                    <!-- ИСПРАВЛЕНО: добавлен value="" для предотвращения ошибки отправки на ПК -->
-                    <option value="" disabled selected>Выберите филиал</option>
-                    <option value="Котлярова, 17">Котлярова, 17</option>
-                    <option value="Зиповская, 42">Зиповская, 42</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="pc-surname">Фамилия</label>
-                <input type="text" id="pc-surname" required placeholder="Введите фамилию">
-            </div>
-            <div class="form-group">
-                <label for="pc-name">Имя</label>
-                <input type="text" id="pc-name" required placeholder="Введите имя">
-            </div>
-            <div class="form-group">
-                <label for="pc-phone">Номер</label>
-                <input type="tel" id="pc-phone" value="+7 (" required placeholder="+7 (___) ___-__-__">
-            </div>
-            <div class="form-group">
-                <label for="pc-age">Возраст</label>
-                <input type="text" id="pc-age" maxlength="2" inputmode="numeric" required placeholder="Укажите возраст">
-            </div>
-            <button type="submit" class="btn-primary" style="margin-top: 5px;">Отправить заявку</button>
-        </form>
+    <label>Ответ бота</label>
+    <textarea id="f_response" placeholder="Введите текст ответа...">${esc(m.response)}</textarea>
+
+    <label>Инлайн-кнопки (необязательно)</label>
+    <div id="buttonsList"></div>
+    <button class="add-btn" id="addBtn">+ Добавить кнопку</button>
+
+    <div class="sheet-actions">
+      <button class="btn secondary" id="cancelBtn">Отмена</button>
+      <button class="btn" id="saveBtn">Сохранить</button>
     </div>
-
-    <footer class="site-footer">
-        <div class="footer-container">
-            <p>&copy; 2026 Academy Of Champions. 8 лет опыта.</p>
-        </div>
-    </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const hamburger = document.querySelector('.hamburger');
-            const mainNav = document.querySelector('.main-nav');
-            const navLinks = document.querySelectorAll('.nav-link');
-            const views = document.querySelectorAll('.view-section');
-
-            // --- ИНТЕРАКТИВНЫЙ ЭФФЕКТ «ФОНАРИКА НОЧЬЮ» ДЛЯ ФИЛИАЛОВ ---
-            const branchesGridContainer = document.getElementById('branches-grid-container');
-            const branchCards = document.querySelectorAll('.branch-card');
-
-            if (branchesGridContainer && branchCards.length > 0) {
-                branchCards.forEach(card => {
-                    card.addEventListener('click', (e) => {
-                        // Если кликнули на кнопку «Подробнее», не перехватываем стандартную навигацию
-                        if (e.target.closest('button')) return;
-
-                        // Если карточка уже освещена, снимаем эффект фонарика
-                        if (card.classList.contains('flashlight-lit')) {
-                            branchesGridContainer.classList.remove('flashlight-active');
-                            card.classList.remove('flashlight-lit');
-                        } else {
-                            // Переключаем свет фонарика на выбранную карточку с плавной анимацией
-                            branchesGridContainer.classList.add('flashlight-active');
-                            branchCards.forEach(c => c.classList.remove('flashlight-lit'));
-                            card.classList.add('flashlight-lit');
-                        }
-                    });
-                });
-            }
-            // -------------------------------------------------------------
-
-            // --- ЗАГРУЗКА ИНФОРМАЦИИ (Статическая заглушка для GitHub Pages) ---
-            function loadDataFromBackend() {
-                console.log('Сайт работает в статическом режиме на GitHub Pages.');
-            }
-            loadDataFromBackend();
-            // ---------------------------------------
-
-            // --- ОТПРАВКА ЗАЯВОК НАПРЯМУЮ В TELEGRAM ЧЕРЕЗ JS ---
-            const BOT_TOKEN = "8949478033:AAG7csA762eBS6QREe_gz0Q7vl_IOf5A_9Q";
-            const CHAT_ID_ZIPOVSTSKAYA = "5208615220";
-            const CHAT_ID_KOTLYAROVA = "7800810111";
-
-            function handleFormSubmit(event, branchId, surnameId, nameId, phoneId, ageId) {
-                event.preventDefault();
-
-                const branch = document.getElementById(branchId).value;
-                const surname = document.getElementById(surnameId).value;
-                const name = document.getElementById(nameId).value;
-                const phone = document.getElementById(phoneId).value;
-                const age = document.getElementById(ageId).value;
-
-                // Выбираем чат в зависимости от выбранного филиала
-                const chatId = (branch === "Котлярова, 17") ? CHAT_ID_KOTLYAROVA : CHAT_ID_ZIPOVSTSKAYA;
-
-                const submitBtn = event.target.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = 'Отправка...';
-                submitBtn.disabled = true;
-
-                const messageText = 
-                    `📥 <b>Новая заявка на тренировку!</b>\n\n` +
-                    `📍 <b>Филиал:</b> ${branch}\n` +
-                    `👤 <b>Фамилия и Имя:</b> ${surname} ${name}\n` +
-                    `📞 <b>Телефон:</b> ${phone}\n` +
-                    `🎂 <b>Возраст:</b> ${age}`;
-
-                const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
-                fetch(telegramUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: messageText,
-                        parse_mode: 'HTML'
-                    })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Спасибо за заявку! Мы свяжемся с вами в ближайшее время.');
-                        event.target.reset();
-                        
-                        const phoneInput = document.getElementById(phoneId);
-                        if(phoneInput) phoneInput.value = '+7 (';
-                        
-                        if (typeof closeDesktopDrawer === 'function') {
-                            closeDesktopDrawer();
-                        }
-                    } else {
-                        alert('Ошибка при отправке. Пожалуйста, попробуйте еще раз.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Произошла ошибка сети.');
-                })
-                .finally(() => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                });
-            }
-
-            // Привязка формы для мобильных
-            const mobileForm = document.querySelector('#view-booking form');
-            if (mobileForm) {
-                mobileForm.addEventListener('submit', (e) => handleFormSubmit(e, 'mob-branch', 'mob-surname', 'mob-name', 'mob-phone', 'mob-age'));
-            }
-
-            // Привязка формы для десктопа (в шторке)
-            const pcForm = document.querySelector('#desktopDrawer form');
-            if (pcForm) {
-                pcForm.addEventListener('submit', (e) => handleFormSubmit(e, 'pc-branch', 'pc-surname', 'pc-name', 'pc-phone', 'pc-age'));
-            }
-            // -----------------------------------------------
-
-            // --- ВАЛИДАЦИЯ ТЕЛЕФОНА И ВОЗРАСТА ---
-            function setupFormValidation(phoneInputId, ageInputId) {
-                const phoneInput = document.getElementById(phoneInputId);
-                const ageInput = document.getElementById(ageInputId);
-
-                if (phoneInput) {
-                    if (!phoneInput.value.startsWith('+7')) {
-                        phoneInput.value = '+7 (';
-                    }
-
-                    let lastValue = phoneInput.value;
-
-                    phoneInput.addEventListener('input', (e) => {
-                        let matrix = '+7 (___) ___-__-__';
-                        let val = phoneInput.value.replace(/\D/g, '');
-                        
-                        if (val.length > 0 && val[0] !== '7') {
-                            val = '7' + val;
-                        }
-
-                        if (val.length > 11) {
-                            val = val.slice(0, 11);
-                        }
-
-                        if (val.length === 0) {
-                            phoneInput.value = '+7 (';
-                            lastValue = '+7 (';
-                            return;
-                        }
-
-                        let i = 0;
-                        let calculate = matrix.replace(/./g, function (a) {
-                            if (/[_\d]/.test(a) && i < val.length) {
-                                return val.charAt(i++);
-                            } else if (i >= val.length) {
-                                return '_';
-                            } else {
-                                return a;
-                            }
-                        });
-
-                        phoneInput.value = calculate;
-                        lastValue = calculate;
-
-                        let pos = calculate.indexOf('_');
-                        if (pos === -1) {
-                            pos = calculate.length;
-                        }
-                        phoneInput.setSelectionRange(pos, pos);
-                    });
-
-                    phoneInput.addEventListener('keydown', (e) => {
-                        if (e.key === 'Backspace') {
-                            let pos = phoneInput.selectionStart;
-                            if (pos <= 4) {
-                                e.preventDefault();
-                            }
-                        }
-                    });
-
-                    phoneInput.addEventListener('click', () => {
-                        let pos = phoneInput.value.indexOf('_');
-                        if (pos === -1) pos = phoneInput.value.length;
-                        if (phoneInput.selectionStart < 4) {
-                            phoneInput.setSelectionRange(pos, pos);
-                        }
-                    });
-                }
-
-                if (ageInput) {
-                    ageInput.addEventListener('input', (e) => {
-                        let val = ageInput.value.replace(/\D/g, '');
-                        if (val.length > 2) {
-                            val = val.slice(0, 2);
-                        }
-                        ageInput.value = val;
-                    });
-                }
-            }
-
-            setupFormValidation('mob-phone', 'mob-age');
-            setupFormValidation('pc-phone', 'pc-age');
-            // ---------------------------------------
-
-            const historyStack = ['index'];
-
-            if (hamburger && mainNav) {
-                hamburger.addEventListener('click', () => {
-                    mainNav.classList.toggle('active');
-                });
-            }
-
-            function switchView(targetId, isBack = false) {
-                const currentActive = document.querySelector('.view-section.active-view');
-                const currentActiveId = currentActive ? currentActive.id.replace('view-', '') : 'index';
-
-                if (targetId === currentActiveId) return;
-
-                const targetView = document.getElementById('view-' + targetId);
-                if (!targetView || !currentActive) return;
-
-                views.forEach(v => {
-                    v.classList.remove('slide-prev');
-                    v.style.transform = '';
-                    v.style.transition = '';
-                });
-
-                if (isBack) {
-                    targetView.style.transform = 'translateX(-30%)';
-                    targetView.style.zIndex = '3';
-                    currentActive.style.zIndex = '2';
-                    targetView.classList.add('active-view');
-
-                    targetView.offsetHeight;
-
-                    targetView.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
-                    currentActive.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
-
-                    targetView.style.transform = 'translateX(0)';
-                    currentActive.style.transform = 'translateX(100%)';
-
-                    setTimeout(() => {
-                        currentActive.classList.remove('active-view');
-                        currentActive.style.transform = '';
-                        currentActive.style.transition = '';
-                        targetView.style.transform = '';
-                        targetView.style.transition = '';
-                        targetView.style.zIndex = '';
-                        currentActive.style.zIndex = '';
-                    }, 350);
-                } else {
-                    targetView.style.transform = 'translateX(100%)';
-                    targetView.style.zIndex = '3';
-                    currentActive.style.zIndex = '2';
-                    targetView.classList.add('active-view');
-
-                    targetView.offsetHeight;
-
-                    targetView.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
-                    currentActive.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
-
-                    targetView.style.transform = 'translateX(0)';
-                    currentActive.style.transform = 'translateX(-30%)';
-
-                    setTimeout(() => {
-                        currentActive.classList.remove('active-view');
-                        currentActive.style.transform = '';
-                        currentActive.style.transition = '';
-                        targetView.style.transform = '';
-                        targetView.style.transition = '';
-                        targetView.style.zIndex = '';
-                        currentActive.style.zIndex = '';
-                    }, 350);
-
-                    if (targetId === 'index') {
-                        historyStack.length = 0;
-                        historyStack.push('index');
-                    } else {
-                        const idx = historyStack.indexOf(targetId);
-                        if (idx !== -1) {
-                            historyStack.length = idx + 1;
-                        } else {
-                            historyStack.push(targetId);
-                        }
-                    }
-                }
-
-                window.scrollTo(0, 0);
-
-                navLinks.forEach(link => {
-                    if (link.getAttribute('data-target') === targetId) {
-                        link.classList.add('active');
-                    } else {
-                        link.classList.remove('active');
-                    }
-                });
-
-                if (mainNav.classList.contains('active')) {
-                    mainNav.classList.remove('active');
-                }
-            }
-
-            navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = link.getAttribute('data-target');
-                    const currentActive = document.querySelector('.view-section.active-view');
-                    const currentActiveId = currentActive ? currentActive.id.replace('view-', '') : 'index';
-                    
-                    if (targetId) {
-                        const historyIndex = historyStack.indexOf(targetId);
-                        const isBack = historyIndex !== -1 && historyIndex < historyStack.indexOf(currentActiveId);
-                        switchView(targetId, isBack);
-                    }
-                });
-            });
-
-            const btnBooking = document.getElementById('btn-booking');
-            const desktopDrawer = document.getElementById('desktopDrawer');
-            const drawerBackdrop = document.getElementById('drawerBackdrop');
-            const drawerClose = document.getElementById('drawerClose');
-
-            if (btnBooking) {
-                btnBooking.addEventListener('click', () => {
-                    if (window.innerWidth > 768) {
-                        desktopDrawer.classList.add('open');
-                        drawerBackdrop.classList.add('open');
-                    } else {
-                        switchView('booking', false);
-                    }
-                });
-            }
-
-            function closeDesktopDrawer() {
-                if (desktopDrawer && drawerBackdrop) {
-                    desktopDrawer.classList.remove('open');
-                    drawerBackdrop.classList.remove('open');
-                }
-            }
-
-            if (drawerClose) drawerClose.addEventListener('click', closeDesktopDrawer);
-            if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDesktopDrawer);
-
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let isSwiping = false;
-            let currentActiveView = null;
-            let prevView = null;
-            let prevId = null;
-
-            document.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-
-                currentActiveView = document.querySelector('.view-section.active-view');
-                const currentId = currentActiveView ? currentActiveView.id.replace('view-', '') : 'index';
-
-                if (touchStartX < 40 && currentId !== 'index' && historyStack.length > 1) {
-                    isSwiping = true;
-                    prevId = historyStack[historyStack.length - 2];
-                    prevView = document.getElementById('view-' + prevId);
-
-                    if (prevView) {
-                        prevView.style.display = 'flex';
-                        prevView.style.zIndex = '2';
-                        currentActiveView.style.zIndex = '3';
-                        prevView.style.transform = 'translateX(-30%)';
-                        currentActiveView.style.transform = 'translateX(0)';
-                    }
-                } else {
-                    isSwiping = false;
-                }
-            }, { passive: true });
-
-            document.addEventListener('touchmove', (e) => {
-                if (!isSwiping || !currentActiveView || !prevView) return;
-                const currentX = e.touches[0].clientX;
-                const currentY = e.touches[0].clientY;
-
-                if (Math.abs(currentY - touchStartY) > 60) {
-                    isSwiping = false;
-                    resetSwipeState();
-                    return;
-                }
-
-                let diffX = currentX - touchStartX;
-                if (diffX < 0) diffX = 0;
-
-                const screenWidth = window.innerWidth;
-                const progress = diffX / screenWidth;
-
-                currentActiveView.style.transform = `translateX(${diffX}px)`;
-                prevView.style.transform = `translateX(${-30 + (30 * progress)}%)`;
-            }, { passive: true });
-
-            document.addEventListener('touchend', (e) => {
-                if (!isSwiping || !currentActiveView || !prevView) return;
-                const touchEndX = e.changedTouches[0].clientX;
-                const diffX = touchEndX - touchStartX;
-                const screenWidth = window.innerWidth;
-
-                currentActiveView.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-                prevView.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-
-                if (diffX > screenWidth * 0.35 || diffX > 120) {
-                    currentActiveView.style.transform = 'translateX(100%)';
-                    prevView.style.transform = 'translateX(0)';
-
-                    setTimeout(() => {
-                        currentActiveView.classList.remove('active-view');
-                        currentActiveView.style.transform = '';
-                        currentActiveView.style.transition = '';
-                        currentActiveView.style.zIndex = '';
-
-                        prevView.classList.add('active-view');
-                        prevView.style.transform = '';
-                        prevView.style.transition = '';
-                        prevView.style.zIndex = '';
-
-                        historyStack.pop();
-
-                        const newId = historyStack[historyStack.length - 1];
-                        navLinks.forEach(link => {
-                            if (link.getAttribute('data-target') === newId) {
-                                link.classList.add('active');
-                            } else {
-                                link.classList.remove('active');
-                            }
-                        });
-                    }, 300);
-                } else {
-                    currentActiveView.style.transform = 'translateX(0)';
-                    prevView.style.transform = 'translateX(-30%)';
-
-                    setTimeout(() => {
-                        prevView.style.display = 'none';
-                        prevView.style.transform = '';
-                        prevView.style.transition = '';
-                        currentActiveView.style.transform = '';
-                        currentActiveView.style.transition = '';
-                        prevView.style.zIndex = '';
-                        currentActiveView.style.zIndex = '';
-                    }, 300);
-                }
-
-                isSwiping = false;
-            }, { passive: true });
-
-            function resetSwipeState() {
-                if (currentActiveView && prevView) {
-                    currentActiveView.style.transform = '';
-                    currentActiveView.style.transition = '';
-                    prevView.style.display = 'none';
-                    prevView.style.transform = '';
-                    prevView.style.transition = '';
-                    prevView.style.zIndex = '';
-                    currentActiveView.style.zIndex = '';
-                }
-            }
-        });
-    </script>
+  `;
+
+  // Триггер видимость
+  $('#f_type').onchange = e => {
+    $('#triggerWrap').style.display = e.target.value === 'any' ? 'none' : 'block';
+  };
+
+  // Кнопки
+  function renderButtons(){
+    const wrap = $('#buttonsList');
+    wrap.innerHTML = '';
+    m.buttons.forEach((b, i) => {
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      row.innerHTML = `
+        <input data-i="${i}" data-k="text" value="${esc(b.text)}" placeholder="Текст кнопки">
+        <select data-i="${i}" data-k="type" style="width:100px;flex:none">
+          <option value="url" ${b.type==='url'?'selected':''}>URL</option>
+          <option value="callback" ${b.type==='callback'?'selected':''}>Callback</option>
+        </select>
+        <button class="rm" data-i="${i}">✕</button>
+      `;
+      row.querySelectorAll('input,select').forEach(inp => {
+        inp.oninput = inp.onchange = () => {
+          const idx = +inp.dataset.i;
+          m.buttons[idx][inp.dataset.k] = inp.value;
+        };
+      });
+      row.querySelector('.rm').onclick = () => {
+        m.buttons.splice(i, 1);
+        renderButtons();
+      };
+      wrap.appendChild(row);
+
+      // Доп. строка для value
+      const vrow = document.createElement('div');
+      vrow.className = 'btn-row';
+      vrow.style.marginTop = '-4px';
+      vrow.innerHTML = `
+        <input data-i="${i}" data-k="value" value="${esc(b.value)}" placeholder="${b.type==='url'?'https://...':'callback_data'}">
+      `;
+      vrow.querySelector('input').oninput = e => {
+        m.buttons[+e.target.dataset.i].value = e.target.value;
+      };
+      wrap.appendChild(vrow);
+    });
+  }
+  renderButtons();
+
+  $('#addBtn').onclick = () => {
+    m.buttons.push({ text: 'Кнопка', type: 'url', value: state.menuUrl });
+    renderButtons();
+  };
+
+  $('#cancelBtn').onclick = closeSheet;
+
+  $('#saveBtn').onclick = () => {
+    m.triggerType = $('#f_type').value;
+    m.trigger = $('#f_trigger').value.trim() || '/start';
+    m.response = $('#f_response').value.trim() || '...';
+    save();
+    render();
+    closeSheet();
+    toast('Сохранено');
+  };
+
+  overlay.classList.add('show');
+  sheet.classList.add('show');
+
+  if(focusButtons){
+    setTimeout(()=>$('#buttonsList').scrollIntoView({behavior:'smooth'}), 300);
+  }
+}
+
+/* ============ ЗАПУСК БОТА ============ */
+$('#startBtn').onclick = () => {
+  if(state.polling){
+    state.polling = false;
+    $('#startBtn').textContent = '▶ Запустить';
+    $('#startBtn').classList.remove('on');
+    $('#botStatus').textContent = 'Остановлен';
+    $('#botStatus').classList.remove('on');
+    toast('Бот остановлен');
+  } else {
+    if(state.messages.length === 0){ toast('Добавьте хотя бы одно сообщение'); return; }
+    state.polling = true;
+    $('#startBtn').textContent = '⏸ Стоп';
+    $('#startBtn').classList.add('on');
+    $('#botStatus').textContent = 'Работает (вкладка должна быть открыта)';
+    $('#botStatus').classList.add('on');
+    toast('Бот запущен');
+    pollLoop();
+  }
+};
+
+async function pollLoop(){
+  while(state.polling){
+    try {
+      const r = await fetch(
+        `https://api.telegram.org/bot${state.token}/getUpdates?offset=${state.offset}&timeout=25`
+      );
+      const data = await r.json();
+      if(!data.ok){ await sleep(3000); continue; }
+      for(const up of data.result){
+        state.offset = up.update_id + 1;
+        await handleUpdate(up);
+      }
+    } catch(e){
+      await sleep(2000);
+    }
+  }
+}
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+async function handleUpdate(up){
+  const msg = up.message || up.edited_message;
+  if(!msg || !msg.text) return;
+  const text = msg.text.trim();
+  const chatId = msg.chat.id;
+
+  // Ищем совпадение
+  let match = state.messages.find(m => {
+    if(m.triggerType === 'any') return true;
+    if(m.triggerType === 'command') return text === m.trigger || text.startsWith(m.trigger + ' ');
+    if(m.triggerType === 'text') return text.toLowerCase() === m.trigger.toLowerCase();
+    return false;
+  });
+
+  // Приоритет: команды и точный текст выше "любое"
+  const specific = state.messages.find(m => m.triggerType !== 'any' && (
+    (m.triggerType === 'command' && (text === m.trigger || text.startsWith(m.trigger + ' '))) ||
+    (m.triggerType === 'text' && text.toLowerCase() === m.trigger.toLowerCase())
+  ));
+  if(specific) match = specific;
+
+  if(!match) return;
+
+  const body = { chat_id: chatId, text: match.response };
+
+  if(match.buttons && match.buttons.length){
+    const kb = match.buttons
+      .filter(b => b.text && b.value)
+      .map(b => b.type === 'url'
+        ? [{ text: b.text, url: b.value }]
+        : [{ text: b.text, callback_data: b.value }]
+      );
+    if(kb.length) body.reply_markup = { inline_keyboard: kb };
+  }
+
+  await tg('sendMessage', body);
+}
+
+/* ============ ИНИЦИАЛИЗАЦИЯ ============ */
+if(state.token){
+  tg('getMe').then(me => {
+    if(me.ok){
+      state.botName = me.result.username;
+      $('#botName').textContent = '@' + me.result.username;
+      $('#botAvatar').textContent = (me.result.first_name || 'G')[0].toUpperCase();
+      $('#screenToken').classList.remove('active');
+      $('#screenEditor').classList.add('active');
+      render();
+    }
+  });
+}
+</script>
 </body>
 </html>
