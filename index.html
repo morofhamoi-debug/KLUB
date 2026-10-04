@@ -6,97 +6,187 @@
 <title>GASPARD — конструктор бота</title>
 <style>
   :root{
-    --bg:#0e1621; --panel:#17212b; --bubble-in:#182533;
-    --accent:#5288c1; --accent-hover:#4a7ab0; --text:#e7eef5; --muted:#7d8e9e;
-    --danger:#e0534a; --border:#253340;
+    --bg:#0a1018; --panel:#111a24; --bubble:#182533; --field:#0a1018;
+    --accent:#5288c1; --accent2:#7c5cff; --text:#e7eef5; --muted:#7d8e9e;
+    --danger:#e0534a; --ok:#57b85a; --border:#1e2c3a; --glow:rgba(82,136,193,.45);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
-  .screen{position:fixed;inset:0;display:none;flex-direction:column}
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--text);overflow:hidden;font-size:14px}
+  body::before{content:'';position:fixed;inset:0;background:
+    radial-gradient(1000px 600px at 80% -10%, rgba(124,92,255,.15), transparent 60%),
+    radial-gradient(900px 500px at -10% 100%, rgba(82,136,193,.18), transparent 60%);
+    pointer-events:none;z-index:0}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:1}
   .screen.active{display:flex}
 
+  /* Анимации */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes pop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+  @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(87,184,90,.5)}50%{box-shadow:0 0 0 6px rgba(87,184,90,0)}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes ripple{to{transform:scale(4);opacity:0}}
+
+  /* Экран входа */
   #screenToken{justify-content:center;align-items:center;padding:24px}
-  .logo{font-size:44px;font-weight:700;letter-spacing:6px;margin-bottom:8px}
-  .sub{color:var(--muted);margin-bottom:32px;font-size:14px;text-align:center}
-  .card{width:100%;max-width:380px;background:var(--panel);border-radius:16px;padding:24px}
+  .logo{font-size:52px;font-weight:800;letter-spacing:8px;margin-bottom:6px;
+    background:linear-gradient(90deg,#5288c1,#7c5cff,#5288c1);background-size:200% auto;
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:gradientMove 4s linear infinite, float 3s ease-in-out infinite}
+  .sub{color:var(--muted);margin-bottom:32px;font-size:13px;text-align:center;letter-spacing:2px;text-transform:uppercase;animation:fadeUp .6s ease}
+  .card{width:100%;max-width:400px;background:rgba(17,26,36,.85);backdrop-filter:blur(14px);
+    border:1px solid var(--border);border-radius:18px;padding:24px;animation:fadeUp .6s ease;box-shadow:0 24px 60px -20px rgba(0,0,0,.6)}
   .card h2{margin:0 0 6px;font-size:18px}
   .card p{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.5}
-  input,textarea,select{width:100%;background:#0e1621;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none}
-  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  input,textarea,select{width:100%;background:var(--field);color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none;transition:.2s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
   textarea{resize:vertical;min-height:70px}
-  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}
-  .btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px;transition:.15s}
-  .btn:hover{background:var(--accent-hover)}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .err{color:var(--danger);font-size:13px;margin-top:14px;min-height:18px;text-align:center;line-height:1.5;word-break:break-word}
-  .err:not(:empty){background:#3a1f1f;padding:10px;border-radius:8px}
-
-  .header{background:var(--panel);padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0}
-  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5288c1,#2b5278);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
-  .header-info{flex:1;min-width:0}
-  .header-info .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .header-info .status{font-size:12px;color:var(--muted)}
-  .header-info .status.on{color:#57b85a}
-  .logout{background:transparent;border:1px solid #2f4a66;color:#8ab4f8;font-size:12px;padding:6px 10px;border-radius:8px;cursor:pointer}
-
-  .chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-  .chat::-webkit-scrollbar{width:6px}
-  .chat::-webkit-scrollbar-thumb{background:#253340;border-radius:3px}
-  .empty{color:var(--muted);text-align:center;font-size:14px;margin:auto;max-width:260px;line-height:1.6}
-
-  .msg{align-self:flex-start;max-width:88%;background:var(--bubble-in);border-radius:14px 14px 14px 4px;padding:10px 12px;font-size:14px;line-height:1.4;animation:pop .2s ease}
-  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  .msg .tag{display:inline-block;background:#2b5278;color:#a9c8e8;font-size:11px;padding:2px 8px;border-radius:6px;margin-bottom:6px;font-family:monospace}
-  .msg .text{white-space:pre-wrap;word-break:break-word}
-  .msg .kb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-  .msg .kb .kbtn{background:#233a52;color:#8ab4f8;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #2f4a66}
-
-  .msg-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed #253340;flex-wrap:wrap}
-  .msg-actions button{background:transparent;border:1px solid #2f4a66;color:#8ab4f8;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:.15s}
-  .msg-actions button:hover{background:#233a52}
-  .msg-actions button.del{border-color:#5a2a2a;color:#e0534a}
-  .msg-actions button.del:hover{background:#3a1f1f}
-
-  .bottombar{background:var(--panel);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
-  .bottombar button{flex:1;padding:12px;border:none;border-radius:10px;background:#233a52;color:#a9c8e8;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
-  .bottombar button:hover{background:#2b5278;color:#fff}
-  .bottombar button.primary{background:var(--accent);color:#fff}
-  .bottombar button.primary:hover{background:var(--accent-hover)}
-  .bottombar button.on{background:#57b85a;color:#fff}
-
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.2s;z-index:50}
-  .overlay.show{opacity:1;pointer-events:auto}
-  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-radius:18px 18px 0 0;padding:20px;transform:translateY(100%);transition:.25s cubic-bezier(.2,.8,.2,1);z-index:51;max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
-  .sheet.show{transform:none}
-  .sheet h3{margin:0 0 16px;font-size:17px}
-  .sheet-actions{display:flex;gap:10px;margin-top:20px}
-  .sheet-actions .btn{margin-top:0}
-  .btn.secondary{background:#233a52;color:#a9c8e8}
-  .btn.secondary:hover{background:#2b5278;color:#fff}
-  .btn.danger{background:var(--danger)}
-  .btn.danger:hover{background:#c94b42}
-
-  .btn-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;background:#0e1621;border:1px solid var(--border);border-radius:10px;padding:8px}
-  .btn-row input{flex:1;border:none;background:transparent;padding:6px 4px;font-size:13px}
-  .btn-row input:focus{border:none}
-  .btn-row .rm{background:transparent;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0 6px;line-height:1}
-  .add-btn{background:transparent;border:1px dashed #2f4a66;color:#8ab4f8;padding:10px;border-radius:10px;width:100%;font-size:13px;cursor:pointer;margin-top:4px}
-  .add-btn:hover{background:#1a2836}
-
-  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#233a52;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:100;pointer-events:none;max-width:90%;text-align:center}
-  .toast.show{opacity:1;transform:translateX(-50%)}
-
+  label{display:block;font-size:11px;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{position:relative;overflow:hidden;display:block;width:100%;padding:13px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,#5288c1,#7c5cff);color:#fff;font-size:14px;font-weight:700;cursor:pointer;
+    margin-top:18px;transition:transform .15s,box-shadow .2s;box-shadow:0 8px 24px -8px var(--glow)}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -8px var(--glow)}
+  .btn:active{transform:translateY(0) scale(.98)}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .btn.secondary{background:#1e2c3a;color:#a9c8e8;box-shadow:none}
+  .btn.danger{background:linear-gradient(135deg,#e0534a,#b8382f)}
+  .btn.small{padding:8px 12px;font-size:13px;margin:0;width:auto}
+  .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:ripple .6s ease-out;pointer-events:none}
+  .err{color:var(--danger);font-size:13px;margin-top:14px;text-align:center;line-height:1.5;word-break:break-word}
+  .err:not(:empty){background:rgba(224,83,74,.1);padding:10px;border-radius:10px;border:1px solid rgba(224,83,74,.3);animation:pop .3s ease}
   .debug{font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-family:monospace;word-break:break-all}
+
+  /* Шапка */
+  .header{position:relative;background:linear-gradient(135deg,#1a2836,#111a24);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;overflow:hidden;z-index:2}
+  .header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,#5288c1,#7c5cff,#5288c1,transparent);
+    background-size:200% 100%;animation:gradientMove 3s linear infinite}
+  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5288c1,#7c5cff);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;box-shadow:0 4px 12px -3px var(--glow)}
+  .header-info{flex:1;min-width:0}
+  .header-info .name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-info .status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;transition:.3s}
+  .dot.on{background:var(--ok);animation:pulse 2s infinite}
+  .dot.err{background:var(--danger)}
+  .icon-btn{background:transparent;border:1px solid #2f4a66;color:#8ab4f8;font-size:12px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:.15s}
+  .icon-btn:hover{background:#1e2c3a;border-color:var(--accent)}
+
+  /* Табы */
+  .tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:2}
+  .tab{flex:1;padding:13px;text-align:center;cursor:pointer;font-size:13px;color:var(--muted);
+    border-bottom:2px solid transparent;transition:.25s;font-weight:600}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--text);border-bottom-color:var(--accent);
+    background:linear-gradient(180deg,transparent,rgba(82,136,193,.08))}
+
+  /* Контент */
+  .content{flex:1;overflow-y:auto;padding:14px;position:relative;z-index:2}
+  .content::-webkit-scrollbar{width:6px}
+  .content::-webkit-scrollbar-thumb{background:#253340;border-radius:3px}
+  .content::-webkit-scrollbar-thumb:hover{background:#3a4a5c}
+  .empty{color:var(--muted);text-align:center;font-size:14px;margin:60px auto;max-width:280px;line-height:1.7;animation:fadeIn .5s ease}
+  .empty::before{content:'💬';display:block;font-size:48px;margin-bottom:14px;opacity:.4}
+
+  /* Сообщения */
+  .msg{background:var(--bubble);border-radius:14px;padding:12px;margin-bottom:10px;font-size:14px;line-height:1.4;
+    border-left:3px solid var(--accent);animation:pop .35s cubic-bezier(.2,.8,.3,1.2);transition:.2s;position:relative}
+  .msg:hover{background:#1d2a38;transform:translateX(2px)}
+  .msg .tag{display:inline-block;background:linear-gradient(135deg,#2b5278,#3a6a9c);color:#a9c8e8;font-size:11px;
+    padding:3px 8px;border-radius:6px;margin-bottom:6px;font-family:monospace;font-weight:600}
+  .msg .tag.callback{background:linear-gradient(135deg,#7c5cff,#5a3aff);color:#e8dfff}
+  .msg .kind{display:inline-block;background:linear-gradient(135deg,#1a3a2a,#245a3a);color:#8ae0a8;font-size:11px;
+    padding:3px 8px;border-radius:6px;margin-bottom:6px;margin-left:4px;font-weight:600}
+  .msg .text{white-space:pre-wrap;word-break:break-word;margin:6px 0}
+  .msg .kb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .msg .kb .kbtn{background:#233a52;color:#8ab4f8;font-size:12px;padding:5px 9px;border-radius:8px;border:1px solid #2f4a66;transition:.2s}
+  .msg .kb .kbtn:hover{background:#2b4a68;transform:scale(1.03)}
+  .msg .rk{margin-top:8px;padding:8px 10px;background:var(--field);border-radius:8px;font-size:11px;color:var(--muted);border:1px dashed #2f4a66}
+  .msg-actions{display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:1px dashed #253340;flex-wrap:wrap}
+  .msg-actions button{background:transparent;border:1px solid #2f4a66;color:#8ab4f8;font-size:12px;padding:5px 10px;
+    border-radius:8px;cursor:pointer;transition:.15s}
+  .msg-actions button:hover{background:#233a52;transform:translateY(-1px)}
+  .msg-actions button.del{border-color:#5a2a2a;color:var(--danger)}
+  .msg-actions button.del:hover{background:rgba(224,83,74,.15)}
+
+  /* Нижняя панель */
+  .bottombar{background:var(--panel);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;
+    flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom));position:relative;z-index:2}
+  .bottombar button{flex:1;padding:12px;border:none;border-radius:12px;background:#233a52;color:#a9c8e8;
+    font-size:13px;font-weight:700;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+  .bottombar button:hover{background:#2b5278;color:#fff;transform:translateY(-1px)}
+  .bottombar button:active{transform:translateY(0) scale(.98)}
+  .bottombar button.primary{background:linear-gradient(135deg,#5288c1,#7c5cff);color:#fff;
+    box-shadow:0 6px 20px -6px var(--glow)}
+  .bottombar button.primary:hover{box-shadow:0 10px 24px -6px var(--glow)}
+  .bottombar button.on{background:linear-gradient(135deg,#57b85a,#3a9a3f);color:#fff}
+
+  /* Sheet */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+    opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  .overlay.show{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-radius:22px 22px 0 0;
+    padding:20px;transform:translateY(100%);transition:.3s cubic-bezier(.2,.8,.2,1);z-index:51;
+    max-height:92vh;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom));
+    box-shadow:0 -20px 60px -20px rgba(0,0,0,.7)}
+  .sheet.show{transform:none}
+  .sheet h3{margin:0 0 16px;font-size:17px;display:flex;align-items:center;gap:8px}
+  .sheet h3::before{content:'';display:block;width:36px;height:4px;border-radius:2px;background:var(--muted);margin:0 auto}
+  .sheet .row{display:flex;gap:8px;margin-top:16px}
+  .sheet .row .btn{margin-top:0;flex:1}
+  .sheet::-webkit-scrollbar{width:6px}
+  .sheet::-webkit-scrollbar-thumb{background:#253340;border-radius:3px}
+
+  .section{background:var(--field);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;
+    animation:fadeUp .3s ease}
+  .section h4{margin:0 0 10px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+
+  .btn-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;background:var(--field);
+    border:1px solid var(--border);border-radius:10px;padding:6px;animation:fadeUp .25s ease}
+  .btn-row input, .btn-row select{flex:1;border:none;background:transparent;padding:6px 4px;font-size:12px;min-width:0;border-radius:6px}
+  .btn-row input:focus, .btn-row select:focus{border:none;background:#1a2836;box-shadow:none}
+  .btn-row select{max-width:140px;flex:none}
+  .btn-row .rm{background:transparent;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0 6px;line-height:1;transition:.15s}
+  .btn-row .rm:hover{transform:scale(1.2)}
+  .add-btn{background:transparent;border:1px dashed #2f4a66;color:#8ab4f8;padding:10px;border-radius:10px;
+    width:100%;font-size:13px;cursor:pointer;margin-top:6px;transition:.2s}
+  .add-btn:hover{background:#1a2836;border-color:var(--accent);border-style:solid}
+
+  .checkbox-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text);cursor:pointer}
+  .checkbox-row input{width:auto;flex:none;accent-color:var(--accent)}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(135deg,#233a52,#2b5278);color:#fff;padding:12px 20px;border-radius:12px;
+    font-size:13px;opacity:0;transition:.3s;z-index:100;pointer-events:none;max-width:90%;text-align:center;
+    box-shadow:0 12px 30px -8px rgba(0,0,0,.6);font-weight:600}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .settings-item{display:flex;justify-content:space-between;align-items:center;padding:14px;
+    background:var(--field);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.2s}
+  .settings-item:hover{border-color:var(--accent);transform:translateX(3px)}
+  .settings-item .arrow{color:var(--muted);transition:.2s}
+  .settings-item:hover .arrow{color:var(--accent);transform:translateX(3px)}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);
+    border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
 </style>
 </head>
 <body>
 
 <div id="screenToken" class="screen active">
   <div class="logo">GASPARD</div>
-  <div class="sub">Конструктор Telegram-бота</div>
+  <div class="sub">конструктор телеграм-бота</div>
   <div class="card">
-    <h2>Введите токен бота</h2>
-    <p>Получите его у <b>@BotFather</b> в Telegram → <code>/newbot</code> или <code>/mybots</code> → API Token.</p>
+    <h2>Подключение</h2>
+    <p>Введите токен от <b>@BotFather</b> (<code>/newbot</code> или <code>/mybots</code> → API Token).</p>
     <label>Токен</label>
     <input id="tokenInput" type="text" placeholder="1234567890:AA..." autocomplete="off" spellcheck="false">
     <button class="btn" id="confirmBtn">Подтвердить</button>
@@ -110,12 +200,18 @@
     <div class="avatar" id="botAvatar">G</div>
     <div class="header-info">
       <div class="name" id="botName">@bot</div>
-      <div class="status" id="botStatus">Остановлен</div>
+      <div class="status"><span class="dot" id="statusDot"></span><span id="botStatus">Остановлен</span></div>
     </div>
-    <button class="logout" id="logoutBtn">Сменить</button>
+    <button class="icon-btn" id="logoutBtn">Сменить</button>
   </div>
 
-  <div class="chat" id="chat"></div>
+  <div class="tabs">
+    <div class="tab active" data-tab="messages">Сообщения</div>
+    <div class="tab" data-tab="settings">Настройки</div>
+  </div>
+
+  <div class="content" id="contentMessages"></div>
+  <div class="content" id="contentSettings" style="display:none"></div>
 
   <div class="bottombar">
     <button id="addMsgBtn">+ Сообщение</button>
@@ -125,52 +221,127 @@
 
 <div class="overlay" id="overlay"></div>
 <div class="sheet" id="sheet"></div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-/* ======= ССЫЛКА НА МИНИ-ЭП (зашита в код) ======= */
+/* ======= КОНСТАНТЫ ======= */
 const WEB_APP_URL = "https://morofhamoi-debug.github.io/GASPARD-/";
+
+const INLINE_BUTTON_TYPES = [
+  {v:'url', l:'🔗 URL'},
+  {v:'callback', l:'👆 Callback'},
+  {v:'web_app', l:'🌐 Web App'},
+  {v:'switch_inline_query', l:'↪ Switch Inline'},
+  {v:'switch_inline_query_current_chat', l:'↪ Switch (текущий)'},
+  {v:'copy_text', l:'📋 Copy Text'},
+  {v:'login_url', l:'🔐 Login URL'}
+];
+
+const CONTENT_TYPES = [
+  {v:'text', l:'📝 Текст'},
+  {v:'photo', l:'🖼 Фото'},
+  {v:'video', l:'🎬 Видео'},
+  {v:'audio', l:'🎵 Аудио'},
+  {v:'voice', l:'🎤 Голосовое'},
+  {v:'document', l:'📄 Документ'},
+  {v:'sticker', l:'🎨 Стикер'},
+  {v:'animation', l:'🎞 GIF'},
+  {v:'location', l:'📍 Локация'},
+  {v:'venue', l:'🏢 Место'},
+  {v:'contact', l:'👤 Контакт'},
+  {v:'poll', l:'📊 Опрос'},
+  {v:'dice', l:'🎲 Кубик'}
+];
+
+const CHAT_ACTIONS = [
+  {v:'none', l:'— нет —'},
+  {v:'typing', l:'печатает'},
+  {v:'upload_photo', l:'отправляет фото'},
+  {v:'upload_video', l:'отправляет видео'},
+  {v:'upload_document', l:'отправляет документ'},
+  {v:'record_voice', l:'записывает голос'},
+  {v:'upload_voice', l:'отправляет голос'},
+  {v:'find_location', l:'ищет локацию'}
+];
+
+const DICE_EMOJI = ['🎲','🎯','🏀','⚽','🎳','🎰'];
+
+const CONTENT_LABELS = {
+  text:'текст', photo:'фото', video:'видео', audio:'аудио', voice:'голос',
+  document:'документ', sticker:'стикер', animation:'гиф', location:'локация',
+  venue:'место', contact:'контакт', poll:'опрос', dice:'кубик'
+};
 
 /* ============ STATE ============ */
 const state = {
   token: localStorage.getItem('bot_token') || '',
   botName: '',
+  botId: null,
   messages: JSON.parse(localStorage.getItem('bot_messages') || '[]'),
+  settings: JSON.parse(localStorage.getItem('bot_settings') || JSON.stringify({
+    description: '', about: '',
+    commands: [{command:'start', description:'Запустить бота'}],
+    menuButtonType: 'web_app',
+    menuButtonText: '🛍️ Каталог',
+    menuButtonUrl: WEB_APP_URL
+  })),
   polling: false,
   offset: 0,
-  editingId: null
+  editingId: null,
+  currentTab: 'messages'
 };
 
 const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
 function save(){
   localStorage.setItem('bot_token', state.token);
   localStorage.setItem('bot_messages', JSON.stringify(state.messages));
+  localStorage.setItem('bot_settings', JSON.stringify(state.settings));
 }
 
-function toast(msg){
+function toast(msg, ms){
   const t = $('#toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._h);
-  t._h = setTimeout(()=>t.classList.remove('show'), 3000);
+  t._h = setTimeout(()=>t.classList.remove('show'), ms || 2500);
+}
+
+function setStatus(text, cls){
+  $('#botStatus').textContent = text;
+  const d = $('#statusDot');
+  d.className = 'dot' + (cls ? ' ' + cls : '');
 }
 
 function debug(msg){
   const d = $('#debugInfo');
-  if(d) d.textContent = msg;
-  console.log('[GASPARD]', msg);
+  if(d) d.textContent = msg || '';
+  if(msg) console.log('[GASPARD]', msg);
 }
 
-/* ============================================================
-   ЯДРО: запрос к Telegram Bot API
-   Используем POST + application/x-www-form-urlencoded.
-   Этот тип НЕ вызывает CORS preflight (в отличие от JSON).
-   Так работает официальный Bot API из браузера.
-   ============================================================ */
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* Ripple-эффект для кнопок */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn, .bottombar button, .add-btn');
+  if(!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const size = Math.max(rect.width, rect.height);
+  r.style.width = r.style.height = size + 'px';
+  r.style.left = (e.clientX - rect.left - size/2) + 'px';
+  r.style.top = (e.clientY - rect.top - size/2) + 'px';
+  btn.appendChild(r);
+  setTimeout(()=>r.remove(), 600);
+});
+
+/* ============ TELEGRAM API ============ */
 async function tg(method, params){
-  // Собираем тело запроса
   const body = new URLSearchParams();
   if(params){
     for(const k in params){
@@ -179,12 +350,9 @@ async function tg(method, params){
       body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
     }
   }
-
   const url = `https://api.telegram.org/bot${state.token}/${method}`;
-
   const ctrl = new AbortController();
   const timer = setTimeout(()=>ctrl.abort(), 20000);
-
   try {
     const r = await fetch(url, {
       method: 'POST',
@@ -193,184 +361,195 @@ async function tg(method, params){
       signal: ctrl.signal
     });
     clearTimeout(timer);
-
-    // Читаем как текст, чтобы не падать на HTML-ответах
     const raw = await r.text();
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch(_){
-      return {
-        ok: false,
-        description: `Telegram вернул не-JSON (HTTP ${r.status}). Возможно, api.telegram.org недоступен или заблокирован провайдером. Первые 100 символов: ${raw.slice(0,100)}`
-      };
-    }
-    return data;
-
+    try { return JSON.parse(raw); }
+    catch(_){ return { ok:false, description:`Не-JSON (HTTP ${r.status}): ${raw.slice(0,80)}` }; }
   } catch(e){
     clearTimeout(timer);
-
-    if(e.name === 'AbortError'){
-      return { ok: false, description: 'Превышено время ожидания (20 сек). Проверьте интернет.' };
-    }
-
-    return {
-      ok: false,
-      description: `Сетевая ошибка: ${e.message}. Если вы в России — api.telegram.org может быть заблокирован вашим провайдером.`
-    };
+    if(e.name === 'AbortError') return { ok:false, description:'Таймаут 20с. Проверьте интернет/VPN.' };
+    return { ok:false, description:`Сетевая ошибка: ${e.message}. Если в РФ — нужен VPN.` };
   }
 }
 
-/* ============ ЭКРАН 1: ВВОД ТОКЕНА ============ */
+/* ============ ВХОД ============ */
 $('#tokenInput').value = state.token;
-
 $('#confirmBtn').onclick = async () => {
   const tok = $('#tokenInput').value.trim();
   const err = $('#tokenErr');
   err.textContent = '';
   debug('');
-
   if(!tok){ err.textContent = 'Введите токен'; return; }
-  if(tok.indexOf(':') === -1){
-    err.textContent = 'Токен должен содержать символ «:». Пример: 1234567890:AAHdq...';
-    return;
-  }
+  if(tok.indexOf(':') === -1){ err.textContent = 'Токен должен содержать «:»'; return; }
 
   const btn = $('#confirmBtn');
   btn.disabled = true;
-  btn.textContent = 'Проверяем...';
+  btn.innerHTML = '<span class="spinner"></span>Проверяем...';
+  state.token = tok;
   debug('Запрос getMe...');
 
-  state.token = tok;
   const me = await tg('getMe');
-
   if(!me || !me.ok){
-    err.textContent = '❌ ' + (me?.description || 'нет ответа от Telegram');
-    debug('getMe провалился');
-    btn.disabled = false;
-    btn.textContent = 'Подтвердить';
+    err.textContent = '❌ ' + (me?.description || 'нет ответа');
+    btn.disabled = false; btn.textContent = 'Подтвердить';
     return;
   }
 
-  debug('OK. Бот: @' + me.result.username);
   state.botName = me.result.username;
+  state.botId = me.result.id;
   $('#botName').textContent = '@' + me.result.username;
   $('#botAvatar').textContent = (me.result.first_name || 'G')[0].toUpperCase();
-
-  // Устанавливаем синюю кнопку меню
-  debug('Ставим кнопку меню...');
-  const menuRes = await tg('setChatMenuButton', {
-    menu_button: JSON.stringify({
-      type: 'web_app',
-      text: '🛍️ Каталог',
-      web_app: { url: WEB_APP_URL }
-    })
-  });
-  if(!menuRes.ok){
-    console.warn('Не удалось поставить кнопку меню:', menuRes.description);
-  }
 
   save();
   $('#screenToken').classList.remove('active');
   $('#screenEditor').classList.add('active');
-  render();
+  renderAll();
   debug('');
+  toast('Бот подключён ✅');
 };
 
-/* ============ СМЕНА БОТА ============ */
 $('#logoutBtn').onclick = () => {
-  if(!confirm('Сменить бота? Настройки сообщений сохранятся.')) return;
+  if(!confirm('Сменить бота? Настройки сохранятся.')) return;
   state.polling = false;
   localStorage.removeItem('bot_token');
   state.token = '';
-  state.botName = '';
   $('#tokenInput').value = '';
   $('#tokenErr').textContent = '';
   debug('');
   $('#screenEditor').classList.remove('active');
   $('#screenToken').classList.add('active');
-  $('#botStatus').textContent = 'Остановлен';
-  $('#botStatus').classList.remove('on');
-  $('#startBtn').textContent = '▶ Запустить';
+  setStatus('Остановлен');
+  $('#startBtn').innerHTML = '▶ Запустить';
   $('#startBtn').classList.remove('on');
 };
 
+/* ============ ТАБЫ ============ */
+$$('.tab').forEach(tab => {
+  tab.onclick = () => {
+    $$('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    state.currentTab = tab.dataset.tab;
+    $('#contentMessages').style.display = state.currentTab === 'messages' ? 'block' : 'none';
+    $('#contentSettings').style.display = state.currentTab === 'settings' ? 'block' : 'none';
+    $('#addMsgBtn').style.display = state.currentTab === 'messages' ? 'block' : 'none';
+    if(state.currentTab === 'settings') renderSettings();
+  };
+});
+
 /* ============ РЕНДЕР ============ */
+function renderAll(){ render(); if(state.currentTab === 'settings') renderSettings(); }
+
+function triggerLabel(m){
+  if(m.triggerType === 'any') return 'любое';
+  if(m.triggerType === 'text') return '«' + m.trigger + '»';
+  if(m.triggerType === 'callback') return 'callback:' + m.trigger;
+  return m.trigger;
+}
+
+function contentPreview(m){
+  const c = m.content || {};
+  switch(m.contentType){
+    case 'text': return c.text || '';
+    case 'location': return `📍 ${c.latitude || '?'}, ${c.longitude || '?'}`;
+    case 'venue': return `🏢 ${c.title || ''} — ${c.address || ''}`;
+    case 'contact': return `👤 ${c.first_name || ''} — ${c.phone_number || ''}`;
+    case 'poll': return `📊 ${c.question || ''}\n${(c.options||[]).map((o,i)=>`${i+1}. ${o}`).join('\n')}`;
+    case 'dice': return `🎲 ${c.emoji || '🎲'}`;
+    default: return (c.caption || '') + (c.media ? `\n${c.media}` : '');
+  }
+}
+
 function render(){
-  const chat = $('#chat');
-  chat.innerHTML = '';
+  const c = $('#contentMessages');
+  c.innerHTML = '';
 
   if(state.messages.length === 0){
-    chat.innerHTML = `<div class="empty">Пока нет сообщений.<br>Нажмите «+ Сообщение», чтобы добавить первое — например, ответ на <code>/start</code>.</div>`;
+    c.innerHTML = `<div class="empty">Пока нет сообщений.<br>Нажмите «+ Сообщение», чтобы добавить ответ на <code>/start</code> или callback-кнопку.</div>`;
     return;
   }
 
-  state.messages.forEach(m => {
+  state.messages.forEach((m, i) => {
     const el = document.createElement('div');
     el.className = 'msg';
+    el.style.animationDelay = (i * 0.04) + 's';
 
-    const tag = m.triggerType === 'any'
-      ? 'любое сообщение'
-      : m.triggerType === 'text'
-        ? '«' + m.trigger + '»'
-        : m.trigger;
+    const tagCls = m.triggerType === 'callback' ? 'tag callback' : 'tag';
 
     let kbHTML = '';
     if(m.buttons && m.buttons.length){
       kbHTML = '<div class="kb">' + m.buttons.map(b =>
-        `<span class="kbtn">${esc(b.text)}${b.type==='url' ? ' 🔗' : ''}</span>`
+        `<span class="kbtn">${esc(b.text)} <small>[${b.type}]</small></span>`
       ).join('') + '</div>';
     }
 
+    let rkHTML = '';
+    if(m.replyKeyboard && m.replyKeyboard.enabled && m.replyKeyboard.buttons.length){
+      rkHTML = '<div class="rk">⌨ Reply: ' +
+        m.replyKeyboard.buttons.map(b => esc(b.text || b.type)).join(' · ') + '</div>';
+    }
+
+    let actionHTML = '';
+    if(m.chatAction && m.chatAction !== 'none'){
+      actionHTML = `<div class="rk">⏳ ${esc(m.chatAction)}${m.chatActionDelay ? ' ('+m.chatActionDelay+'с)' : ''}</div>`;
+    }
+
     el.innerHTML = `
-      <div class="tag">${esc(tag)}</div>
-      <div class="text">${esc(m.response)}</div>
-      ${kbHTML}
+      <div>
+        <span class="${tagCls}">${esc(triggerLabel(m))}</span>
+        <span class="kind">${esc(CONTENT_LABELS[m.contentType] || 'текст')}</span>
+      </div>
+      <div class="text">${esc(contentPreview(m)) || '<i style="color:var(--muted)">(без текста)</i>'}</div>
+      ${kbHTML}${rkHTML}${actionHTML}
       <div class="msg-actions">
         <button data-act="edit">✏️ Изменить</button>
-        <button data-act="btn">➕ Кнопка</button>
+        <button data-act="dup">📋 Дублировать</button>
         <button data-act="del" class="del">🗑 Удалить</button>
       </div>
     `;
 
-    el.querySelector('[data-act="edit"]').onclick = e => { e.stopPropagation(); openEdit(m.id); };
-    el.querySelector('[data-act="btn"]').onclick = e => { e.stopPropagation(); openEdit(m.id, true); };
-    el.querySelector('[data-act="del"]').onclick = e => {
-      e.stopPropagation();
-      if(confirm('Удалить это сообщение?')){
+    el.querySelector('[data-act="edit"]').onclick = () => openEdit(m.id);
+    el.querySelector('[data-act="dup"]').onclick = () => {
+      const copy = JSON.parse(JSON.stringify(m));
+      copy.id = Date.now();
+      state.messages.push(copy);
+      save(); render();
+      toast('Скопировано 📋');
+    };
+    el.querySelector('[data-act="del"]').onclick = () => {
+      if(confirm('Удалить?')){
         state.messages = state.messages.filter(x => x.id !== m.id);
         save(); render();
       }
     };
 
-    chat.appendChild(el);
+    c.appendChild(el);
   });
-
-  chat.scrollTop = chat.scrollHeight;
 }
 
-function esc(s){
-  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
-
-/* ============ ДОБАВИТЬ СООБЩЕНИЕ ============ */
+/* ============ ДОБАВИТЬ ============ */
 $('#addMsgBtn').onclick = () => {
   const id = Date.now();
   state.messages.push({
-    id,
-    triggerType: 'command',
-    trigger: '/start',
-    response: 'Здравствуйте! Нажмите на кнопку ниже, чтобы открыть каталог товаров в наличии 👇',
-    buttons: [
-      { text: '🛍️ Открыть каталог', type: 'url', value: WEB_APP_URL }
-    ]
+    id, triggerType:'command', trigger:'/start',
+    contentType:'text',
+    content: {
+      text:'Здравствуйте! Нажмите на кнопку ниже, чтобы открыть каталог товаров 👇',
+      parse_mode:'HTML', caption:'', media:'',
+      latitude:'', longitude:'', title:'', address:'',
+      phone_number:'', first_name:'',
+      question:'Что вас интересует?', options:['Одежда','Обувь','Аксессуары'],
+      pollType:'regular', is_anonymous:true, allows_multiple_answers:false, correct_option_id:0,
+      emoji:'🎲'
+    },
+    buttons: [{ type:'web_app', text:'🛍️ Открыть каталог', url:WEB_APP_URL }],
+    replyKeyboard: { enabled:false, one_time_keyboard:true, resize_keyboard:true, buttons:[] },
+    chatAction:'none', chatActionDelay:0,
+    callbackAction:'answer', callbackText:''
   });
-  save();
-  render();
+  save(); render();
   openEdit(id);
 };
 
-/* ============ BOTTOM SHEET ============ */
+/* ============ SHEET ============ */
 const overlay = $('#overlay');
 const sheet = $('#sheet');
 
@@ -381,43 +560,181 @@ function closeSheet(){
 }
 overlay.onclick = closeSheet;
 
-function openEdit(id, focusButtons){
+function openEdit(id){
   const m = state.messages.find(x => x.id === id);
   if(!m) return;
   state.editingId = id;
 
   sheet.innerHTML = `
-    <h3>Редактировать сообщение</h3>
+    <h3 style="text-align:center;display:block">Редактировать</h3>
 
-    <label>Тип триггера</label>
-    <select id="f_type">
-      <option value="command" ${m.triggerType==='command'?'selected':''}>Команда (например /start)</option>
-      <option value="text" ${m.triggerType==='text'?'selected':''}>Точный текст</option>
-      <option value="any" ${m.triggerType==='any'?'selected':''}>Любое сообщение</option>
-    </select>
-
-    <div id="triggerWrap" style="display:${m.triggerType==='any'?'none':'block'}">
-      <label>Триггер</label>
-      <input id="f_trigger" value="${esc(m.trigger)}" placeholder="/start">
+    <div class="section">
+      <h4>Триггер</h4>
+      <select id="f_triggerType">
+        <option value="command" ${m.triggerType==='command'?'selected':''}>Команда</option>
+        <option value="text" ${m.triggerType==='text'?'selected':''}>Точный текст</option>
+        <option value="any" ${m.triggerType==='any'?'selected':''}>Любое сообщение</option>
+        <option value="callback" ${m.triggerType==='callback'?'selected':''}>Callback (нажатие кнопки)</option>
+      </select>
+      <div id="triggerWrap" style="display:${m.triggerType==='any'?'none':'block'}">
+        <label>Значение</label>
+        <input id="f_trigger" value="${esc(m.trigger)}" placeholder="/start">
+      </div>
+      <div class="hint" id="triggerHint"></div>
     </div>
 
-    <label>Ответ бота</label>
-    <textarea id="f_response" placeholder="Введите текст ответа...">${esc(m.response)}</textarea>
+    <div class="section">
+      <h4>Тип ответа</h4>
+      <select id="f_contentType">
+        ${CONTENT_TYPES.map(t => `<option value="${t.v}" ${m.contentType===t.v?'selected':''}>${t.l}</option>`).join('')}
+      </select>
+      <div id="contentFields" style="margin-top:10px"></div>
+    </div>
 
-    <label>Инлайн-кнопки (необязательно)</label>
-    <div id="buttonsList"></div>
-    <button class="add-btn" id="addBtn">+ Добавить кнопку</button>
+    <div class="section">
+      <h4>Инлайн-кнопки</h4>
+      <div id="buttonsList"></div>
+      <button class="add-btn" id="addBtn">+ Добавить кнопку</button>
+    </div>
 
-    <div class="sheet-actions">
+    <div class="section">
+      <h4>Reply-клавиатура</h4>
+      <label class="checkbox-row"><input type="checkbox" id="f_rk_enabled" ${m.replyKeyboard?.enabled?'checked':''}> Показывать</label>
+      <div id="rkFields" style="display:${m.replyKeyboard?.enabled?'block':'none'}">
+        <label class="checkbox-row"><input type="checkbox" id="f_rk_one" ${m.replyKeyboard?.one_time_keyboard?'checked':''}> Скрыть после нажатия</label>
+        <label class="checkbox-row"><input type="checkbox" id="f_rk_resize" ${m.replyKeyboard?.resize_keyboard?'checked':''}> Уменьшить высоту</label>
+        <div id="rkButtons" style="margin-top:10px"></div>
+        <button class="add-btn" id="addRkBtn">+ Кнопка</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h4>Chat action (индикатор «печатает»)</h4>
+      <select id="f_chatAction">
+        ${CHAT_ACTIONS.map(a => `<option value="${a.v}" ${m.chatAction===a.v?'selected':''}>${a.l}</option>`).join('')}
+      </select>
+      <label>Задержка перед ответом (сек)</label>
+      <input type="number" id="f_chatDelay" min="0" max="10" value="${m.chatActionDelay||0}">
+    </div>
+
+    <div class="section" id="callbackSection" style="display:${m.triggerType==='callback'?'block':'none'}">
+      <h4>Действие при callback</h4>
+      <select id="f_cbAction">
+        <option value="answer" ${m.callbackAction==='answer'?'selected':''}>Тихий ответ</option>
+        <option value="alert" ${m.callbackAction==='alert'?'selected':''}>Уведомление</option>
+      </select>
+      <label>Текст</label>
+      <input id="f_cbText" value="${esc(m.callbackText||'')}" placeholder="Готово!">
+    </div>
+
+    <div class="row">
       <button class="btn secondary" id="cancelBtn">Отмена</button>
       <button class="btn" id="saveBtn">Сохранить</button>
     </div>
   `;
 
-  $('#f_type').onchange = e => {
-    $('#triggerWrap').style.display = e.target.value === 'any' ? 'none' : 'block';
+  $('#f_triggerType').onchange = e => {
+    const v = e.target.value;
+    $('#triggerWrap').style.display = v === 'any' ? 'none' : 'block';
+    $('#callbackSection').style.display = v === 'callback' ? 'block' : 'none';
+    updateHint();
   };
+  function updateHint(){
+    const t = $('#f_triggerType').value;
+    $('#triggerHint').textContent = t === 'callback'
+      ? 'Callback — данные кнопки из другого сообщения.'
+      : t === 'any' ? 'Ответит на всё, что не подошло под другие правила.'
+      : t === 'command' ? 'Например: /start' : 'Точное совпадение текста';
+  }
+  updateHint();
 
+  // Content fields
+  function renderContentFields(){
+    const wrap = $('#contentFields');
+    const c = m.content;
+    const type = m.contentType;
+    let html = '';
+
+    const textarea = (field, ph) => `
+      <label>${field==='text'?'Текст':'Подпись'}</label>
+      <textarea data-c="${field}" placeholder="${ph}">${esc(c[field]||'')}</textarea>
+    `;
+
+    switch(type){
+      case 'text': html = textarea('text','Текст сообщения'); break;
+      case 'photo': case 'video': case 'audio': case 'voice':
+      case 'document': case 'sticker': case 'animation':
+        html = `
+          <label>URL или file_id</label>
+          <input data-c="media" value="${esc(c.media||'')}" placeholder="https://... или file_id">
+          ${textarea('caption','Подпись (необязательно)')}
+        `;
+        break;
+      case 'location':
+        html = `
+          <label>Широта</label>
+          <input data-c="latitude" value="${esc(c.latitude||'')}" placeholder="55.7558">
+          <label>Долгота</label>
+          <input data-c="longitude" value="${esc(c.longitude||'')}" placeholder="37.6173">
+        `;
+        break;
+      case 'venue':
+        html = `
+          <label>Широта</label><input data-c="latitude" value="${esc(c.latitude||'')}">
+          <label>Долгота</label><input data-c="longitude" value="${esc(c.longitude||'')}">
+          <label>Название</label><input data-c="title" value="${esc(c.title||'')}">
+          <label>Адрес</label><input data-c="address" value="${esc(c.address||'')}">
+        `;
+        break;
+      case 'contact':
+        html = `
+          <label>Телефон</label><input data-c="phone_number" value="${esc(c.phone_number||'')}" placeholder="+7...">
+          <label>Имя</label><input data-c="first_name" value="${esc(c.first_name||'')}">
+        `;
+        break;
+      case 'poll':
+        html = `
+          <label>Вопрос</label>
+          <input data-c="question" value="${esc(c.question||'')}">
+          <label>Варианты (каждый с новой строки)</label>
+          <textarea data-c="options" placeholder="Вариант 1&#10;Вариант 2">${esc((c.options||[]).join('\n'))}</textarea>
+          <label>Тип</label>
+          <select data-c="pollType">
+            <option value="regular" ${c.pollType==='regular'?'selected':''}>Обычный</option>
+            <option value="quiz" ${c.pollType==='quiz'?'selected':''}>Викторина</option>
+          </select>
+          <label class="checkbox-row"><input type="checkbox" data-c="is_anonymous" ${c.is_anonymous?'checked':''}> Анонимный</label>
+          <label class="checkbox-row"><input type="checkbox" data-c="allows_multiple_answers" ${c.allows_multiple_answers?'checked':''}> Несколько ответов</label>
+        `;
+        break;
+      case 'dice':
+        html = `<label>Эмодзи</label><select data-c="emoji">
+          ${DICE_EMOJI.map(e => `<option ${c.emoji===e?'selected':''}>${e}</option>`).join('')}
+        </select>`;
+        break;
+    }
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('[data-c]').forEach(inp => {
+      const key = inp.dataset.c;
+      const ev = inp.type === 'checkbox' ? 'change' : 'input';
+      inp.addEventListener(ev, () => {
+        if(key === 'options'){
+          m.content.options = inp.value.split('\n').map(s => s.trim()).filter(Boolean);
+        } else if(inp.type === 'checkbox'){
+          m.content[key] = inp.checked;
+        } else {
+          m.content[key] = inp.value;
+        }
+        save();
+      });
+    });
+  }
+
+  $('#f_contentType').onchange = e => { m.contentType = e.target.value; save(); renderContentFields(); };
+  renderContentFields();
+
+  // Inline buttons
   function renderButtons(){
     const wrap = $('#buttonsList');
     wrap.innerHTML = '';
@@ -425,156 +742,498 @@ function openEdit(id, focusButtons){
       const row = document.createElement('div');
       row.className = 'btn-row';
       row.innerHTML = `
-        <input data-i="${i}" data-k="text" value="${esc(b.text)}" placeholder="Текст кнопки">
-        <select data-i="${i}" data-k="type" style="width:100px;flex:none">
-          <option value="url" ${b.type==='url'?'selected':''}>URL</option>
-          <option value="callback" ${b.type==='callback'?'selected':''}>Callback</option>
+        <input data-i="${i}" data-k="text" value="${esc(b.text||'')}" placeholder="Текст кнопки">
+        <select data-i="${i}" data-k="type">
+          ${INLINE_BUTTON_TYPES.map(t => `<option value="${t.v}" ${b.type===t.v?'selected':''}>${t.l}</option>`).join('')}
         </select>
         <button class="rm" data-i="${i}">✕</button>
       `;
-      row.querySelectorAll('input,select').forEach(inp => {
-        inp.oninput = inp.onchange = () => {
-          const idx = +inp.dataset.i;
-          m.buttons[idx][inp.dataset.k] = inp.value;
-        };
-      });
-      row.querySelector('.rm').onclick = () => {
-        m.buttons.splice(i, 1);
-        renderButtons();
-      };
-      wrap.appendChild(row);
-
       const vrow = document.createElement('div');
       vrow.className = 'btn-row';
-      vrow.style.marginTop = '-4px';
-      vrow.innerHTML = `
-        <input data-i="${i}" data-k="value" value="${esc(b.value)}" placeholder="${b.type==='url'?'https://...':'callback_data'}">
-      `;
-      vrow.querySelector('input').oninput = e => {
-        m.buttons[+e.target.dataset.i].value = e.target.value;
+      vrow.style.marginTop = '-3px';
+      const valueField = b.type === 'callback' ? 'callback' : 'url';
+      const ph = b.type === 'callback' ? 'callback_data' :
+                 b.type === 'copy_text' ? 'Текст для копирования' :
+                 b.type === 'switch_inline_query' ? 'Запрос' :
+                 b.type === 'switch_inline_query_current_chat' ? 'Запрос' : 'https://...';
+      vrow.innerHTML = `<input data-i="${i}" data-k="${valueField}" value="${esc(b[valueField]||'')}" placeholder="${ph}">`;
+
+      row.querySelectorAll('input,select').forEach(inp => {
+        const ev = inp.tagName === 'SELECT' ? 'change' : 'input';
+        inp.addEventListener(ev, () => {
+          const idx = +inp.dataset.i;
+          m.buttons[idx][inp.dataset.k] = inp.value;
+          save();
+          if(inp.dataset.k === 'type') renderButtons();
+        });
+      });
+      row.querySelector('.rm').onclick = () => {
+        m.buttons.splice(i, 1); save(); renderButtons();
       };
+      vrow.querySelector('input').oninput = e => {
+        m.buttons[+e.target.dataset.i][e.target.dataset.k] = e.target.value; save();
+      };
+      wrap.appendChild(row);
       wrap.appendChild(vrow);
     });
   }
   renderButtons();
 
   $('#addBtn').onclick = () => {
-    m.buttons.push({ text: 'Кнопка', type: 'url', value: WEB_APP_URL });
-    renderButtons();
+    m.buttons.push({ type:'url', text:'Кнопка', url: WEB_APP_URL });
+    save(); renderButtons();
   };
 
-  $('#cancelBtn').onclick = closeSheet;
-
-  $('#saveBtn').onclick = () => {
-    m.triggerType = $('#f_type').value;
-    m.trigger = $('#f_trigger').value.trim() || '/start';
-    m.response = $('#f_response').value.trim() || '...';
+  // Reply keyboard
+  $('#f_rk_enabled').onchange = e => {
+    m.replyKeyboard.enabled = e.target.checked;
+    $('#rkFields').style.display = e.target.checked ? 'block' : 'none';
     save();
-    render();
-    closeSheet();
-    toast('Сохранено');
+  };
+  $('#f_rk_one').onchange = e => { m.replyKeyboard.one_time_keyboard = e.target.checked; save(); };
+  $('#f_rk_resize').onchange = e => { m.replyKeyboard.resize_keyboard = e.target.checked; save(); };
+
+  function renderRkButtons(){
+    const wrap = $('#rkButtons');
+    wrap.innerHTML = '';
+    m.replyKeyboard.buttons.forEach((b, i) => {
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      row.innerHTML = `
+        <select data-i="${i}" data-k="type" style="max-width:150px;flex:none">
+          <option value="text" ${b.type==='text'?'selected':''}>Текст</option>
+          <option value="request_contact" ${b.type==='request_contact'?'selected':''}>Контакт</option>
+          <option value="request_location" ${b.type==='request_location'?'selected':''}>Локация</option>
+        </select>
+        <input data-i="${i}" data-k="text" value="${esc(b.text||'')}" placeholder="Текст кнопки">
+        <button class="rm" data-i="${i}">✕</button>
+      `;
+      row.querySelectorAll('input,select').forEach(inp => {
+        inp.addEventListener(inp.tagName==='SELECT'?'change':'input', () => {
+          m.replyKeyboard.buttons[+inp.dataset.i][inp.dataset.k] = inp.value;
+          save();
+        });
+      });
+      row.querySelector('.rm').onclick = () => {
+        m.replyKeyboard.buttons.splice(i, 1); save(); renderRkButtons();
+      };
+      wrap.appendChild(row);
+    });
+  }
+  renderRkButtons();
+
+  $('#addRkBtn').onclick = () => {
+    m.replyKeyboard.buttons.push({ type:'text', text:'Кнопка' });
+    save(); renderRkButtons();
+  };
+
+  // Chat action
+  $('#f_chatAction').onchange = e => { m.chatAction = e.target.value; save(); };
+  $('#f_chatDelay').oninput = e => { m.chatActionDelay = +e.target.value; save(); };
+
+  // Callback action
+  $('#f_cbAction').onchange = e => { m.callbackAction = e.target.value; save(); };
+  $('#f_cbText').oninput = e => { m.callbackText = e.target.value; save(); };
+
+  // Save / cancel
+  $('#cancelBtn').onclick = closeSheet;
+  $('#saveBtn').onclick = () => {
+    m.triggerType = $('#f_triggerType').value;
+    m.trigger = ($('#f_trigger').value || '').trim() || '/start';
+    save(); render(); closeSheet();
+    toast('Сохранено ✅');
   };
 
   overlay.classList.add('show');
   sheet.classList.add('show');
+}
 
-  if(focusButtons){
-    setTimeout(()=>$('#buttonsList').scrollIntoView({behavior:'smooth'}), 300);
+/* ============ НАСТРОЙКИ ============ */
+function renderSettings(){
+  const c = $('#contentSettings');
+  c.innerHTML = `
+    <div class="settings-item" data-s="commands">
+      <div><div class="label">📋 Команды бота</div><div class="hint">${state.settings.commands.length} шт.</div></div>
+      <div class="arrow">›</div>
+    </div>
+    <div class="settings-item" data-s="menu">
+      <div><div class="label">🔵 Кнопка меню</div><div class="hint">${esc(state.settings.menuButtonType)}</div></div>
+      <div class="arrow">›</div>
+    </div>
+    <div class="settings-item" data-s="profile">
+      <div><div class="label">👤 Описание бота</div><div class="hint">Короткое и полное описание</div></div>
+      <div class="arrow">›</div>
+    </div>
+    <div class="settings-item" data-s="apply">
+      <div><div class="label">⚡ Применить всё</div><div class="hint">Отправить настройки в Telegram</div></div>
+      <div class="arrow">›</div>
+    </div>
+    <div class="settings-item" data-s="webhook">
+      <div><div class="label">🔄 Сбросить webhook</div><div class="hint">На случай конфликтов</div></div>
+      <div class="arrow">›</div>
+    </div>
+  `;
+
+  c.querySelectorAll('.settings-item').forEach(item => {
+    item.onclick = () => openSetting(item.dataset.s);
+  });
+}
+
+function openSetting(key){
+  if(key === 'commands'){
+    sheet.innerHTML = `
+      <h3 style="text-align:center">Команды бота</h3>
+      <div class="hint">Появятся в меню «/» в Telegram.</div>
+      <div id="cmdList" style="margin-top:14px"></div>
+      <button class="add-btn" id="addCmd">+ Добавить команду</button>
+      <div class="row">
+        <button class="btn secondary" id="closeBtn">Закрыть</button>
+        <button class="btn" id="applyBtn">Применить</button>
+      </div>
+    `;
+
+    function renderCmdList(){
+      const wrap = $('#cmdList');
+      wrap.innerHTML = '';
+      state.settings.commands.forEach((cmd, i) => {
+        const row = document.createElement('div');
+        row.className = 'btn-row';
+        row.innerHTML = `
+          <input data-i="${i}" data-k="command" value="${esc(cmd.command)}" placeholder="start" style="max-width:120px;flex:none">
+          <input data-i="${i}" data-k="description" value="${esc(cmd.description)}" placeholder="Описание">
+          <button class="rm" data-i="${i}">✕</button>
+        `;
+        row.querySelectorAll('input').forEach(inp => {
+          inp.oninput = () => {
+            state.settings.commands[+inp.dataset.i][inp.dataset.k] = inp.value; save();
+          };
+        });
+        row.querySelector('.rm').onclick = () => {
+          state.settings.commands.splice(i, 1); save(); renderCmdList();
+        };
+        wrap.appendChild(row);
+      });
+    }
+    renderCmdList();
+
+    $('#addCmd').onclick = () => {
+      state.settings.commands.push({command:'', description:''});
+      save(); renderCmdList();
+    };
+    $('#closeBtn').onclick = closeSheet;
+    $('#applyBtn').onclick = async () => {
+      const btn = $('#applyBtn');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Отправляем...';
+      const res = await tg('setMyCommands', {
+        commands: state.settings.commands.filter(c => c.command && c.description)
+      });
+      btn.disabled = false; btn.textContent = 'Применить';
+      if(res.ok){ toast('Команды применены ✅'); closeSheet(); }
+      else toast('Ошибка: ' + res.description, 4000);
+    };
+
+    overlay.classList.add('show');
+    sheet.classList.add('show');
+  }
+
+  else if(key === 'menu'){
+    const s = state.settings;
+    sheet.innerHTML = `
+      <h3 style="text-align:center">Кнопка меню</h3>
+      <div class="hint">Синяя кнопка слева от поля ввода.</div>
+      <label>Тип</label>
+      <select id="mb_type">
+        <option value="web_app" ${s.menuButtonType==='web_app'?'selected':''}>Mini App</option>
+        <option value="commands" ${s.menuButtonType==='commands'?'selected':''}>Список команд</option>
+        <option value="default" ${s.menuButtonType==='default'?'selected':''}>По умолчанию</option>
+      </select>
+      <div id="mb_url_wrap" style="display:${s.menuButtonType==='web_app'?'block':'none'}">
+        <label>Текст кнопки</label>
+        <input id="mb_text" value="${esc(s.menuButtonText)}">
+        <label>URL приложения (HTTPS)</label>
+        <input id="mb_url" value="${esc(s.menuButtonUrl)}">
+      </div>
+      <div class="row">
+        <button class="btn secondary" id="closeBtn">Закрыть</button>
+        <button class="btn" id="applyBtn">Применить</button>
+      </div>
+    `;
+
+    $('#mb_type').onchange = e => {
+      s.menuButtonType = e.target.value;
+      $('#mb_url_wrap').style.display = e.target.value === 'web_app' ? 'block' : 'none';
+      save();
+    };
+    $('#mb_text').oninput = e => { s.menuButtonText = e.target.value; save(); };
+    $('#mb_url').oninput = e => { s.menuButtonUrl = e.target.value; save(); };
+    $('#closeBtn').onclick = closeSheet;
+    $('#applyBtn').onclick = async () => {
+      let menu_button;
+      if(s.menuButtonType === 'web_app'){
+        menu_button = { type:'web_app', text:s.menuButtonText, web_app:{ url:s.menuButtonUrl } };
+      } else if(s.menuButtonType === 'commands'){
+        menu_button = { type:'commands' };
+      } else {
+        menu_button = { type:'default' };
+      }
+      const btn = $('#applyBtn');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+      const res = await tg('setChatMenuButton', { menu_button });
+      btn.disabled = false; btn.textContent = 'Применить';
+      if(res.ok){ toast('Меню обновлено ✅'); closeSheet(); }
+      else toast('Ошибка: ' + res.description, 4000);
+    };
+
+    overlay.classList.add('show');
+    sheet.classList.add('show');
+  }
+
+  else if(key === 'profile'){
+    const s = state.settings;
+    sheet.innerHTML = `
+      <h3 style="text-align:center">Описание бота</h3>
+      <label>Короткое описание (до 120 символов)</label>
+      <textarea id="p_desc" maxlength="120">${esc(s.description)}</textarea>
+      <label>Полное описание (до 512)</label>
+      <textarea id="p_about" maxlength="512">${esc(s.about)}</textarea>
+      <div class="row">
+        <button class="btn secondary" id="closeBtn">Закрыть</button>
+        <button class="btn" id="applyBtn">Применить</button>
+      </div>
+    `;
+    $('#p_desc').oninput = e => { s.description = e.target.value; save(); };
+    $('#p_about').oninput = e => { s.about = e.target.value; save(); };
+    $('#closeBtn').onclick = closeSheet;
+    $('#applyBtn').onclick = async () => {
+      const btn = $('#applyBtn');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+      let ok = true;
+      if(s.description){ const r = await tg('setMyDescription', {description:s.description}); ok = ok && r.ok; }
+      if(s.about){ const r = await tg('setMyShortDescription', {short_description:s.about}); ok = ok && r.ok; }
+      btn.disabled = false; btn.textContent = 'Применить';
+      if(ok){ toast('Описание обновлено ✅'); closeSheet(); }
+      else toast('Частичная ошибка', 4000);
+    };
+    overlay.classList.add('show');
+    sheet.classList.add('show');
+  }
+
+  else if(key === 'apply'){
+    (async () => {
+      toast('Применяем всё...', 1500);
+      // Команды
+      await tg('setMyCommands', { commands: state.settings.commands.filter(c => c.command) });
+      // Меню
+      let mb;
+      const s = state.settings;
+      if(s.menuButtonType === 'web_app') mb = { type:'web_app', text:s.menuButtonText, web_app:{url:s.menuButtonUrl} };
+      else if(s.menuButtonType === 'commands') mb = { type:'commands' };
+      else mb = { type:'default' };
+      await tg('setChatMenuButton', { menu_button: mb });
+      toast('Готово ✅');
+    })();
+  }
+
+  else if(key === 'webhook'){
+    (async () => {
+      const res = await tg('deleteWebhook', { drop_pending_updates: false });
+      if(res.ok) toast('Webhook сброшен ✅');
+      else toast('Ошибка: ' + res.description, 4000);
+    })();
   }
 }
 
-/* ============ ЗАПУСК / СТОП ============ */
+/* ============ POLLING ============ */
 $('#startBtn').onclick = () => {
   if(state.polling){
     state.polling = false;
-    $('#startBtn').textContent = '▶ Запустить';
+    $('#startBtn').innerHTML = '▶ Запустить';
     $('#startBtn').classList.remove('on');
-    $('#botStatus').textContent = 'Остановлен';
-    $('#botStatus').classList.remove('on');
+    setStatus('Остановлен');
     toast('Бот остановлен');
   } else {
     if(state.messages.length === 0){ toast('Добавьте хотя бы одно сообщение'); return; }
     state.polling = true;
-    $('#startBtn').textContent = '⏸ Стоп';
+    $('#startBtn').innerHTML = '⏸ Стоп';
     $('#startBtn').classList.add('on');
-    $('#botStatus').textContent = 'Работает (вкладка должна быть открыта)';
-    $('#botStatus').classList.add('on');
-    toast('Бот запущен');
+    setStatus('Работает (вкладка открыта)', 'on');
+    toast('Бот запущен 🚀');
     pollLoop();
   }
 };
 
 async function pollLoop(){
-  // Сбрасываем старые updates перед стартом
   try {
     const reset = await tg('getUpdates', { offset: -1 });
     if(reset.ok && reset.result.length){
       state.offset = reset.result[reset.result.length - 1].update_id + 1;
-    } else {
-      state.offset = 0;
-    }
+    } else state.offset = 0;
   } catch(_){}
 
   while(state.polling){
     try {
-      const data = await tg('getUpdates', {
-        offset: state.offset,
-        timeout: 25
-      });
-
+      const data = await tg('getUpdates', { offset: state.offset, timeout: 25 });
       if(!data.ok){
-        console.warn('[poll] ошибка:', data.description);
-        $('#botStatus').textContent = 'Ошибка: ' + (data.description || '').slice(0,60);
-        await sleep(4000);
-        continue;
+        setStatus('Ошибка: ' + (data.description||'').slice(0,40), 'err');
+        await sleep(4000); continue;
       }
-
-      $('#botStatus').textContent = 'Работает (вкладка должна быть открыта)';
-
+      setStatus('Работает (вкладка открыта)', 'on');
       for(const up of data.result){
         state.offset = up.update_id + 1;
         await handleUpdate(up);
       }
-    } catch(e){
-      console.warn('[poll] exception:', e);
-      await sleep(2000);
-    }
+    } catch(e){ await sleep(2000); }
   }
 }
 
-function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
-
+/* ============ ОБРАБОТКА ОБНОВЛЕНИЙ ============ */
 async function handleUpdate(up){
+  // Callback
+  if(up.callback_query){
+    const cb = up.callback_query;
+    const data = cb.data || '';
+    const match = state.messages.find(m => m.triggerType === 'callback' && m.trigger === data);
+    if(match){
+      // Отвечаем на callback
+      const cbParams = { callback_query_id: cb.id };
+      if(match.callbackAction === 'alert'){
+        cbParams.text = match.callbackText || 'OK';
+        cbParams.show_alert = true;
+      } else if(match.callbackText){
+        cbParams.text = match.callbackText;
+      }
+      await tg('answerCallbackQuery', cbParams);
+
+      // И отправляем ответ, если есть
+      if(match.contentType !== 'text' || match.content.text){
+        await sendResponse(cb.message.chat.id, match);
+      }
+    } else {
+      await tg('answerCallbackQuery', { callback_query_id: cb.id });
+    }
+    return;
+  }
+
+  // Message
   const msg = up.message || up.edited_message;
-  if(!msg || !msg.text) return;
-  const text = msg.text.trim();
+  if(!msg) return;
   const chatId = msg.chat.id;
 
-  const specific = state.messages.find(m => m.triggerType !== 'any' && (
-    (m.triggerType === 'command' && (text === m.trigger || text.startsWith(m.trigger + ' '))) ||
-    (m.triggerType === 'text' && text.toLowerCase() === m.trigger.toLowerCase())
-  ));
+  // Reply keyboard — контакт / локация
+  const text = msg.text ? msg.text.trim() : '';
+
+  const specific = state.messages.find(m => {
+    if(m.triggerType === 'any') return false;
+    if(m.triggerType === 'command'){
+      return text === m.trigger || text.startsWith(m.trigger + ' ');
+    }
+    if(m.triggerType === 'text'){
+      return text.toLowerCase() === m.trigger.toLowerCase();
+    }
+    return false;
+  });
   const anyMatch = state.messages.find(m => m.triggerType === 'any');
   const match = specific || anyMatch;
-
   if(!match) return;
 
-  const body = { chat_id: chatId, text: match.response };
+  await sendResponse(chatId, match);
+}
 
-  if(match.buttons && match.buttons.length){
-    const kb = match.buttons
-      .filter(b => b.text && b.value)
-      .map(b => b.type === 'url'
-        ? [{ text: b.text, url: b.value }]
-        : [{ text: b.text, callback_data: b.value }]
-      );
-    if(kb.length) body.reply_markup = JSON.stringify({ inline_keyboard: kb });
+async function sendResponse(chatId, m){
+  // Chat action
+  if(m.chatAction && m.chatAction !== 'none'){
+    await tg('sendChatAction', { chat_id: chatId, action: m.chatAction });
+    if(m.chatActionDelay > 0) await sleep(m.chatActionDelay * 1000);
   }
 
-  const res = await tg('sendMessage', body);
-  if(!res.ok){
-    console.warn('[send] ошибка:', res.description, body);
+  const c = m.content || {};
+  const base = { chat_id: chatId };
+
+  // Reply keyboard
+  let reply_markup = null;
+  if(m.replyKeyboard && m.replyKeyboard.enabled && m.replyKeyboard.buttons.length){
+    const kb = m.replyKeyboard.buttons.map(b => {
+      if(b.type === 'request_contact') return { text: b.text || '📱 Отправить контакт', request_contact: true };
+      if(b.type === 'request_location') return { text: b.text || '📍 Отправить локацию', request_location: true };
+      return { text: b.text || 'Кнопка' };
+    });
+    reply_markup = {
+      keyboard: kb.map(b => [b]),
+      resize_keyboard: m.replyKeyboard.resize_keyboard,
+      one_time_keyboard: m.replyKeyboard.one_time_keyboard
+    };
   }
+
+  // Inline keyboard
+  if(m.buttons && m.buttons.length){
+    const rows = m.buttons.filter(b => b.text).map(b => {
+      const btn = { text: b.text };
+      if(b.type === 'url') btn.url = b.url;
+      else if(b.type === 'callback') btn.callback_data = b.callback || b.text;
+      else if(b.type === 'web_app') btn.web_app = { url: b.url || WEB_APP_URL };
+      else if(b.type === 'switch_inline_query') btn.switch_inline_query = b.url || '';
+      else if(b.type === 'switch_inline_query_current_chat') btn.switch_inline_query_current_chat = b.url || '';
+      else if(b.type === 'copy_text') btn.copy_text = { text: b.url || b.text };
+      else if(b.type === 'login_url') btn.login_url = { url: b.url || '' };
+      return [btn];
+    });
+    if(rows.length){
+      if(reply_markup){
+        // Нельзя одновременно reply и inline — приоритет inline
+        reply_markup = { inline_keyboard: rows };
+      } else {
+        reply_markup = { inline_keyboard: rows };
+      }
+    }
+  }
+
+  const params = { ...base };
+  if(reply_markup) params.reply_markup = reply_markup;
+  if(c.parse_mode) params.parse_mode = c.parse_mode;
+
+  let method = 'sendMessage';
+  switch(m.contentType){
+    case 'text':
+      params.text = c.text || '...';
+      break;
+    case 'photo': method='sendPhoto'; params.photo=c.media; params.caption=c.caption||''; break;
+    case 'video': method='sendVideo'; params.video=c.media; params.caption=c.caption||''; break;
+    case 'audio': method='sendAudio'; params.audio=c.media; params.caption=c.caption||''; break;
+    case 'voice': method='sendVoice'; params.voice=c.media; params.caption=c.caption||''; break;
+    case 'document': method='sendDocument'; params.document=c.media; params.caption=c.caption||''; break;
+    case 'sticker': method='sendSticker'; params.sticker=c.media; break;
+    case 'animation': method='sendAnimation'; params.animation=c.media; params.caption=c.caption||''; break;
+    case 'location': method='sendLocation'; params.latitude=+c.latitude||0; params.longitude=+c.longitude||0; break;
+    case 'venue':
+      method='sendVenue';
+      params.latitude=+c.latitude||0; params.longitude=+c.longitude||0;
+      params.title=c.title||''; params.address=c.address||'';
+      break;
+    case 'contact':
+      method='sendContact';
+      params.phone_number=c.phone_number||''; params.first_name=c.first_name||'';
+      break;
+    case 'poll':
+      method='sendPoll';
+      params.question=c.question||'?';
+      params.options=JSON.stringify(c.options||[]);
+      params.is_anonymous = c.is_anonymous !== false;
+      params.allows_multiple_answers = !!c.allows_multiple_answers;
+      if(c.pollType === 'quiz' && c.correct_option_id != null){
+        params.type = 'quiz';
+        params.correct_option_id = +c.correct_option_id;
+      }
+      break;
+    case 'dice':
+      method='sendDice';
+      params.emoji = c.emoji || '🎲';
+      break;
+  }
+
+  // Если chat action + reply keyboard, отправляем сначала пустое, потом клавиатуру
+  // Но проще: reply keyboard и inline взаимоисключающие.
+  const res = await tg(method, params);
+  if(!res.ok) console.warn('[send]', res.description, params);
 }
 
 /* ============ АВТОВХОД ============ */
@@ -584,11 +1243,12 @@ if(state.token){
     const me = await tg('getMe');
     if(me && me.ok){
       state.botName = me.result.username;
+      state.botId = me.result.id;
       $('#botName').textContent = '@' + me.result.username;
       $('#botAvatar').textContent = (me.result.first_name || 'G')[0].toUpperCase();
       $('#screenToken').classList.remove('active');
       $('#screenEditor').classList.add('active');
-      render();
+      renderAll();
       debug('');
     } else {
       localStorage.removeItem('bot_token');
