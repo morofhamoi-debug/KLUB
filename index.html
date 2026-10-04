@@ -28,7 +28,8 @@
   .btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px;transition:.15s}
   .btn:hover{background:var(--accent-hover)}
   .btn:disabled{opacity:.5;cursor:not-allowed}
-  .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:18px;text-align:center;line-height:1.4}
+  .err{color:var(--danger);font-size:13px;margin-top:14px;min-height:18px;text-align:center;line-height:1.5;word-break:break-word}
+  .err:not(:empty){background:#3a1f1f;padding:10px;border-radius:8px}
 
   .header{background:var(--panel);padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0}
   .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5288c1,#2b5278);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
@@ -85,7 +86,7 @@
   .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#233a52;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:100;pointer-events:none;max-width:90%;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
-  .settings-link{display:block;text-align:center;font-size:12px;color:var(--muted);margin-top:16px;cursor:pointer;text-decoration:underline}
+  .debug{font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-family:monospace;word-break:break-all}
 </style>
 </head>
 <body>
@@ -100,6 +101,7 @@
     <input id="tokenInput" type="text" placeholder="1234567890:AA..." autocomplete="off" spellcheck="false">
     <button class="btn" id="confirmBtn">Подтвердить</button>
     <div class="err" id="tokenErr"></div>
+    <div class="debug" id="debugInfo"></div>
   </div>
 </div>
 
@@ -127,7 +129,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ======= КОНСТАНТА: ССЫЛКА НА МИНИ-ЭП ======= */
+/* ======= ССЫЛКА НА МИНИ-ЭП (зашита в код) ======= */
 const WEB_APP_URL = "https://morofhamoi-debug.github.io/GASPARD-/";
 
 /* ============ STATE ============ */
@@ -152,85 +154,139 @@ function toast(msg){
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._h);
-  t._h = setTimeout(()=>t.classList.remove('show'), 2500);
+  t._h = setTimeout(()=>t.classList.remove('show'), 3000);
 }
 
-/* ============ TELEGRAM API (через GET + таймаут) ============ */
+function debug(msg){
+  const d = $('#debugInfo');
+  if(d) d.textContent = msg;
+  console.log('[GASPARD]', msg);
+}
+
+/* ============================================================
+   ЯДРО: запрос к Telegram Bot API
+   Используем POST + application/x-www-form-urlencoded.
+   Этот тип НЕ вызывает CORS preflight (в отличие от JSON).
+   Так работает официальный Bot API из браузера.
+   ============================================================ */
 async function tg(method, params){
-  const qs = new URLSearchParams();
+  // Собираем тело запроса
+  const body = new URLSearchParams();
   if(params){
     for(const k in params){
       const v = params[k];
-      qs.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
+      if(v === undefined || v === null) continue;
+      body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
     }
   }
-  const url = `https://api.telegram.org/bot${state.token}/${method}?${qs}`;
+
+  const url = `https://api.telegram.org/bot${state.token}/${method}`;
 
   const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), 15000);
+  const timer = setTimeout(()=>ctrl.abort(), 20000);
 
   try {
-    const r = await fetch(url, { method: 'GET', signal: ctrl.signal });
-    clearTimeout(t);
-    return await r.json();
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+
+    // Читаем как текст, чтобы не падать на HTML-ответах
+    const raw = await r.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch(_){
+      return {
+        ok: false,
+        description: `Telegram вернул не-JSON (HTTP ${r.status}). Возможно, api.telegram.org недоступен или заблокирован провайдером. Первые 100 символов: ${raw.slice(0,100)}`
+      };
+    }
+    return data;
+
   } catch(e){
-    clearTimeout(t);
-    return { ok:false, description:'Сетевая ошибка: ' + e.message };
+    clearTimeout(timer);
+
+    if(e.name === 'AbortError'){
+      return { ok: false, description: 'Превышено время ожидания (20 сек). Проверьте интернет.' };
+    }
+
+    return {
+      ok: false,
+      description: `Сетевая ошибка: ${e.message}. Если вы в России — api.telegram.org может быть заблокирован вашим провайдером.`
+    };
   }
 }
 
-/* ============ ЭКРАН 1 ============ */
+/* ============ ЭКРАН 1: ВВОД ТОКЕНА ============ */
 $('#tokenInput').value = state.token;
 
 $('#confirmBtn').onclick = async () => {
   const tok = $('#tokenInput').value.trim();
   const err = $('#tokenErr');
   err.textContent = '';
+  debug('');
 
   if(!tok){ err.textContent = 'Введите токен'; return; }
-  if(!/^\d+:[\w-]+$/.test(tok)){ err.textContent = 'Токен выглядит неправильно. Формат: 1234567890:AA...'; return; }
+  if(tok.indexOf(':') === -1){
+    err.textContent = 'Токен должен содержать символ «:». Пример: 1234567890:AAHdq...';
+    return;
+  }
 
   const btn = $('#confirmBtn');
   btn.disabled = true;
   btn.textContent = 'Проверяем...';
+  debug('Запрос getMe...');
 
   state.token = tok;
   const me = await tg('getMe');
 
   if(!me || !me.ok){
-    err.textContent = 'Ошибка: ' + (me?.description || 'нет ответа от Telegram');
+    err.textContent = '❌ ' + (me?.description || 'нет ответа от Telegram');
+    debug('getMe провалился');
     btn.disabled = false;
     btn.textContent = 'Подтвердить';
     return;
   }
 
+  debug('OK. Бот: @' + me.result.username);
   state.botName = me.result.username;
   $('#botName').textContent = '@' + me.result.username;
   $('#botAvatar').textContent = (me.result.first_name || 'G')[0].toUpperCase();
 
   // Устанавливаем синюю кнопку меню
-  await tg('setChatMenuButton', {
-    menu_button: {
+  debug('Ставим кнопку меню...');
+  const menuRes = await tg('setChatMenuButton', {
+    menu_button: JSON.stringify({
       type: 'web_app',
       text: '🛍️ Каталог',
       web_app: { url: WEB_APP_URL }
-    }
+    })
   });
+  if(!menuRes.ok){
+    console.warn('Не удалось поставить кнопку меню:', menuRes.description);
+  }
 
   save();
   $('#screenToken').classList.remove('active');
   $('#screenEditor').classList.add('active');
   render();
+  debug('');
 };
 
-/* ============ ВЫХОД ============ */
+/* ============ СМЕНА БОТА ============ */
 $('#logoutBtn').onclick = () => {
-  if(!confirm('Сменить бота? Текущие настройки сообщений сохранятся.')) return;
+  if(!confirm('Сменить бота? Настройки сообщений сохранятся.')) return;
   state.polling = false;
   localStorage.removeItem('bot_token');
   state.token = '';
   state.botName = '';
   $('#tokenInput').value = '';
+  $('#tokenErr').textContent = '';
+  debug('');
   $('#screenEditor').classList.remove('active');
   $('#screenToken').classList.add('active');
   $('#botStatus').textContent = 'Остановлен';
@@ -449,20 +505,38 @@ $('#startBtn').onclick = () => {
 };
 
 async function pollLoop(){
+  // Сбрасываем старые updates перед стартом
+  try {
+    const reset = await tg('getUpdates', { offset: -1 });
+    if(reset.ok && reset.result.length){
+      state.offset = reset.result[reset.result.length - 1].update_id + 1;
+    } else {
+      state.offset = 0;
+    }
+  } catch(_){}
+
   while(state.polling){
     try {
-      const url = `https://api.telegram.org/bot${state.token}/getUpdates?offset=${state.offset}&timeout=25`;
-      const ctrl = new AbortController();
-      const t = setTimeout(()=>ctrl.abort(), 30000);
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(t);
-      const data = await r.json();
-      if(!data.ok){ await sleep(3000); continue; }
+      const data = await tg('getUpdates', {
+        offset: state.offset,
+        timeout: 25
+      });
+
+      if(!data.ok){
+        console.warn('[poll] ошибка:', data.description);
+        $('#botStatus').textContent = 'Ошибка: ' + (data.description || '').slice(0,60);
+        await sleep(4000);
+        continue;
+      }
+
+      $('#botStatus').textContent = 'Работает (вкладка должна быть открыта)';
+
       for(const up of data.result){
         state.offset = up.update_id + 1;
         await handleUpdate(up);
       }
     } catch(e){
+      console.warn('[poll] exception:', e);
       await sleep(2000);
     }
   }
@@ -494,15 +568,19 @@ async function handleUpdate(up){
         ? [{ text: b.text, url: b.value }]
         : [{ text: b.text, callback_data: b.value }]
       );
-    if(kb.length) body.reply_markup = { inline_keyboard: kb };
+    if(kb.length) body.reply_markup = JSON.stringify({ inline_keyboard: kb });
   }
 
-  await tg('sendMessage', body);
+  const res = await tg('sendMessage', body);
+  if(!res.ok){
+    console.warn('[send] ошибка:', res.description, body);
+  }
 }
 
 /* ============ АВТОВХОД ============ */
 if(state.token){
   (async () => {
+    debug('Проверяем сохранённый токен...');
     const me = await tg('getMe');
     if(me && me.ok){
       state.botName = me.result.username;
@@ -511,10 +589,12 @@ if(state.token){
       $('#screenToken').classList.remove('active');
       $('#screenEditor').classList.add('active');
       render();
+      debug('');
     } else {
       localStorage.removeItem('bot_token');
       state.token = '';
       $('#tokenInput').value = '';
+      debug('Сохранённый токен недействителен');
     }
   })();
 }
