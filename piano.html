@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Пианино</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{height:100%;overflow:hidden;background:#fff;color:#0b1220;
+    font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;touch-action:none}
+  body::before{content:'';position:fixed;inset:-10%;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(600px circle at 20% 0%,rgba(99,102,241,.12),transparent 55%),
+      radial-gradient(700px circle at 100% 100%,rgba(139,92,246,.12),transparent 55%);
+    animation:float 20s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-25px,20px)}}
+
+  .app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+  header{display:flex;justify-content:space-between;align-items:center;
+    padding:16px clamp(14px,4vw,40px);gap:12px;
+    animation:drop .7s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes drop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+  .back{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;
+    font-weight:600;font-size:14px;padding:10px 16px;border-radius:14px;
+    background:rgba(255,255,255,.7);backdrop-filter:blur(20px);
+    border:1px solid rgba(15,23,42,.06);transition:all .35s cubic-bezier(.2,.9,.2,1)}
+  .back:hover{transform:translateX(-4px);border-color:rgba(99,102,241,.3);color:#6366f1}
+  .title{font-weight:800;font-size:16px;letter-spacing:-.02em}
+  .title span{background:linear-gradient(120deg,#6366f1,#8b5cf6,#ec4899);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .ctrls{display:flex;gap:8px;align-items:center}
+  .chip{padding:10px 16px;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;
+    background:rgba(255,255,255,.7);backdrop-filter:blur(20px);
+    border:1px solid rgba(15,23,42,.06);color:#0b1220;
+    transition:all .35s cubic-bezier(.2,.9,.2,1)}
+  .chip:hover{border-color:rgba(99,102,241,.3);color:#6366f1;transform:translateY(-2px)}
+  .chip.on{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:transparent;
+    box-shadow:0 8px 20px -6px rgba(99,102,241,.5)}
+
+  .keys{flex:1;display:flex;position:relative;padding:0 clamp(8px,2vw,24px) clamp(12px,3vw,28px);
+    animation:rise .8s .1s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+  .white-row{display:flex;width:100%;height:100%;gap:6px}
+  .wk{flex:1;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 60%,#eef2f7 100%);
+    border-radius:0 0 16px 16px;border:1px solid rgba(15,23,42,.06);
+    box-shadow:0 10px 30px -12px rgba(15,23,42,.18),inset 0 -6px 12px rgba(15,23,42,.04);
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;
+    font-size:11px;font-weight:600;color:#94a3b8;cursor:pointer;position:relative;
+    transition:transform .08s ease,box-shadow .2s,background .2s}
+  .wk.press{background:linear-gradient(180deg,#eef2ff,#e0e7ff);transform:translateY(2px) scaleY(.985);
+    box-shadow:0 4px 16px -8px rgba(99,102,241,.6),inset 0 -4px 10px rgba(99,102,241,.15);
+    color:#6366f1}
+  .wk::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:0;height:3px;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);
+    transition:width .25s cubic-bezier(.2,.9,.2,1)}
+  .wk.press::after{width:60%}
+
+  .blacks{position:absolute;top:0;left:clamp(8px,2vw,24px);right:clamp(8px,2vw,24px);
+    height:62%;pointer-events:none}
+  .bk{position:absolute;top:0;height:100%;border-radius:0 0 12px 12px;
+    background:linear-gradient(180deg,#1e293b,#0f172a);
+    box-shadow:0 12px 24px -8px rgba(15,23,42,.6),inset 0 -4px 8px rgba(255,255,255,.08);
+    pointer-events:auto;cursor:pointer;transition:transform .08s ease,background .2s;
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;
+    font-size:10px;font-weight:600;color:#64748b}
+  .bk.press{background:linear-gradient(180deg,#4f46e5,#6366f1);transform:translateY(2px) scaleY(.98);
+    box-shadow:0 6px 16px -6px rgba(99,102,241,.9)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <a class="back" href="index.html">← Назад</a>
+    <div class="title">Пиа<span>нино</span></div>
+    <div class="ctrls">
+      <button class="chip" id="octDown">− Окт</button>
+      <button class="chip" id="octLbl" style="pointer-events:none">C4</button>
+      <button class="chip" id="octUp">+ Окт</button>
+    </div>
+  </header>
+
+  <div class="keys">
+    <div class="white-row" id="whites"></div>
+    <div class="blacks" id="blacks"></div>
+  </div>
+</div>
+
+<script>
+  // ---- Web Audio: пиано-подобный синтез ----
+  let ac;
+  const ensure = () => ac || (ac = new (window.AudioContext||window.webkitAudioContext)());
+  function playNote(freq){
+    const ctx = ensure();
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0, now);
+    master.gain.linearRampToValueAtTime(0.35, now + 0.005);
+    master.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+    master.connect(ctx.destination);
+    // гармоники
+    const parts = [
+      {m:1, g:1.0}, {m:2, g:0.5}, {m:3, g:0.25},
+      {m:4, g:0.12}, {m:6, g:0.06}
+    ];
+    parts.forEach(p=>{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq * p.m;
+      g.gain.value = p.g;
+      o.connect(g).connect(master);
+      o.start(now); o.stop(now + 1.7);
+    });
+    // лёгкий шум атаки
+    const buf = ctx.createBuffer(1, ctx.sampleRate*0.02, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const ng = ctx.createGain(); ng.gain.value = 0.08;
+    src.connect(ng).connect(master); src.start(now);
+  }
+
+  // ---- Ноты ----
+  const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const WHITE = ['C','D','E','F','G','A','B'];
+  const BLACK_AFTER = {C:'C#', D:'D#', F:'F#', G:'G#', A:'A#'};
+  const OCTAVES = 2;        // сколько октав показать
+  let baseOctave = 4;       // нижняя октава
+
+  const freq = (name, oct) => {
+    const i = NOTES.indexOf(name);
+    const midi = (oct + 1) * 12 + i;
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  };
+
+  const whitesEl = document.getElementById('whites');
+  const blacksEl = document.getElementById('blacks');
+
+  function build(){
+    whitesEl.innerHTML = ''; blacksEl.innerHTML = '';
+    const totalWhites = WHITE.length * OCTAVES;
+    // белые
+    for(let o=0;o<OCTAVES;o++){
+      for(const n of WHITE){
+        const oct = baseOctave + o;
+        const k = document.createElement('div');
+        k.className = 'wk';
+        k.dataset.note = n; k.dataset.oct = oct;
+        k.textContent = n + oct;
+        bind(k, freq(n, oct));
+        whitesEl.appendChild(k);
+      }
+    }
+    // чёрные — позиционируем поверх между белыми
+    requestAnimationFrame(()=>{
+      const w = whitesEl.children;
+      for(let o=0;o<OCTAVES;o++){
+        for(const wn of Object.keys(BLACK_AFTER)){
+          const idx = o*7 + WHITE.indexOf(wn);
+          const kw = w[idx];
+          if(!kw) continue;
+          const r = kw.getBoundingClientRect();
+          const parentR = blacksEl.getBoundingClientRect();
+          const bn = BLACK_AFTER[wn];
+          const b = document.createElement('div');
+          b.className = 'bk';
+          const width = r.width * 0.62;
+          b.style.width = width + 'px';
+          b.style.left = (r.right - parentR.left - width/2) + 'px';
+          bind(b, freq(bn, baseOctave + o));
+          blacksEl.appendChild(b);
+        }
+      }
+    });
+  }
+
+  const active = new Set();
+  function bind(el, f){
+    const press = e => {
+      e.preventDefault();
+      if(active.has(el)) return;
+      active.add(el); el.classList.add('press');
+      playNote(f);
+    };
+    const release = () => { active.delete(el); el.classList.remove('press'); };
+    el.addEventListener('pointerdown', press);
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    el.addEventListener('pointerleave', release);
+  }
+
+  document.getElementById('octUp').onclick = () => { baseOctave++; refresh(); };
+  document.getElementById('octDown').onclick = () => { if(baseOctave>0){baseOctave--; refresh();} };
+  function refresh(){
+    document.getElementById('octLbl').textContent = 'C' + baseOctave;
+    build();
+  }
+  window.addEventListener('resize', build);
+  refresh();
+</script>
+</body>
+</html>
