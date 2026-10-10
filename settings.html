@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Настройки</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{--accent:#6366f1;--accent2:#8b5cf6;--text:#0b1220;--muted:#64748b}
+  html,body{min-height:100%;background:#fff;color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body::before{content:'';position:fixed;inset:-10%;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(500px circle at 10% 0%,rgba(99,102,241,.12),transparent 55%),
+      radial-gradient(700px circle at 100% 100%,rgba(139,92,246,.12),transparent 55%);
+    animation:float 22s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
+
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:24px clamp(14px,4vw,40px) 60px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;
+    animation:drop .7s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes drop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+  .back{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;
+    font-weight:600;font-size:14px;padding:10px 16px;border-radius:14px;
+    background:rgba(255,255,255,.7);backdrop-filter:blur(20px);
+    border:1px solid rgba(15,23,42,.06);transition:all .35s cubic-bezier(.2,.9,.2,1)}
+  .back:hover{transform:translateX(-4px);border-color:rgba(99,102,241,.3);color:var(--accent)}
+  h1{font-size:clamp(24px,5vw,34px);font-weight:800;letter-spacing:-.03em}
+  h1 span{background:linear-gradient(120deg,var(--accent),var(--accent2),#ec4899);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .group{margin-top:26px;animation:rise .7s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .group h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:0 4px 10px}
+
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(20px);
+    border:1px solid rgba(15,23,42,.06);border-radius:22px;overflow:hidden;
+    box-shadow:0 4px 24px -12px rgba(15,23,42,.12)}
+  .row{display:flex;align-items:center;gap:14px;padding:16px 20px;
+    border-bottom:1px solid rgba(15,23,42,.05);transition:background .25s}
+  .row:last-child{border-bottom:none}
+  .row:hover{background:rgba(99,102,241,.04)}
+  .row .ico{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
+    font-size:17px;flex-shrink:0;background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:var(--accent)}
+  .row .txt{flex:1;min-width:0}
+  .row .txt b{display:block;font-size:14.5px;font-weight:600}
+  .row .txt small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:500}
+
+  /* Toggle */
+  .sw{width:50px;height:30px;border-radius:16px;background:#e2e8f0;position:relative;
+    cursor:pointer;transition:background .35s cubic-bezier(.2,.9,.2,1);flex-shrink:0}
+  .sw::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+    background:#fff;box-shadow:0 2px 6px rgba(15,23,42,.2);
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .sw.on{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .sw.on::after{transform:translateX(20px)}
+
+  /* Slider */
+  .slider{position:relative;width:140px;height:28px;display:flex;align-items:center;flex-shrink:0}
+  input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:6px;
+    background:#e2e8f0;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;
+    border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:pointer;
+    box-shadow:0 2px 8px rgba(99,102,241,.4);transition:transform .2s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;
+    border:2px solid var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(99,102,241,.4)}
+
+  /* Segmented */
+  .seg{display:flex;background:#f1f5f9;border-radius:12px;padding:3px;gap:3px;flex-shrink:0}
+  .seg button{border:none;background:transparent;padding:7px 14px;border-radius:9px;
+    font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;
+    transition:all .3s cubic-bezier(.2,.9,.2,1)}
+  .seg button.on{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(15,23,42,.08)}
+
+  .chev{color:#cbd5e1;font-size:18px;flex-shrink:0;transition:transform .3s,color .3s}
+  .row:hover .chev{color:var(--accent);transform:translateX(2px)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="back" href="index.html">← Назад</a>
+    <h1>Настрой<span>ки</span></h1>
+  </header>
+
+  <div class="group" style="animation-delay:.05s">
+    <h2>Внешний вид</h2>
+    <div class="card">
+      <div class="row">
+        <div class="ico">🎨</div>
+        <div class="txt"><b>Тема</b><small>Светлая, тёмная или системная</small></div>
+        <div class="seg" data-key="theme">
+          <button data-v="light" class="on">Светлая</button>
+          <button data-v="dark">Тёмная</button>
+          <button data-v="auto">Авто</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="ico">🔠</div>
+        <div class="txt"><b>Размер шрифта</b><small>Влияет на весь интерфейс</small></div>
+        <div class="slider"><input type="range" min="80" max="140" value="100" data-key="fontSize"></div>
+      </div>
+      <div class="row">
+        <div class="ico">✨</div>
+        <div class="txt"><b>Анимации</b><small>Плавные переходы и эффекты</small></div>
+        <div class="sw on" data-key="animations"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group" style="animation-delay:.15s">
+    <h2>Звук</h2>
+    <div class="card">
+      <div class="row">
+        <div class="ico">🔊</div>
+        <div class="txt"><b>Общая громкость</b><small>Для всех приложений</small></div>
+        <div class="slider"><input type="range" min="0" max="100" value="70" data-key="volume"></div>
+      </div>
+      <div class="row">
+        <div class="ico">🎹</div>
+        <div class="txt"><b>Громкость пианино</b><small>Отдельно для клавиатуры</small></div>
+        <div class="slider"><input type="range" min="0" max="100" value="80" data-key="pianoVolume"></div>
+      </div>
+      <div class="row">
+        <div class="ico">🔔</div>
+        <div class="txt"><b>Звуки интерфейса</b><small>Клики, переключения</small></div>
+        <div class="sw on" data-key="uiSounds"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group" style="animation-delay:.25s">
+    <h2>Язык и регион</h2>
+    <div class="card">
+      <div class="row">
+        <div class="ico">🌐</div>
+        <div class="txt"><b>Язык</b><small>Русский</small></div>
+        <div class="chev">›</div>
+      </div>
+      <div class="row">
+        <div class="ico">🕐</div>
+        <div class="txt"><b>Формат времени</b><small>24-часовой</small></div>
+        <div class="seg" data-key="timeFormat">
+          <button data-v="24" class="on">24ч</button>
+          <button data-v="12">12ч</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group" style="animation-delay:.35s">
+    <h2>Уведомления</h2>
+    <div class="card">
+      <div class="row">
+        <div class="ico">📬</div>
+        <div class="txt"><b>Показывать уведомления</b><small>Всплывающие подсказки</small></div>
+        <div class="sw on" data-key="notifications"></div>
+      </div>
+      <div class="row">
+        <div class="ico">🌙</div>
+        <div class="txt"><b>Не беспокоить</b><small>Скрыть все уведомления</small></div>
+        <div class="sw" data-key="dnd"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group" style="animation-delay:.45s">
+    <h2>Данные</h2>
+    <div class="card">
+      <div class="row" id="resetAll" style="cursor:pointer">
+        <div class="ico" style="background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626">🗑️</div>
+        <div class="txt"><b>Сбросить настройки</b><small>Вернуть значения по умолчанию</small></div>
+        <div class="chev">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const store = {
+    get(k, d){ const v = localStorage.getItem('set_'+k); return v===null ? d : JSON.parse(v); },
+    set(k, v){ localStorage.setItem('set_'+k, JSON.stringify(v)); }
+  };
+
+  // Toggles
+  document.querySelectorAll('.sw').forEach(sw=>{
+    const k = sw.dataset.key;
+    const saved = store.get(k, sw.classList.contains('on'));
+    sw.classList.toggle('on', saved);
+    sw.addEventListener('click', ()=>{
+      sw.classList.toggle('on');
+      store.set(k, sw.classList.contains('on'));
+    });
+  });
+
+  // Segmented
+  document.querySelectorAll('.seg').forEach(seg=>{
+    const k = seg.dataset.key;
+    const saved = store.get(k, seg.querySelector('.on')?.dataset.v);
+    seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===saved));
+    seg.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        store.set(k, b.dataset.v);
+      });
+    });
+  });
+
+  // Sliders
+  document.querySelectorAll('input[type=range]').forEach(r=>{
+    const k = r.dataset.key;
+    const saved = store.get(k, r.value);
+    r.value = saved;
+    r.addEventListener('input', ()=> store.set(k, r.value));
+  });
+
+  // Reset
+  document.getElementById('resetAll').addEventListener('click', ()=>{
+    if(!confirm('Сбросить все настройки?')) return;
+    Object.keys(localStorage).filter(k=>k.startsWith('set_')).forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  });
+</script>
+</body>
+</html>
