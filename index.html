@@ -13069,3 +13069,317 @@ Ring        ctx();
    не выдумывая событий сверх того, что уже установлено ч. 9–14).
    Закрытие <\/script><\/body><\/html> произойдёт в Части 20.
    ========================================================================== */
+<script>
+(function(global) {
+  'use strict';
+
+  const MC = global.MC || (global.MC = {});
+
+  /* ==========================================================================
+     МОДУЛЬ 5. CorridorScene
+     CanvasScene для коридора (1920×1080). Оформление через RoomDrawer
+     (без окон, с дверью кабинета и стойкой дежурного).
+     ========================================================================== */
+
+  const CorridorScene = (() => {
+    const WORLD = Object.freeze({ w: 1920, h: 1080 });
+
+    const create = (container) => {
+      const scene = CanvasScene.create({
+        parent: container,
+        worldWidth: WORLD.w,
+        worldHeight: WORLD.h,
+        background: '#05080d',
+        camera: { initialZoom: 0.65, minZoom: 0.5, maxZoom: 1.4, smoothing: 0.12 },
+        lighting: {
+          ambient: 'rgba(4,7,12,0.5)',
+          vignette: 0.65,
+          lights: [
+            { x: WORLD.w * 0.50, y: WORLD.h * 0.20, radius: 280, color: 'rgba(217,164,65,0.45)', intensity: 0.8 },
+            { x: WORLD.w * 0.22, y: WORLD.h * 0.35, radius: 220, color: 'rgba(140,170,210,0.35)', intensity: 0.5 }
+          ],
+          rainGlass: false
+        }
+      });
+
+      if (!scene) return null;
+      if (scene._fallback) return scene;
+
+      // Отрисовка мира коридора.
+      scene.onDraw((ctx, cam) => {
+        // Коридор: комната без окон, с деревянными панелями и дверями.
+        MC.RoomDrawer.drawRoom(ctx, {
+          x: 0, y: 0, w: WORLD.w, h: WORLD.h,
+          horizon: 0.45,
+          wall: {
+            color: '#111620',
+            panelLines: 6,
+            panelColor: 'rgba(25,35,50,0.65)',
+            doors: [
+              { x: WORLD.w * 0.12, y: WORLD.h * 0.25, w: WORLD.w * 0.08, h: WORLD.h * 0.48 },
+              { x: WORLD.w * 0.80, y: WORLD.h * 0.25, w: WORLD.w * 0.08, h: WORLD.h * 0.48 }
+            ]
+          },
+          floor: { color: '#090d14', boardRows: 5 },
+          seed: 'corridor-interior'
+        });
+
+        // Стойка дежурного — в левой части.
+        const sx = WORLD.w * 0.32;
+        const sy = WORLD.h * 0.62;
+        const sw = WORLD.w * 0.26;
+        const sh = WORLD.h * 0.18;
+        ctx.save();
+        ctx.fillStyle = 'rgba(20,26,36,0.95)';
+        ctx.fillRect(sx, sy, sw, sh);
+        ctx.strokeStyle = 'rgba(70,90,120,0.4)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+        ctx.restore();
+      });
+
+      // Хотспоты коридора.
+      const inspect = (id) => {
+        const wasNew = EvidenceAPI.discover(id);
+        if (wasNew) {
+          TopBar.setSaveStatus('Новая улика', 'saved');
+          setTimeout(() => TopBar.setSaveStatus('Готово', 'idle'), 1600);
+          A11y.announce('Обнаружена улика');
+        }
+        EvidenceViewer.open(id);
+      };
+
+      // Журнал на стойке.
+      scene.addHotspot(Hotspot.create({
+        id: 'hs-logbook',
+        kind: 'prop',
+        tooltip: 'Журнал дежурств',
+        rect: { x: WORLD.w * 0.38, y: WORLD.h * 0.64, w: WORLD.w * 0.08, h: WORLD.h * 0.08 },
+        onInspect: () => inspect(CorridorEvidence.IDS.LOGBOOK)
+      }));
+
+      // Дежурный за стойкой.
+      scene.addHotspot(Hotspot.create({
+        id: 'hs-duty-officer',
+        kind: 'character',
+        tooltip: 'Дежурный',
+        rect: { x: WORLD.w * 0.40, y: WORLD.h * 0.45, w: WORLD.w * 0.12, h: WORLD.h * 0.22 },
+        onClick: () => {
+          EventBus.emit('ui:start-dialogue', {
+            characterId: DutyOfficerCharacter.ID,
+            graphId: DutyOfficerDialogue.GRAPH_ID,
+            title: 'Дежурный'
+          });
+          A11y.announce('Начата беседа с дежурным');
+        },
+        onInspect: () => {
+          TopBar.setSaveStatus('Дежурный следит за порядком', 'idle');
+          setTimeout(() => TopBar.setSaveStatus('Готово', 'idle'), 1400);
+        }
+      }));
+
+      // Дверь назад в кабинет (возврат в пролог).
+      scene.addHotspot(Hotspot.create({
+        id: 'hs-back-to-office',
+        kind: 'scenery',
+        tooltip: 'Вернуться в кабинет',
+        rect: { x: WORLD.w * 0.12, y: WORLD.h * 0.25, w: WORLD.w * 0.08, h: WORLD.h * 0.48 },
+        onClick: () => {
+          ScreenRouter.show('game');
+          A11y.announce('Возврат в кабинет');
+        },
+        onInspect: () => {
+          ScreenRouter.show('game');
+        }
+      }));
+
+      scene.start();
+      return scene;
+    };
+
+    return { create, WORLD };
+  })();
+
+  /* ==========================================================================
+     МОДУЛЬ 6. CorridorScreen
+     Фабрика для ScreenRouter под id 'corridor'.
+     ========================================================================== */
+
+  const makeCorridorScreen = () => {
+    const wrap = document.createElement('div');
+    wrap.className = 'mc-corridor';
+
+    const stage = document.createElement('div');
+    stage.className = 'mc-corridor__stage';
+    stage.setAttribute('data-mc-corridor-stage', '1');
+    wrap.appendChild(stage);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'mc-corridor__overlay';
+
+    const banner = document.createElement('div');
+    banner.className = 'mc-corridor__banner';
+    banner.appendChild(UIComponents.el('div', { className: 'mc-corridor__kicker', text: 'Коридор' }));
+    banner.appendChild(UIComponents.el('h2', { className: 'mc-corridor__title', text: 'Пост дежурного' }));
+    banner.appendChild(UIComponents.el('p', { className: 'mc-corridor__text',
+      text: 'Тусклый свет ламп отражается на полу. За стойкой дежурный просматривает бумаги. ' +
+            'Журнал дежурств лежит прямо перед вами.' }));
+    overlay.appendChild(banner);
+
+    overlay.appendChild(document.createElement('div'));
+
+    const bottom = document.createElement('div');
+    bottom.style.display = 'flex';
+    bottom.style.flexDirection = 'column';
+    bottom.style.gap = 'var(--mc-s-2)';
+
+    const hint = document.createElement('div');
+    hint.className = 'mc-corridor__hint';
+    hint.textContent = 'Кликните по дежурному, чтобы начать беседу. Дверь слева — обратно в кабинет.';
+    bottom.appendChild(hint);
+
+    const actions = document.createElement('div');
+    actions.className = 'mc-corridor__actions';
+
+    actions.appendChild(UIComponents.button({
+      label: 'В кабинет',
+      variant: 'primary',
+      onClick: () => ScreenRouter.show('game')
+    }));
+
+    actions.appendChild(UIComponents.button({
+      label: 'Журнал',
+      variant: 'ghost',
+      onClick: () => ScreenRouter.show('journal')
+    }));
+
+    actions.appendChild(UIComponents.button({
+      label: 'В меню',
+      variant: 'ghost',
+      onClick: () => ScreenRouter.show('menu')
+    }));
+
+    bottom.appendChild(actions);
+    overlay.appendChild(bottom);
+
+    wrap.appendChild(overlay);
+    return wrap;
+  };
+
+  /* ==========================================================================
+     МОДУЛЬ 7. CorridorWiring
+     - Регистрация экрана 'corridor' в ScreenRouter.
+     - Жизненный цикл CanvasScene коридора.
+     - Добавление хотспота «Выйти в коридор» в существующую сцену пролога (ч. 9).
+     ========================================================================== */
+
+  const CorridorWiring = (() => {
+    let installed = false;
+    let currentCorridorScene = null;
+    let addedDoorToPrologue = false;
+
+    const destroyScene = () => {
+      if (currentCorridorScene) {
+        try { currentCorridorScene.dispose(); } catch (_) {}
+      }
+      currentCorridorScene = null;
+    };
+
+    const buildScene = () => {
+      if (currentCorridorScene) return;
+      const stage = document.querySelector('.mc-corridor [data-mc-corridor-stage]');
+      if (!stage) return;
+      currentCorridorScene = CorridorScene.create(stage);
+    };
+
+    const onSlotShown = (p) => {
+      const id = p && p.id;
+      if (id === 'corridor') {
+        const raf = (global.requestAnimationFrame || ((fn) => setTimeout(fn, 16)));
+        raf(() => buildScene());
+      } else {
+        destroyScene();
+      }
+    };
+
+    // Добавляем дверь в коридор на сцену пролога (в зону cabinet).
+    const addCorridorDoorToPrologue = () => {
+      if (addedDoorToPrologue) return;
+      const prologueScene = MC.PrologueWiring && typeof MC.PrologueWiring.scene === 'function'
+        ? MC.PrologueWiring.scene()
+        : null;
+      if (!prologueScene) return;
+
+      const WORLD = (MC.PrologueScene && MC.PrologueScene.WORLD) || { w: 1920, h: 1080 };
+
+      prologueScene.addHotspot(Hotspot.create({
+        id: 'hs-to-corridor',
+        kind: 'scenery',
+        tooltip: 'Выйти в коридор',
+        rect: {
+          x: WORLD.w * 0.06,
+          y: WORLD.h * 0.30,
+          w: WORLD.w * 0.06,
+          h: WORLD.h * 0.42
+        },
+        onClick: () => {
+          ScreenRouter.show('corridor');
+          A11y.announce('Переход в коридор');
+        },
+        onInspect: () => {
+          ScreenRouter.show('corridor');
+        }
+      }));
+
+      addedDoorToPrologue = true;
+    };
+
+    const install = () => {
+      if (installed) return;
+      installed = true;
+
+      CorridorEvidence.register();
+      DutyOfficerCharacter.register();
+      DutyOfficerDialogue.register();
+
+      ScreenRouter.register('corridor', makeCorridorScreen, {
+        title: 'Коридор',
+        cache: false
+      });
+
+      EventBus.on('ui:slot-shown', onSlotShown);
+      EventBus.on('prologue:scene-ready', addCorridorDoorToPrologue);
+
+      // Догоняем, если сцена пролога уже была готова.
+      const existing = MC.PrologueWiring && typeof MC.PrologueWiring.scene === 'function'
+        ? MC.PrologueWiring.scene()
+        : null;
+      if (existing) addCorridorDoorToPrologue();
+    };
+
+    return { install, scene: () => currentCorridorScene };
+  })();
+
+  /* ==========================================================================
+     ИНИЦИАЛИЗАЦИЯ ЧАСТИ 14
+     ========================================================================== */
+
+  Part14Styles.install();
+  CorridorWiring.install();
+
+  Object.assign(MC, {
+    CorridorEvidence,
+    DutyOfficerCharacter,
+    DutyOfficerDialogue,
+    CorridorScene,
+    CorridorScreen: { make: makeCorridorScreen },
+    CorridorWiring
+  });
+
+  Logger.info('app', 'Часть 14 инициализирована: CorridorEvidence, DutyOfficerCharacter, DutyOfficerDialogue, CorridorScene, CorridorWiring');
+  EventBus.emit('part14:ready', { at: Date.now(), profile: UIProfileManager.current() });
+
+})(typeof window !== 'undefined' ? window : this);
+</script>
+</body>
+</html>
