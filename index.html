@@ -1,1524 +1,2036 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>MIND CASE</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>MIND CASE — Detective 3D</title>
 <style>
-:root{
-  --bg:#08090d; --pn:#12151c; --pn2:#181c26; --pn3:#1e2330; --ln:#272c3a;
-  --tx:#e8eaf0; --mu:#8a93a8; --dim:#5a6377;
-  --rd:#e0433b; --rd2:#ff5c4d; --gd:#c9a35a; --gn:#3ecf8e; --bl:#5b8def;
-  --fs:15px; --rad:10px;
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#050607;color:#cfd6dd;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;user-select:none}
+canvas#gl{display:block;position:fixed;inset:0;width:100%;height:100%}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#crosshair{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border:1px solid rgba(220,220,220,.7);border-radius:50%;background:rgba(0,0,0,.2);transition:all .15s;box-shadow:0 0 4px rgba(0,0,0,.7)}
+#crosshair.active{width:14px;height:14px;margin:-7px 0 0 -7px;background:rgba(220,60,50,.35);border-color:#e05050}
+#prompt{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);background:rgba(8,10,14,.85);border:1px solid rgba(200,80,70,.5);padding:10px 18px;border-radius:4px;text-align:center;min-width:220px;display:none;backdrop-filter:blur(3px)}
+#prompt .pn{font-size:13px;letter-spacing:1px;color:#e8eef3;text-transform:uppercase}
+#prompt .pa{font-size:11px;color:#d86060;margin-top:4px;letter-spacing:.6px}
+#hudTop{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:space-between;padding:0 14px;pointer-events:auto}
+.hbtn{background:rgba(10,12,16,.75);border:1px solid rgba(120,130,150,.35);color:#cfd6dd;padding:8px 14px;border-radius:3px;font-size:12px;letter-spacing:.5px;cursor:pointer;transition:all .15s}
+.hbtn:hover{background:rgba(30,35,45,.9);border-color:#e05050;color:#fff}
+.hbtn:disabled{opacity:.4;cursor:default}
+#hudInfo{display:flex;gap:8px;align-items:center}
+#evBadge{background:rgba(80,20,20,.75);border:1px solid #a04040;color:#f0d0d0;padding:8px 12px;border-radius:3px;font-size:12px}
+#toast{position:absolute;left:50%;top:20%;transform:translateX(-50%);background:rgba(20,10,10,.92);border:1px solid #d05050;padding:12px 20px;border-radius:4px;color:#f5e5e5;font-size:13px;opacity:0;transition:opacity .3s;max-width:80%;text-align:center}
+#toast.show{opacity:1}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.55) 100%)}
+#grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.05;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.9'/></svg>")}
+
+/* ---------- Menus ---------- */
+.overlay{position:fixed;inset:0;background:linear-gradient(135deg,#050608 0%,#0e1015 50%,#050608 100%);z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.overlay.show{display:flex}
+.title{font-size:52px;letter-spacing:12px;font-weight:200;color:#e8eef3;margin-bottom:6px;text-shadow:0 0 20px rgba(200,60,60,.4)}
+.subtitle{font-size:13px;letter-spacing:6px;color:#a04040;margin-bottom:36px}
+.mbtn{background:transparent;border:1px solid rgba(140,150,170,.4);color:#cfd6dd;padding:14px 46px;margin:6px;font-size:14px;letter-spacing:3px;cursor:pointer;transition:all .2s;min-width:280px;text-align:center}
+.mbtn:hover:not(:disabled){background:rgba(200,60,60,.15);border-color:#e05050;color:#fff;letter-spacing:5px}
+.mbtn:disabled{opacity:.35;cursor:default}
+.panelTitle{font-size:20px;letter-spacing:6px;color:#e8eef3;margin-bottom:20px;text-align:center}
+.panelBox{background:rgba(10,12,18,.95);border:1px solid rgba(120,130,150,.3);padding:26px 34px;border-radius:6px;max-width:560px;width:100%}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(120,130,150,.12);font-size:13px}
+.row:last-child{border:none}
+.row label{color:#cfd6dd}
+.row input[type=range]{width:180px;accent-color:#e05050}
+.row select,.row input[type=text]{background:#0a0c12;border:1px solid rgba(120,130,150,.4);color:#e8eef3;padding:6px 10px;border-radius:3px;font-size:13px;outline:none}
+.row select:focus,.row input:focus{border-color:#e05050}
+
+/* ---------- Journal / Board ---------- */
+#journal{position:fixed;top:0;right:-460px;width:440px;max-width:100vw;height:100%;background:linear-gradient(180deg,#0a0c10 0%,#0d1016 100%);border-left:1px solid rgba(120,130,150,.3);z-index:30;transition:right .35s ease;overflow-y:auto;padding:70px 20px 30px}
+#journal.open{right:0}
+#journal h2{font-size:16px;letter-spacing:5px;color:#e05050;margin-bottom:16px;font-weight:400;text-transform:uppercase}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{background:rgba(30,35,45,.6);border:1px solid rgba(120,130,150,.25);color:#8f97a3;padding:6px 12px;font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:3px}
+.tab.on{background:rgba(200,60,60,.2);border-color:#e05050;color:#fff}
+.evItem{background:rgba(15,18,25,.85);border-left:3px solid #a04040;padding:10px 12px;margin-bottom:8px;border-radius:2px;cursor:pointer;transition:all .15s}
+.evItem:hover{background:rgba(30,25,30,.9);border-left-color:#e05050}
+.evItem h4{font-size:12px;color:#e8eef3;margin-bottom:3px;letter-spacing:.5px}
+.evItem p{font-size:11px;color:#8f97a3;line-height:1.4}
+.evItem .cat{font-size:9px;color:#d86060;letter-spacing:1px;margin-top:5px;text-transform:uppercase}
+#journalClose{position:fixed;top:12px;right:16px;z-index:31;background:rgba(20,10,10,.9);border:1px solid #a04040;color:#e8eef3;padding:6px 12px;border-radius:3px;cursor:pointer;font-size:12px;display:none}
+#journalClose.show{display:block}
+
+#board{position:fixed;inset:0;background:rgba(3,4,6,.96);z-index:35;display:none;padding:60px 20px 20px;overflow:auto}
+#board.show{display:block}
+#boardWrap{max-width:1100px;margin:0 auto}
+#boardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px}
+.bcard{background:linear-gradient(180deg,rgba(30,20,20,.9),rgba(15,10,10,.9));border:1px solid #a04040;padding:10px;border-radius:4px;cursor:pointer;font-size:11px;transition:all .15s;text-align:center}
+.bcard:hover{border-color:#e05050;transform:translateY(-2px)}
+.bcard.sel{border-color:#ffd050;box-shadow:0 0 12px rgba(255,208,80,.35)}
+.bcard h5{color:#e8eef3;font-size:11px;margin-bottom:4px;letter-spacing:.5px}
+.bcard p{color:#8f97a3;font-size:10px;line-height:1.3}
+#boardClose{position:fixed;top:12px;right:16px;background:rgba(20,10,10,.9);border:1px solid #a04040;color:#e8eef3;padding:6px 12px;border-radius:3px;cursor:pointer;font-size:12px}
+#connList{margin-top:16px;background:rgba(15,15,20,.9);border:1px solid rgba(120,130,150,.25);border-radius:4px;padding:12px;min-height:60px}
+#connList h3{font-size:12px;color:#e05050;letter-spacing:2px;margin-bottom:8px}
+.connItem{font-size:11px;color:#cfd6dd;padding:5px 0;border-bottom:1px solid rgba(120,130,150,.1)}
+
+/* ---------- Computer OS ---------- */
+#os{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+#os.show{display:flex}
+#osMonitor{width:min(1180px,96vw);height:min(720px,92vh);background:#000;border-radius:14px;padding:min(20px,2vw);box-shadow:0 0 40px rgba(0,0,0,.9),0 0 4px rgba(120,140,180,.3);position:relative;display:flex;flex-direction:column}
+#osScreen{flex:1;background:#0a0d14;border-radius:6px;overflow:hidden;position:relative;border:1px solid rgba(80,90,110,.4);display:flex;flex-direction:column}
+#osStand{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);width:120px;height:24px;background:linear-gradient(180deg,#161a22,#0a0d12);border-radius:0 0 8px 8px;box-shadow:0 6px 12px rgba(0,0,0,.6)}
+#osLock{position:absolute;inset:0;background:linear-gradient(135deg,#0a0f18,#1a1520);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:3}
+#osLock h1{font-size:26px;letter-spacing:6px;color:#e8eef3;font-weight:200}
+#osLock .user{color:#8f97a3;font-size:13px;letter-spacing:2px}
+#osLock input{background:#0a0c12;border:1px solid #35506b;color:#e8eef3;padding:10px 14px;border-radius:4px;font-size:14px;width:240px;outline:none;text-align:center;letter-spacing:3px}
+#osLock input:focus{border-color:#4a7aae}
+#osLock button{background:rgba(60,120,180,.25);border:1px solid #4a7aae;color:#e8eef3;padding:10px 30px;border-radius:4px;cursor:pointer;letter-spacing:2px;font-size:13px}
+#osLock button:hover{background:rgba(60,120,180,.5)}
+#osLockMsg{color:#e05050;font-size:12px;min-height:16px;letter-spacing:1px}
+#osDesk{position:absolute;inset:0;background:radial-gradient(ellipse at center,#101823 0%,#050810 100%);overflow:hidden;display:none}
+#osDesk.on{display:block}
+#osIcons{position:absolute;top:14px;left:14px;display:flex;flex-direction:column;gap:14px;z-index:2}
+.osIcon{width:76px;text-align:center;color:#e8eef3;font-size:10px;cursor:pointer;letter-spacing:.4px;user-select:none}
+.osIcon .ic{width:44px;height:44px;margin:0 auto 4px;background:linear-gradient(180deg,#2a3345,#141a24);border:1px solid #4a5a72;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.osIcon:hover .ic{border-color:#e05050}
+#osTaskbar{position:absolute;left:0;right:0;bottom:0;height:38px;background:rgba(8,10,16,.94);border-top:1px solid rgba(120,130,150,.3);display:flex;align-items:center;padding:0 10px;gap:10px;z-index:10}
+#osStart{background:rgba(60,80,120,.4);border:1px solid #4a5a72;color:#e8eef3;padding:5px 12px;border-radius:3px;cursor:pointer;font-size:12px;letter-spacing:1px}
+#osStart:hover{border-color:#e05050}
+#osTasks{flex:1;display:flex;gap:6px;overflow:hidden}
+.osTask{background:rgba(40,50,70,.6);border:1px solid rgba(120,130,150,.3);color:#cfd6dd;padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.osTask:hover{border-color:#e05050}
+#osClock{color:#8f97a3;font-size:12px;letter-spacing:1px}
+#osWindows{position:absolute;inset:38px 0 38px 0;pointer-events:none}
+.osWin{position:absolute;background:rgba(15,20,30,.98);border:1px solid rgba(120,140,170,.5);border-radius:5px;min-width:260px;min-height:180px;box-shadow:0 8px 24px rgba(0,0,0,.7);display:flex;flex-direction:column;pointer-events:auto;overflow:hidden}
+.osWin .bar{background:linear-gradient(180deg,#1a2235,#0f1420);padding:7px 10px;display:flex;align-items:center;justify-content:space-between;cursor:move;font-size:12px;color:#cfd6dd;letter-spacing:1px;border-bottom:1px solid rgba(120,140,170,.3)}
+.osWin .bar .cl{cursor:pointer;background:rgba(200,60,60,.3);width:20px;height:20px;border-radius:3px;text-align:center;line-height:18px;color:#e8eef3;font-size:14px}
+.osWin .bar .cl:hover{background:rgba(200,60,60,.7)}
+.osWin .body{padding:12px;overflow:auto;flex:1;font-size:12px;color:#cfd6dd;line-height:1.5}
+.osWin .body h3{color:#e05050;font-size:12px;letter-spacing:2px;margin-bottom:8px}
+.osWin .body p{margin-bottom:8px}
+.osWin .body .fitem{padding:6px 8px;margin-bottom:4px;border:1px solid rgba(120,130,150,.2);border-radius:3px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.osWin .body .fitem:hover{background:rgba(60,80,120,.3);border-color:#e05050}
+.osWin .body .fitem .ficon{font-size:16px}
+.photoGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.photoBox{aspect-ratio:1;background:linear-gradient(135deg,#1a2030,#0a0d14);border:1px solid #3a4a5e;border-radius:3px;display:flex;align-items:center;justify-content:center;color:#8f97a3;font-size:10px;padding:6px;text-align:center}
+.photoBox:hover{border-color:#e05050}
+.msg{background:rgba(30,40,60,.7);padding:8px 10px;border-radius:6px;margin-bottom:8px;max-width:85%;font-size:11px;line-height:1.4}
+.msg.me{background:rgba(60,40,40,.7);margin-left:auto}
+.msg .who{font-size:10px;color:#d0d8e0;margin-bottom:2px;letter-spacing:.5px}
+.msg .tm{font-size:9px;color:#8f97a3;margin-top:3px}
+.browserBar{display:flex;gap:6px;margin-bottom:10px}
+.browserBar input{flex:1;background:#0a0c12;border:1px solid #2a3545;color:#cfd6dd;padding:5px 10px;border-radius:3px;font-size:11px;outline:none}
+.hist{padding:6px 8px;border-bottom:1px solid rgba(120,130,150,.15);font-size:11px}
+.hist:hover{background:rgba(60,80,120,.2)}
+.hist .t{color:#8f97a3;font-size:10px}
+
+/* ---------- Dialogue ---------- */
+#dlg{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);width:min(720px,94vw);background:rgba(8,10,14,.96);border:1px solid #a04040;border-radius:6px;padding:16px 20px;z-index:45;display:none}
+#dlg.show{display:block}
+#dlgWho{color:#e05050;font-size:12px;letter-spacing:2px;margin-bottom:6px}
+#dlgTxt{color:#e8eef3;font-size:13px;line-height:1.5;margin-bottom:12px}
+#dlgOpts{display:flex;flex-direction:column;gap:6px}
+.dOpt{background:rgba(30,35,45,.6);border:1px solid rgba(120,130,150,.3);color:#cfd6dd;padding:8px 12px;text-align:left;cursor:pointer;border-radius:3px;font-size:12px}
+.dOpt:hover{background:rgba(200,60,60,.2);border-color:#e05050}
+
+/* ---------- Touch controls ---------- */
+#touch{position:fixed;inset:0;pointer-events:none;z-index:6;display:none}
+#touch.on{display:block}
+#stick{position:absolute;left:max(20px,env(safe-area-inset-left));bottom:max(20px,env(safe-area-inset-bottom));width:130px;height:130px;border-radius:50%;background:rgba(20,25,35,.35);border:2px solid rgba(150,160,180,.35);pointer-events:auto;touch-action:none}
+#stickNub{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(200,80,70,.6);border:2px solid rgba(255,180,180,.8);pointer-events:none}
+#lookzone{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:auto;touch-action:none}
+#touchBtns{position:absolute;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;pointer-events:auto;align-items:flex-end}
+.tbtn{width:78px;height:78px;border-radius:50%;background:rgba(200,60,60,.45);border:2px solid rgba(255,180,180,.7);color:#fff;font-size:12px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;font-weight:600}
+.tbtn.small{width:60px;height:60px;background:rgba(60,80,120,.5);border-color:rgba(140,170,220,.7);font-size:11px}
+#touchTop{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));display:flex;gap:10px;pointer-events:auto}
+
+/* ---------- Devices ---------- */
+body[data-device="tv"] .title{font-size:72px;letter-spacing:18px}
+body[data-device="tv"] .mbtn{font-size:18px;padding:18px 60px;min-width:360px}
+body[data-device="tv"] .hbtn{padding:12px 22px;font-size:14px}
+body[data-device="tv"] .osWin{font-size:14px}
+body[data-device="phone"] .title{font-size:36px;letter-spacing:6px}
+body[data-device="phone"] .mbtn{padding:12px 30px;font-size:13px;min-width:220px}
+body[data-device="phone"] #journal{width:100vw}
+body[data-device="phone"] #osMonitor{width:96vw;height:88vh;padding:8px;border-radius:10px}
+body[data-device="phone"] .osIcon{width:64px}
+body[data-device="phone"] .osIcon .ic{width:38px;height:38px;font-size:18px}
+body[data-device="phone"] .osWin{min-width:200px;min-height:140px}
+body[data-device="tablet"] #osMonitor{width:92vw;height:86vh}
+@media (max-width:520px){
+  #prompt{min-width:180px;padding:8px 12px}
+  .title{font-size:38px;letter-spacing:8px}
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-body{
-  background:radial-gradient(ellipse at top,#141a26 0%,#05060a 75%);
-  color:var(--tx);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-  font-size:var(--fs);line-height:1.5;
-}
-#app{height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
-button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
-button:focus-visible{outline:2px solid var(--rd);outline-offset:2px}
-
-/* ═══ Common ═══ */
-.panel{background:linear-gradient(180deg,var(--pn) 0%,var(--pn2) 100%);border:1px solid var(--ln);border-radius:var(--rad)}
-.btn{padding:10px 16px;border-radius:8px;border:1px solid var(--ln);background:var(--pn2);transition:.15s;font-size:14px}
-.btn:hover{border-color:var(--rd);background:var(--pn3)}
-.btn.primary{background:linear-gradient(180deg,#b8322b,#8f231d);border-color:#d04038;color:#fff;font-weight:600}
-.btn.primary:hover{background:linear-gradient(180deg,#d04038,#a82a23)}
-.btn.ghost{background:transparent}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-h1,h2,h3{font-weight:600;letter-spacing:.2px}
-h1{font-size:28px}
-h2{font-size:20px}
-h3{font-size:16px}
-.mu{color:var(--mu)} .dim{color:var(--dim)} .rd{color:var(--rd2)} .gd{color:var(--gd)} .gn{color:var(--gn)}
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;background:var(--pn3);border:1px solid var(--ln);font-size:11px;color:var(--mu);letter-spacing:.4px;text-transform:uppercase}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.grow{flex:1}
-.hr{height:1px;background:var(--ln);margin:12px 0}
-
-/* ═══ Screens ═══ */
-.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
-.screen.on{display:flex}
-.fade-in{animation:fi .35s ease-out}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* ═══ Menu ═══ */
-#s-menu{align-items:center;justify-content:center;padding:24px;text-align:center;position:absolute;inset:0}
-.menu-logo{font-size:clamp(44px,9vw,96px);font-weight:800;letter-spacing:14px;color:var(--tx);position:relative;text-shadow:0 0 40px rgba(224,67,59,.35)}
-.menu-logo span{color:var(--rd2)}
-.menu-sub{color:var(--mu);letter-spacing:6px;text-transform:uppercase;font-size:12px;margin-top:8px}
-.menu-line{width:120px;height:2px;background:var(--rd);margin:22px auto}
-.menu-btns{display:flex;flex-direction:column;gap:10px;width:min(320px,86vw);margin-top:12px}
-.menu-btns .btn{width:100%;padding:14px;font-size:15px;text-align:left}
-.menu-foot{position:absolute;bottom:14px;left:0;right:0;color:var(--dim);font-size:11px;letter-spacing:1px}
-.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(224,67,59,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(224,67,59,.04) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;mask-image:radial-gradient(ellipse at center,black 20%,transparent 75%)}
-
-/* ═══ Topbar ═══ */
-.topbar{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--ln);background:rgba(10,12,18,.85);backdrop-filter:blur(8px);z-index:5}
-.topbar .logo{font-weight:800;letter-spacing:3px;font-size:14px}
-.topbar .logo span{color:var(--rd2)}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;background:var(--pn2);border:1px solid var(--ln);font-size:12px;color:var(--mu)}
-.chip b{color:var(--tx)}
-
-/* ═══ App body ═══ */
-.body{flex:1;display:grid;grid-template-columns:220px 1fr;overflow:hidden}
-.sidenav{background:var(--pn);border-right:1px solid var(--ln);padding:14px 10px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
-.navbtn{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:8px;color:var(--mu);transition:.15s;text-align:left;font-size:14px;position:relative}
-.navbtn:hover{background:var(--pn2);color:var(--tx)}
-.navbtn.on{background:linear-gradient(90deg,rgba(224,67,59,.15),transparent);color:var(--tx)}
-.navbtn.on::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--rd);border-radius:2px}
-.navbtn .ic{width:20px;text-align:center;font-size:16px}
-.navbtn .badge{margin-left:auto;background:var(--rd);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600}
-.content{overflow-y:auto;padding:20px;background:rgba(6,8,12,.5)}
-.content::-webkit-scrollbar,.sidenav::-webkit-scrollbar{width:8px}
-.content::-webkit-scrollbar-thumb,.sidenav::-webkit-scrollbar-thumb{background:var(--ln);border-radius:4px}
-
-/* ═══ Cards ═══ */
-.card{padding:14px;background:var(--pn2);border:1px solid var(--ln);border-radius:var(--rad);transition:.15s;cursor:pointer;position:relative}
-.card:hover{border-color:var(--rd);transform:translateY(-2px)}
-.card.locked{opacity:.4;cursor:not-allowed;filter:grayscale(.6)}
-.card.locked:hover{transform:none;border-color:var(--ln)}
-.card.sel{border-color:var(--rd);background:linear-gradient(180deg,rgba(224,67,59,.08),var(--pn2))}
-.card h4{font-size:15px;margin-bottom:6px;color:var(--tx)}
-.card p{font-size:13px;color:var(--mu);line-height:1.45}
-.grid{display:grid;gap:12px}
-.grid.c2{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-.grid.c3{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
-.section-title{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin:22px 0 10px;font-weight:600}
-.section-title:first-child{margin-top:0}
-
-/* ═══ Evidence icons ═══ */
-.ev-icon{font-size:22px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--pn3);border-radius:8px;flex-shrink:0}
-.char-row{display:flex;gap:12px;align-items:flex-start}
-.char-avatar{width:52px;height:52px;font-size:26px;border-radius:50%;background:linear-gradient(135deg,#232838,#141824);display:flex;align-items:center;justify-content:center;border:1px solid var(--ln);flex-shrink:0}
-.char-avatar.lg{width:80px;height:80px;font-size:40px}
-
-/* ═══ Board ═══ */
-.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
-.board-node{padding:10px;border-radius:8px;background:var(--pn2);border:1px solid var(--ln);cursor:pointer;font-size:13px;text-align:center;transition:.15s;position:relative}
-.board-node:hover{border-color:var(--rd)}
-.board-node.sel{border-color:var(--rd2);box-shadow:0 0 0 2px rgba(224,67,59,.3);background:rgba(224,67,59,.1)}
-.board-node.linked{border-color:var(--gn);color:var(--gn)}
-.links-list{margin-top:14px;display:flex;flex-direction:column;gap:8px}
-.link-item{padding:10px 14px;background:rgba(62,207,142,.06);border-left:3px solid var(--gn);border-radius:6px;font-size:13px;color:var(--tx)}
-.link-item .mu{display:block;font-size:11px;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase}
-
-/* ═══ Dialogue ═══ */
-.dlg-head{display:flex;gap:16px;align-items:center;padding:16px;border-bottom:1px solid var(--ln);background:var(--pn)}
-.dlg-body{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;background:rgba(8,10,16,.6)}
-.dlg-text{max-width:820px;padding:14px 18px;border-radius:12px;background:var(--pn2);border-left:3px solid var(--rd);line-height:1.65;animation:fi .3s ease-out}
-.dlg-text.narr{border-left-color:var(--mu);color:var(--mu);font-style:italic}
-.dlg-opts{display:flex;flex-direction:column;gap:8px;max-width:820px;margin-top:8px}
-.dlg-opt{padding:12px 16px;border-radius:8px;border:1px solid var(--ln);background:var(--pn);text-align:left;transition:.15s;font-size:14px}
-.dlg-opt:hover{border-color:var(--rd);background:var(--pn2);transform:translateX(4px)}
-.dlg-opt.present{border-color:var(--gd);color:var(--gd)}
-.dlg-opt.end{color:var(--mu)}
-
-/* ═══ Modal ═══ */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal.on{display:flex}
-.modal-box{max-width:640px;width:100%;max-height:88vh;overflow:auto;background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:22px;animation:fi .25s ease-out}
-
-/* ═══ Toast ═══ */
-#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:200;pointer-events:none;align-items:center}
-.toast{padding:10px 18px;border-radius:10px;background:var(--pn3);border:1px solid var(--ln);font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:tin .3s ease-out;max-width:90vw;text-align:center}
-.toast.ok{border-color:var(--gn);color:var(--gn)}
-.toast.err{border-color:var(--rd);color:var(--rd2)}
-.toast.ev{border-color:var(--gd);color:var(--gd)}
-@keyframes tin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
-
-/* ═══ Chapters ═══ */
-.chapter-banner{padding:18px;border-radius:12px;background:linear-gradient(135deg,rgba(224,67,59,.12),transparent 70%);border:1px solid var(--ln);margin-bottom:20px}
-.chapter-banner .tag{margin-bottom:8px}
-.chapter-banner h2{margin-bottom:6px}
-.chapter-banner p{color:var(--mu);font-size:14px;max-width:680px}
-
-/* ═══ End screen ═══ */
-#s-end{align-items:center;justify-content:center;padding:24px;text-align:center;overflow-y:auto}
-.end-title{font-size:clamp(28px,6vw,56px);font-weight:800;letter-spacing:6px;margin-bottom:8px}
-.end-stat{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;max-width:420px;margin:20px auto;font-size:14px;text-align:left}
-.end-stat .k{color:var(--mu)}
-.end-stat .v{text-align:right}
-
-/* ═══ Device layouts ═══ */
-body.dev-pc .body{grid-template-columns:220px 1fr}
-body.dev-tv{--fs:18px}
-body.dev-tv .body{grid-template-columns:280px 1fr}
-body.dev-tv .content{padding:36px;max-width:1600px;margin:0 auto;width:100%}
-body.dev-tv .topbar{padding:16px 28px}
-body.dev-tv .topbar .logo{font-size:18px;letter-spacing:6px}
-body.dev-tv .btn{padding:14px 22px;font-size:16px}
-body.dev-tv .card{padding:20px}
-body.dev-tv .card h4{font-size:19px}
-body.dev-tv .card p{font-size:15px}
-
-body.dev-tablet .body{grid-template-columns:190px 1fr}
-
-body.dev-phone .body{grid-template-columns:1fr;grid-template-rows:1fr auto}
-body.dev-phone .sidenav{order:2;flex-direction:row;padding:6px 8px;border-right:none;border-top:1px solid var(--ln);overflow-x:auto;gap:2px;background:var(--pn)}
-body.dev-phone .navbtn{flex-direction:column;gap:3px;font-size:10px;padding:8px 10px;min-width:64px;text-align:center;justify-content:center}
-body.dev-phone .navbtn .ic{font-size:20px}
-body.dev-phone .navbtn.on::before{left:10px;right:10px;top:auto;bottom:2px;width:auto;height:2px}
-body.dev-phone .navbtn .badge{position:absolute;top:2px;right:6px;font-size:9px;padding:1px 5px}
-body.dev-phone .content{padding:14px;padding-bottom:14px}
-body.dev-phone .topbar{padding:8px 12px;gap:8px;flex-wrap:wrap}
-body.dev-phone .topbar .chip{padding:4px 8px;font-size:11px}
-body.dev-phone h1{font-size:22px}
-body.dev-phone h2{font-size:18px}
-body.dev-phone .grid.c2,body.dev-phone .grid.c3{grid-template-columns:1fr}
-body.dev-phone .board-grid{grid-template-columns:repeat(2,1fr)}
-body.dev-phone .dlg-head{padding:12px}
-body.dev-phone .dlg-body{padding:14px}
-body.dev-phone .char-avatar{width:44px;height:44px;font-size:22px}
-
-/* ═══ Loading / overlay ═══ */
-#loading{position:fixed;inset:0;background:#05060a;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:500}
-#loading.on{display:flex}
-.spinner{width:44px;height:44px;border:2px solid var(--ln);border-top-color:var(--rd);border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* virtual OS cursor for TV/gamepad */
+#osCursor{position:absolute;width:18px;height:18px;border:2px solid #e05050;border-radius:50%;pointer-events:none;z-index:60;display:none;box-shadow:0 0 8px rgba(224,80,80,.6);transition:transform .05s linear}
+#osCursor.on{display:block}
 </style>
 </head>
-<body>
-<div id="app">
+<body data-device="auto">
+<canvas id="gl"></canvas>
+<div id="vignette"></div>
+<div id="grain"></div>
+
+<div id="hud">
+  <div id="crosshair"></div>
+  <div id="prompt"><div class="pn"></div><div class="pa"></div></div>
+  <div id="hudTop">
+    <div id="hudInfo">
+      <button class="hbtn" id="btnJournal">ЖУРНАЛ [J]</button>
+      <button class="hbtn" id="btnBoard">ДОСКА [B]</button>
+    </div>
+    <div id="hudInfo">
+      <span id="evBadge">УЛИКИ: 0</span>
+      <button class="hbtn" id="btnPause">ПАУЗА [ESC]</button>
+    </div>
+  </div>
   <div id="toast"></div>
-  <div id="loading"><div class="spinner"></div><div class="mu" id="loading-text">ЗАГРУЗКА…</div></div>
+</div>
 
-  <!-- MENU -->
-  <section class="screen on" id="s-menu">
-    <div class="bg-grid"></div>
-    <div class="menu-logo">MIND<span>CASE</span></div>
-    <div class="menu-sub">Детективный триллер</div>
-    <div class="menu-line"></div>
-    <div class="menu-btns">
-      <button class="btn primary" id="btn-new">▸ Новая игра</button>
-      <button class="btn" id="btn-continue" disabled>↻ Продолжить</button>
-      <button class="btn ghost" id="btn-settings">⚙ Настройки</button>
-      <button class="btn ghost" id="btn-about">ℹ Об игре</button>
-    </div>
-    <div class="menu-foot">MIND CASE · версия 1.0</div>
-  </section>
+<div id="touch">
+  <div id="lookzone"></div>
+  <div id="stick"><div id="stickNub"></div></div>
+  <div id="touchBtns">
+    <button class="tbtn" id="tInteract">E</button>
+    <button class="tbtn small" id="tCrouch">СЕСТЬ</button>
+  </div>
+  <div id="touchTop">
+    <button class="hbtn" id="tMenu">МЕНЮ</button>
+    <button class="hbtn" id="tJrn">ЖУРНАЛ</button>
+  </div>
+</div>
 
-  <!-- INTRO -->
-  <section class="screen" id="s-intro">
-    <div class="topbar"><div class="logo">MIND<span>CASE</span></div><div class="grow"></div><span class="chip" id="intro-chip">Пролог</span></div>
-    <div class="content fade-in" id="intro-content" style="max-width:820px;margin:auto;padding:30px"></div>
-  </section>
+<button id="journalClose" class="hbtn">ЗАКРЫТЬ ✕</button>
+<div id="journal">
+  <h2>ДЕЛО №21-Б</h2>
+  <div class="tabs">
+    <div class="tab on" data-tab="ev">Улики</div>
+    <div class="tab" data-tab="sub">Подозреваемые</div>
+    <div class="tab" data-tab="tl">Хронология</div>
+    <div class="tab" data-tab="notes">Заметки</div>
+  </div>
+  <div id="journalContent"></div>
+</div>
 
-  <!-- GAME HUB -->
-  <section class="screen" id="s-hub">
-    <div class="topbar">
-      <div class="logo">MIND<span>CASE</span></div>
-      <div class="chip">Дело <b id="hud-ch">1</b>/3</div>
-      <div class="chip">Репутация <b id="hud-rep">100</b></div>
-      <div class="chip" id="hud-loc">—</div>
-      <div class="grow"></div>
-      <button class="btn ghost" id="btn-hint" title="Подсказка">💡</button>
-      <button class="btn ghost" id="btn-save" title="Сохранить">💾</button>
-      <button class="btn ghost" id="btn-pause" title="Пауза">⏸</button>
-    </div>
-    <div class="body">
-      <nav class="sidenav" id="sidenav"></nav>
-      <main class="content" id="hub-content"></main>
-    </div>
-  </section>
+<div id="board">
+  <button id="boardClose" class="hbtn">ЗАКРЫТЬ ✕</button>
+  <div id="boardWrap">
+    <div class="panelTitle">ДОСКА РАССЛЕДОВАНИЯ</div>
+    <p style="font-size:11px;color:#8f97a3;text-align:center">Выберите две карточки для связывания</p>
+    <div id="boardGrid"></div>
+    <div id="connList"><h3>УСТАНОВЛЕННЫЕ СВЯЗИ</h3><div id="connItems"></div></div>
+  </div>
+</div>
 
-  <!-- DIALOGUE -->
-  <section class="screen" id="s-dlg">
-    <div class="topbar">
-      <button class="btn ghost" id="btn-dlg-back">← Назад</button>
-      <div class="grow"></div>
-      <div class="chip">Допрос</div>
+<div class="overlay" id="mainMenu">
+  <div class="title">MIND CASE</div>
+  <div class="subtitle">3D ДЕТЕКТИВ · ДЕЛО ОБ УБИЙСТВЕ</div>
+  <button class="mbtn" id="mNew">НОВАЯ ИГРА</button>
+  <button class="mbtn" id="mCont" disabled>ПРОДОЛЖИТЬ</button>
+  <button class="mbtn" id="mSettings">НАСТРОЙКИ</button>
+  <button class="mbtn" id="mControls">УПРАВЛЕНИЕ</button>
+  <button class="mbtn" id="mAbout">ОБ ИГРЕ</button>
+  <button class="mbtn" id="mClear">УДАЛИТЬ СОХРАНЕНИЕ</button>
+</div>
+
+<div class="overlay" id="pauseMenu">
+  <div class="title" style="font-size:32px">ПАУЗА</div>
+  <button class="mbtn" id="pResume">ПРОДОЛЖИТЬ</button>
+  <button class="mbtn" id="pJournal">ЖУРНАЛ</button>
+  <button class="mbtn" id="pBoard">ДОСКА</button>
+  <button class="mbtn" id="pSave">СОХРАНИТЬ</button>
+  <button class="mbtn" id="pSettings">НАСТРОЙКИ</button>
+  <button class="mbtn" id="pMain">В ГЛАВНОЕ МЕНЮ</button>
+</div>
+
+<div class="overlay" id="settingsMenu">
+  <div class="panelBox">
+    <div class="panelTitle">НАСТРОЙКИ</div>
+    <div class="row"><label>Общая громкость</label><input type="range" id="sMaster" min="0" max="100" value="70"></div>
+    <div class="row"><label>Звуки интерфейса</label><input type="range" id="sUi" min="0" max="100" value="80"></div>
+    <div class="row"><label>Атмосфера</label><input type="range" id="sAmb" min="0" max="100" value="40"></div>
+    <div class="row"><label>Шаги</label><input type="range" id="sStep" min="0" max="100" value="60"></div>
+    <div class="row"><label>Режим устройства</label>
+      <select id="sDevice">
+        <option value="auto">Автоматически</option>
+        <option value="pc">ПК</option>
+        <option value="phone">Телефон</option>
+        <option value="tablet">Планшет</option>
+        <option value="tv">Телевизор</option>
+      </select>
     </div>
-    <div class="body" style="grid-template-columns:1fr">
-      <div style="display:flex;flex-direction:column;overflow:hidden">
-        <div class="dlg-head" id="dlg-head"></div>
-        <div class="dlg-body" id="dlg-body"></div>
+    <div class="row"><label>Чувствительность</label><input type="range" id="sSens" min="20" max="200" value="100"></div>
+    <div style="text-align:center;margin-top:20px"><button class="mbtn" id="setBack" style="min-width:180px">НАЗАД</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="controlsMenu">
+  <div class="panelBox">
+    <div class="panelTitle">УПРАВЛЕНИЕ</div>
+    <div class="row"><label>Движение</label><span>W A S D</span></div>
+    <div class="row"><label>Обзор</label><span>Мышь / стик</span></div>
+    <div class="row"><label>Ускорение</label><span>Shift</span></div>
+    <div class="row"><label>Присесть</label><span>Ctrl / C</span></div>
+    <div class="row"><label>Взаимодействие</label><span>E / X (PS4)</span></div>
+    <div class="row"><label>Журнал</label><span>J</span></div>
+    <div class="row"><label>Доска</label><span>B</span></div>
+    <div class="row"><label>Пауза</label><span>Esc / Options (PS4)</span></div>
+    <div class="row"><label>Телефон</label><span>Левый джойстик + свайп</span></div>
+    <div style="text-align:center;margin-top:20px"><button class="mbtn" id="ctrlBack" style="min-width:180px">НАЗАД</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="aboutMenu">
+  <div class="panelBox">
+    <div class="panelTitle">ОБ ИГРЕ</div>
+    <p style="font-size:12px;line-height:1.7;color:#cfd6dd">
+      <b style="color:#e05050">MIND CASE</b> — атмосферное 3D-расследование, выполненное целиком в одном HTML-файле.<br><br>
+      В комнате произошло убийство аналитика корпорации MIND Corp — Алекса Ривза. На первый взгляд — ограбление. Но детали указывают на нечто большее.<br><br>
+      Исследуйте комнату, изучайте предметы, работайте с компьютером погибшего, находите улики и восстановите картину преступления.<br><br>
+      Использование: мышь + клавиатура, тач-управление или геймпад PS4.
+    </p>
+    <div style="text-align:center;margin-top:20px"><button class="mbtn" id="aboutBack" style="min-width:180px">НАЗАД</button></div>
+  </div>
+</div>
+
+<div id="os">
+  <div id="osMonitor">
+    <div id="osScreen">
+      <div id="osLock">
+        <h1>CASE OS</h1>
+        <div class="user">Пользователь: A. REEVES</div>
+        <input type="password" id="osPass" placeholder="ПАРОЛЬ" autocomplete="off">
+        <button id="osLogin">ВОЙТИ</button>
+        <div id="osLockMsg"></div>
+        <div style="color:#8f97a3;font-size:10px;margin-top:8px">Подсказка — записка в комнате</div>
       </div>
+      <div id="osDesk">
+        <div id="osIcons"></div>
+        <div id="osTaskbar">
+          <button id="osStart">MIND</button>
+          <div id="osTasks"></div>
+          <div id="osClock">--:--</div>
+        </div>
+        <div id="osWindows"></div>
+      </div>
+      <div id="osCursor"></div>
     </div>
-  </section>
+    <div id="osStand"></div>
+  </div>
+</div>
 
-  <!-- END -->
-  <section class="screen" id="s-end">
-    <div class="content fade-in" style="max-width:760px;margin:auto;padding:32px;text-align:center" id="end-content"></div>
-  </section>
+<div id="dlg">
+  <div id="dlgWho"></div>
+  <div id="dlgTxt"></div>
+  <div id="dlgOpts"></div>
 </div>
 
 <script>
 "use strict";
-/* ═══════════════════════════════════════════════════════════
-   MIND CASE — детективная игра
-   ═══════════════════════════════════════════════════════════ */
 
-/* ─────────── DATA ─────────── */
-const EV = {
-  /* Глава 1 */
-  ev_syringe:{n:'Шприц',i:'💉',ch:1,d:'Одноразовый шприц с остатками бледно-жёлтой жидкости. Найден под столом в кабинете Волкова.'},
-  ev_broken:{n:'Разбитая чашка',i:'☕',ch:1,d:'Чашка разбита, но кофе вытек не полностью — значит, падение было неслучайным.'},
-  ev_log:{n:'Журнал входа',i:'📖',ch:1,d:'В 22:47 в клинику вошёл человек, скрывший лицо. Пропуск не зарегистрирован.'},
-  ev_autopsy:{n:'Заключение морга',i:'🧬',ch:1,d:'Смерть от асфиксии. На шее — след от инъекции миорелаксанта. Самоубийство исключено.'},
-  ev_notebook:{n:'Тетрадь Волкова',i:'📓',ch:1,d:'Личные записи о пациенте №7 и проекте «Mindcase». Эксперименты по стиранию памяти.'},
-  ev_patient:{n:'Записка пациента',i:'✉️',ch:1,d:'«Доктор М. обещал, что я забуду. Но я не хочу забывать. Я спрячу это».'},
-  /* Глава 2 */
-  ev_photo:{n:'Фотография',i:'📷',ch:2,d:'Из квартиры Орлова. Круглова садится в машину к мужчине в форме комиссара.'},
-  ev_tape:{n:'Диктофон Орлова',i:'🎙',ch:2,d:'Запись: «Убери журналиста, пока он не заговорил». Голос — Кругловой.'},
-  ev_letter:{n:'Анонимное письмо',i:'✉️',ch:2,d:'«Не лезь в клинику. Mindcase — не миф. Тебя предупредили». Адресовано Орлову.'},
-  ev_key:{n:'Ключ от архива',i:'🔑',ch:2,d:'Ключ с биркой «АРХ. 3». Был спрятан в сливном бачке в квартире Орлова.'},
-  ev_contract:{n:'Контракт',i:'📄',ch:2,d:'Договор между клиникой и «Рябов Б.С.» на «исследовательскую программу». Сумма — 47 млн.'},
-  ev_cross:{n:'Перекрёстная сверка',i:'🔎',ch:2,d:'Сопоставление дат: Орлов погиб через 4 часа после звонка из кабинета Кругловой.'},
-  /* Глава 3 */
-  ev_drive:{n:'Флешка',i:'💾',ch:3,d:'Зашифрованные данные. Файлы «стирание памяти пациента №7». Куратор — Рябов.'},
-  ev_diary:{n:'Дневник пациента №7',i:'📔',ch:3,d:'Многолетние записи. Последняя: «Он снова приходил. Комиссар Рябов. Я видел его лицо».'},
-  ev_badge:{n:'Значок комиссара',i:'🎖',ch:3,d:'Найден в лаборатории. Принадлежит Б.С. Рябову. На обороте — следы крови.'},
-  ev_photo2:{n:'Фото Рябова',i:'📸',ch:3,d:'Рябов в лаборатории рядом с пациентом №7. Датировано вчера.'},
-  ev_confess:{n:'Финансовая расписка',i:'📝',ch:3,d:'Рябов признаёт: проект финансировался из «служебных фондов» МВД.'}
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const CFG = {
+  ROOM: { x: 8, y: 3, z: 8 },
+  PLAYER: { radius: 0.32, speed: 2.6, runMult: 1.8, crouchH: 1.1, standH: 1.7, eye: 1.65 },
+  INTERACT_DIST: 2.6,
+  SAVE_KEY: 'mind_case_save_v1',
+  SETTINGS_KEY: 'mind_case_settings_v1'
 };
 
-const CH = {
-  sokolova:{n:'Вера Соколова',r:'Старшая медсестра',i:'👩‍⚕️',d:'12 лет в клинике. Спокойна, наблюдательна. Была на смене в ночь убийства.'},
-  moroz:{n:'Игорь Мороз',r:'Психиатр',i:'👨‍⚕️',d:'Коллега и соавтор Волкова по проекту «Mindcase». Внешне невозмутим.'},
-  lebedeva:{n:'Анна Лебедева',r:'Сестра пациента',i:'👩',d:'Её брат — пациент №7 — умер в клинике два года назад. Винит Волкова.'},
-  orlov:{n:'Кирилл Орлов',r:'Журналист',i:'🕵️',d:'Погиб в главе II. Расследовал деятельность клиники.'},
-  kruglova:{n:'Марина Круглова',r:'Директор клиники',i:'👩‍💼',d:'Холодна, расчётлива. Управляет «Новым Рассветом» шесть лет.'},
-  ryabov:{n:'Борис Рябов',r:'Комиссар полиции',i:'🎖',d:'Ваш начальник. Патронирует клинику как «социальный проект».'},
-  volkov:{n:'Антон Волков',r:'Жертва (гл. I)',i:'👨‍🔬',d:'Ведущий психиатр. Изучал стирание травматической памяти.'},
-  kane:{n:'Алекс Кейн',r:'Следователь (вы)',i:'🔍',d:'12 лет в отделе. Убеждён: за клиникой стоит большее, чем кажется.'}
-};
-
-const LOC = {
-  office:{n:'Кабинет Волкова',i:'🚪',ch:1,d:'Разбитая чашка, перевёрнутое кресло. На столе — раскрытый ежедневник.',ev:['ev_syringe','ev_broken']},
-  corridor:{n:'Коридор клиники',i:'🛤',ch:1,d:'Тихие коридоры, запах хлорки. На посту — журнал входа.',ev:['ev_log']},
-  morgue:{n:'Морг',i:'⚰️',ch:1,d:'Холодные столы. Патологоанатом уже подготовил заключение.',ev:['ev_autopsy']},
-  archive:{n:'Архив клиники',i:'🗄',ch:1,d:'Старые карточки пациентов. Шкаф заперт на кодовый замок.',ev:['ev_notebook'],req:'ev_broken'},
-  ward7:{n:'Палата №7',i:'🛏',ch:1,d:'Пустая палата. Под матрасом — сложенная записка.',ev:['ev_patient'],req:'ev_notebook'},
-  /* глава 2 */
-  flat:{n:'Квартира Орлова',i:'🏠',ch:2,d:'Разгром. Кто-то искал что-то конкретное.',ev:['ev_photo','ev_key']},
-  editorial:{n:'Редакция «Прожектора»',i:'📰',ch:2,d:'Рабочее место журналиста.',ev:['ev_letter']},
-  bar:{n:'Бар «Полночь»',i:'🍸',ch:2,d:'Место встречи информаторов.',ev:['ev_tape'],req:'ev_letter'},
-  clinic_dir:{n:'Кабинет директора',i:'🏢',ch:2,d:'Роскошный кабинет Кругловой. Сейф в стене.',ev:['ev_contract','ev_cross'],req:'ev_photo'},
-  /* глава 3 */
-  lab:{n:'Подземная лаборатория',i:'🧪',ch:3,d:'Секретная лаборатория под клиникой. Здесь стояло оборудование.',ev:['ev_drive','ev_badge'],req:'ev_contract'},
-  server:{n:'Серверная',i:'💻',ch:3,d:'Комната с серверами проекта. Всё ещё гудит.',ev:['ev_diary'],req:'ev_drive'},
-  safe:{n:'Сейф Рябова',i:'🔐',ch:3,d:'Личный сейф комиссара в его кабинете.',ev:['ev_photo2','ev_confess'],req:'ev_badge'},
-  roof:{n:'Крыша клиники',i:'🌃',ch:3,d:'Место финальной встречи. Холодный ветер.',ev:[],req:'ev_photo2'}
-};
-
-const LINKS = [
-  {a:'ev_syringe',b:'ev_autopsy',t:'Орудие убийства',d:'Инъекция миорелаксанта через шприц — причина смерти Волкова. Это не самоубийство.'},
-  {a:'ev_broken',b:'ev_log',t:'Картина ночи',d:'Борьба в кабинете и тайный вход незнакомца совпадают по времени.'},
-  {a:'ev_notebook',b:'ev_patient',t:'Проект «Mindcase»',d:'Записи Волкова и записка пациента подтверждают эксперименты над сознанием.'},
-  {a:'ev_photo',b:'ev_contract',t:'Связь Кругловой и Рябова',d:'Директриса клиники напрямую связана с комиссаром Рябовым.'},
-  {a:'ev_tape',b:'ev_letter',t:'Заказ на Орлова',d:'Круглова лично заказала устранение журналиста, знавшего о проекте.'},
-  {a:'ev_key',b:'ev_contract',t:'Ключ к правде',d:'Ключ ведёт в архив, где хранился контракт с Рябовым.'},
-  {a:'ev_drive',b:'ev_badge',t:'Куратор проекта',d:'Рябов лично курировал эксперименты. Значок оставлен в лаборатории.'},
-  {a:'ev_diary',b:'ev_photo2',t:'Личный контроль',d:'Рябов не просто куратор — он сам присутствовал на сеансах.'},
-  {a:'ev_confess',b:'ev_drive',t:'Финансовый след',d:'Служебные фонды МВД шли на эксперименты. Рябов подписывал лично.'}
-];
-
-const CHAPTERS = [
-  {
-    n:1,title:'Глава I. Тихий пациент',
-    brief:'Доктор Антон Волков, ведущий психиатр клиники «Новый Рассвет», найден мёртвым в собственном кабинете. Предварительная версия — самоубийство. Вы — следователь Алекс Кейн. У вас 48 часов.',
-    objective:'Установить обстоятельства смерти Волкова и найти виновного.',
-    locs:['office','corridor','morgue','archive','ward7'],
-    suspects:['sokolova','moroz','lebedeva'],
-    dlg:{sokolova:'d_sokolova_c1',moroz:'d_moroz_c1',lebedeva:'d_lebedeva_c1'},
-    keyEv:['ev_syringe','ev_autopsy','ev_notebook'],
-    culprit:'moroz',
-    proof:'ev_notebook',
-    truth:'Мороз убил Волкова, чтобы не дать ему опубликовать данные проекта «Mindcase» — и присвоить открытия себе. Инъекция имитировала суицид.'
+/* ============================================================
+   MATH
+   ============================================================ */
+const M4 = {
+  create: () => new Float32Array(16),
+  identity(o){o[0]=1;o[1]=0;o[2]=0;o[3]=0;o[4]=0;o[5]=1;o[6]=0;o[7]=0;o[8]=0;o[9]=0;o[10]=1;o[11]=0;o[12]=0;o[13]=0;o[14]=0;o[15]=1;return o;},
+  perspective(o,fovy,a,n,f){
+    const t=1/Math.tan(fovy/2);
+    o[0]=t/a;o[1]=0;o[2]=0;o[3]=0;o[4]=0;o[5]=t;o[6]=0;o[7]=0;
+    o[8]=0;o[9]=0;o[10]=(f+n)/(n-f);o[11]=-1;
+    o[12]=0;o[13]=0;o[14]=2*f*n/(n-f);o[15]=0;return o;
   },
-  {
-    n:2,title:'Глава II. Немой свидетель',
-    brief:'Журналист Кирилл Орлов, копавший под клинику, найден мёртвым у себя дома. На столе — разбросанные бумаги и пустая папка. Кто-то искал компромат.',
-    objective:'Связать смерть Орлова с клиникой и выйти на заказчика.',
-    locs:['flat','editorial','bar','clinic_dir'],
-    suspects:['sokolova','kruglova','moroz'],
-    dlg:{sokolova:'d_sokolova_c2',kruglova:'d_kruglova_c2',moroz:'d_moroz_c2'},
-    keyEv:['ev_photo','ev_tape','ev_contract'],
-    culprit:'kruglova',
-    proof:'ev_tape',
-    truth:'Круглова заказала устранение Орлова по указанию Рябова. Журналист подобрался слишком близко к проекту «Mindcase».'
+  lookAt(o,e,c,u){
+    let z0=e[0]-c[0],z1=e[1]-c[1],z2=e[2]-c[2];
+    let l=1/Math.hypot(z0,z1,z2);z0*=l;z1*=l;z2*=l;
+    let x0=u[1]*z2-u[2]*z1,x1=u[2]*z0-u[0]*z2,x2=u[0]*z1-u[1]*z0;
+    l=Math.hypot(x0,x1,x2);if(l){l=1/l;x0*=l;x1*=l;x2*=l;}
+    let y0=z1*x2-z2*x1,y1=z2*x0-z0*x2,y2=z0*x1-z1*x0;
+    o[0]=x0;o[1]=y0;o[2]=z0;o[3]=0;
+    o[4]=x1;o[5]=y1;o[6]=z1;o[7]=0;
+    o[8]=x2;o[9]=y2;o[10]=z2;o[11]=0;
+    o[12]=-(x0*e[0]+x1*e[1]+x2*e[2]);
+    o[13]=-(y0*e[0]+y1*e[1]+y2*e[2]);
+    o[14]=-(z0*e[0]+z1*e[1]+z2*e[2]);
+    o[15]=1;return o;
   },
-  {
-    n:3,title:'Глава III. Проект «Mindcase»',
-    brief:'Под клиникой обнаружена секретная лаборатория. Пациентам стирали память, свидетелей убирали. Наверху кто-то заметает следы.',
-    objective:'Установить главного заказчика проекта и остановить его.',
-    locs:['lab','server','safe','roof'],
-    suspects:['kruglova','ryabov','sokolova'],
-    dlg:{kruglova:'d_kruglova_c3',ryabov:'d_ryabov_c3',sokolova:'d_sokolova_c3'},
-    keyEv:['ev_drive','ev_photo2','ev_confess'],
-    culprit:'ryabov',
-    proof:'ev_confess',
-    truth:'Комиссар Рябов лично курировал проект стирания памяти. Клиника была прикрытием. Финансирование — из служебных фондов МВД.'
-  }
-];
-
-/* Диалоги */
-const DLG = {
-  /* ── Глава 1 ── */
-  d_sokolova_c1:{
-    char:'sokolova', start:'r',
-    nodes:{
-      r:{t:'Следователь, я уже всё рассказала вашему коллеге. Но спрашивайте, если нужно.',
-        o:[
-          {t:'Где вы были в ночь убийства?',n:'a'},
-          {t:'Что за человек был Волков?',n:'b'},
-          {t:'Вы заметили что-нибудь необычное?',n:'c'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Пока всё.',end:true}
-        ]},
-      a:{t:'На посту. Проверяла палаты. Около 23:00 услышала шум из кабинета Волкова — как будто что-то упало.',
-        o:[{t:'Почему не сообщили?',n:'a2'},{t:'Кто был в клинике?',n:'c'}]},
-      a2:{t:'Я думала — очередной спор. У них с Морозом это было постоянно. Только утром поняла, что произошло.',
-        o:[{t:'Понятно.',n:'r'}]},
-      b:{t:'Требовательный. Гениальный, но одержимый. Последние месяцы он вёл какой-то закрытый проект. Даже медсёстрам не разрешал заходить в палату №7.',
-        o:[{t:'Что за проект?',n:'b2'},{t:'Назад',n:'r'}]},
-      b2:{t:'Он называл это «Mindcase». Я не знаю деталей, но пациенты после его сеансов становились… другими. Пустыми.',
-        flag:'sokolova_mindcase',
-        o:[{t:'Спасибо.',n:'r'}]},
-      c:{t:'В клинике был Мороз. Он задержался в ординаторской допоздна. И кто-то ещё — в тёмном. Я не разглядела, но запах… дорогой парфюм.',
-        flag:'sokolova_black',
-        o:[{t:'Понятно.',n:'r'}]}
-    },
-    present:{
-      'ev_syringe':{t:'Вы видели такой шприц?',flag:'sokolova_syringe',n:'p_syr'},
-      'ev_notebook':{t:'Это тетрадь Волкова. Вы её видели?',flag:'sokolova_tetr',n:'p_not'},
-      'ev_autopsy':{t:'Вот заключение морга.',flag:'sokolova_autopsy',n:'p_aut'},
-      'ev_patient':{t:'Записка из палаты №7. Знакомый почерк?',flag:'sokolova_pat',n:'p_pat'}
-    },
-    nodesPresent:{
-      p_syr:{t:'Это из процедурной. Но кто-то взял его без записи. Я такое замечаю — я инвентарь веду.',
-        o:[{t:'Кто мог взять?',n:'p_syr2'},{t:'Понятно.',n:'r'}]},
-      p_syr2:{t:'Только тот, кто знал расположение. Мороз — заходил туда каждый день.',
-        flag:'sokolova_moroz_syr', o:[{t:'Ясно.',n:'r'}]},
-      p_not:{t:'Она хранилась в сейфе в кабинете. Мороз знал код — Волков сам ему сказал на случай экстренной ситуации.',
-        flag:'sokolova_moroz_code', o:[{t:'Спасибо.',n:'r'}]},
-      p_aut:{t:'Значит, всё-таки убили… Я так и подумала, когда увидела его лицо.',
-        o:[{t:'Назад',n:'r'}]},
-      p_pat:{t:'Это почерк пациента №7. Он умер два года назад… Я думала, все его вещи уничтожили.',
-        flag:'sokolova_pat7', o:[{t:'Не уничтожили.',n:'r'}]}
-    }
-  },
-  d_moroz_c1:{
-    char:'moroz',start:'r',
-    nodes:{
-      r:{t:'Следователь. У меня плотный график. Давайте быстрее.',
-        o:[
-          {t:'Где вы были в ночь убийства?',n:'a'},
-          {t:'Расскажите о проекте «Mindcase»',n:'b'},
-          {t:'Как вы относились к Волкову?',n:'c'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Завершить разговор.',end:true}
-        ]},
-      a:{t:'В ординаторской. Писал статью. Один. Никого не видел, меня тоже никто.',
-        o:[{t:'Вы уверены? Свидетельница слышала шум.',n:'a2'},{t:'Хорошо.',n:'r'}]},
-      a2:{t:'Шум? Возможно, Волков уронил что-то. Я не выходил.',
-        o:[{t:'Понятно.',n:'r'}]},
-      b:{t:'Не понимаю, о чём вы. Мы занимались исследованиями в области психотерапии. Никакого «проекта».',
-        flag:'moroz_denies',
-        o:[{t:'В вашей тетради он называет иначе.',n:'b2'},{t:'Назад',n:'r'}]},
-      b2:{t:'Вы читали тетрадь?.. Где вы её взяли? Она была в сейфе.',
-        flag:'moroz_slip', o:[{t:'Она была под столом.',n:'b3'}]},
-      b3:{t:'(пауза) Под столом. Разумеется. Волков был рассеянным.',
-        o:[{t:'Кто был у вас вчера, кроме медсестры?',n:'c'}]},
-      c:{t:'Мы партнёры. Партнёры спорят. Это нормально.',
-        o:[{t:'Из-за чего спорили?',n:'c2'},{t:'Назад',n:'r'}]},
-      c2:{t:'Из-за публикации. Он хотел обнародовать результаты раньше времени. Я был против.',
-        flag:'moroz_dispute', o:[{t:'Почему?',n:'c3'}]},
-      c3:{t:'Потому что не все данные подтверждены. Так бывает в науке.',
-        o:[{t:'Ясно.',n:'r'}]}
-    },
-    present:{
-      'ev_notebook':{t:'Знаете эту тетрадь?',flag:'moroz_tetr',n:'p_not'},
-      'ev_syringe':{t:'Видели этот шприц?',flag:'moroz_syr',n:'p_syr'},
-      'ev_autopsy':{t:'Заключение морга: инъекция миорелаксанта.',flag:'moroz_aut',n:'p_aut'}
-    },
-    nodesPresent:{
-      p_not:{t:'(долгая пауза) Да. Это его тетрадь. Я знал, где она лежит.',
-        flag:'moroz_knew', o:[{t:'Код от сейфа?',n:'p_not2'}]},
-      p_not2:{t:'Он дал мне код. На всякий случай. Мы партнёры, не забывайте.',
-        o:[{t:'И вы им воспользовались.',n:'p_not3'}]},
-      p_not3:{t:'(тихо) Я не убивал его.',
-        o:[{t:'Пока.',n:'r'}]},
-      p_syr:{t:'Откуда у вас… Это же процедурный. Я не имею к нему отношения.',
-        flag:'moroz_nerv', o:[{t:'Назад',n:'r'}]},
-      p_aut:{t:'Инъекция. Хм. Значит, это не был сердечный приступ, как нам сообщили.',
-        o:[{t:'Кто сообщил?',n:'p_aut2'}]},
-      p_aut2:{t:'Круглова. На утренней планёрке. Сказала — несчастный случай.',
-        flag:'moroz_krug', o:[{t:'Понятно.',n:'r'}]}
-    }
-  },
-  d_lebedeva_c1:{
-    char:'lebedeva',start:'r',
-    nodes:{
-      r:{t:'Вы из полиции? Наконец-то. Я два года писала заявления — и никто не отвечал.',
-        o:[
-          {t:'Расскажите о вашем брате.',n:'a'},
-          {t:'Почему вы винили Волкова?',n:'b'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Достаточно.',end:true}
-        ]},
-      a:{t:'Его звали Андрей. Он был пациентом №7. Молодой, здоровый — и вдруг провалы в памяти, апатия. Волков взялся «лечить». После сеансов брат меня не узнавал.',
-        o:[{t:'Что именно делал Волков?',n:'a2'}]},
-      a2:{t:'Стирал его память. Дозированно, по протоколу. Он говорил, что это «во благо». Что Андрей «не должен помнить то, что видел».',
-        flag:'lebed_ster', o:[{t:'Что он видел?',n:'a3'}]},
-      a3:{t:'Я не знаю. Андрей успел сказать только одно: «Комиссар. Рябов. Я видел его в подвале».',
-        flag:'lebed_ryab', o:[{t:'Комиссар Рябов?',n:'a4'}]},
-      a4:{t:'Да. И через неделю Андрей умер. Сердечный приступ. Ему было 24.',
-        o:[{t:'Соболезную.',n:'r'}]},
-      b:{t:'Я не винила. Я ЗНАЛА. Он стирал память пациентам. Кто-то из них не выдерживал.',
-        o:[{t:'У вас есть доказательства?',n:'b2'},{t:'Назад',n:'r'}]},
-      b2:{t:'Только записка Андрея. Я её отдала в клинику — там её «потеряли». Вместе с телом.',
-        flag:'lebed_zap', o:[{t:'Мы её найдём.',n:'r'}]}
-    },
-    present:{
-      'ev_patient':{t:'Это записка вашего брата?',flag:'lebed_recog',n:'p_pat'},
-      'ev_notebook':{t:'Тетрадь Волкова. Упоминается пациент №7.',flag:'lebed_tetr',n:'p_not'}
-    },
-    nodesPresent:{
-      p_pat:{t:'(плачет) Да. Это его почерк. «Доктор М. обещал, что я забуду». Мороз. Он ассистировал на сеансах.',
-        flag:'lebed_moroz', o:[{t:'Мороз лично?',n:'p_pat2'}]},
-      p_pat2:{t:'Да. Он вводил препарат. Волков «стирал», Мороз — колол.',
-        o:[{t:'Спасибо.',n:'r'}]},
-      p_not:{t:'«Пациент №7. Протокол стирания — 14 сеансов». Они убили его. Медленно.',
-        o:[{t:'Я разберусь.',n:'r'}]}
-    }
-  },
-  /* ── Глава 2 ── */
-  d_sokolova_c2:{
-    char:'sokolova',start:'r',
-    nodes:{
-      r:{t:'Снова вы. Что на этот раз?',
-        o:[
-          {t:'Вы знали Орлова?',n:'a'},
-          {t:'Что вам известно о Рябове?',n:'b'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Спасибо.',end:true}
-        ]},
-      a:{t:'Журналиста? Видела пару раз — он ждал Круглову у входа. Она с ним не разговаривала. Делала вид, что не знает.',
-        o:[{t:'Что-то ещё?',n:'a2'}]},
-      a2:{t:'Однажды я видела, как она передала ему конверт. Думаю — деньги. За молчание.',
-        flag:'sokolova_convent', o:[{t:'Понятно.',n:'r'}]},
-      b:{t:'Комиссар? Он приезжал к Кругловой каждый вторник. Без охраны, без регистрации.',
-        flag:'sokolova_ryab', o:[{t:'Как давно?',n:'b2'}]},
-      b2:{t:'Лет шесть. С тех пор как её назначили директором.',
-        o:[{t:'Спасибо.',n:'r'}]}
-    },
-    present:{
-      'ev_photo':{t:'Вы видели эту фотографию?',flag:'sokolova_photo',n:'p_ph'},
-      'ev_contract':{t:'Знакомый контракт?',flag:'sokolova_contr',n:'p_ct'},
-      'ev_tape':{t:'Запись разговора Кругловой.',flag:'sokolova_tape',n:'p_tp'}
-    },
-    nodesPresent:{
-      p_ph:{t:'Это Рябов. Комиссар. Он здесь каждый вторник. Я не удивлена, что он на фото.',
-        o:[{t:'Спасибо.',n:'r'}]},
-      p_ct:{t:'47 миллионов… Господи. Я знала, что она что-то скрывает, но не думала, что настолько.',
-        flag:'sokolova_47', o:[{t:'Понятно.',n:'r'}]},
-      p_tp:{t:'(бледнеет) Это её голос. Она заказала убийство журналиста. Я так и думала, когда узнала.',
-        o:[{t:'Спасибо за честность.',n:'r'}]}
-    }
-  },
-  d_kruglova_c2:{
-    char:'kruglova',start:'r',
-    nodes:{
-      r:{t:'Следователь Кейн. Я вас слушаю. У меня через 15 минут встреча.',
-        o:[
-          {t:'Что связывает вас с Рябовым?',n:'a'},
-          {t:'Куда шли 47 миллионов?',n:'b'},
-          {t:'Вы знали Кирилла Орлова?',n:'c'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Пока всё.',end:true}
-        ]},
-      a:{t:'Комиссар — наш куратор по социальным программам. Мы лечим неимущих пациентов. Это законно.',
-        o:[{t:'Вторники, без регистрации?',n:'a2'},{t:'Назад',n:'r'}]},
-      a2:{t:'(пауза) Откуда у вас эта информация? Впрочем, не важно. Мы обсуждаем финансирование.',
-        flag:'krug_nerv', o:[{t:'Понятно.',n:'r'}]},
-      b:{t:'На оборудование. На персонал. На исследования. Я не обязана отчитываться перед вами в деталях.',
-        o:[{t:'Контракт говорит иначе.',n:'b2'},{t:'Назад',n:'r'}]},
-      b2:{t:'(тихо) Вы не понимаете, во что лезете. Это очень большие люди.',
-        flag:'krug_threat', o:[{t:'Я вас слушаю.',n:'b3'}]},
-      b3:{t:'Я больше ничего не скажу без адвоката.',
-        o:[{t:'Как хотите.',n:'r'}]},
-      c:{t:'Орлов был паразитом. Писал гадости о клинике, требовал денег за молчание. Я не убивала его — но и не жалею.',
-        o:[{t:'Кто же тогда?',n:'c2'}]},
-      c2:{t:'Понятия не имею. Возможно, он перешёл дорогу не только мне.',
-        o:[{t:'Возможно.',n:'r'}]}
-    },
-    present:{
-      'ev_tape':{t:'Это ваш голос на записи?',flag:'krug_tape',n:'p_tp'},
-      'ev_photo':{t:'Вы на этой фотографии.',flag:'krug_photo',n:'p_ph'},
-      'ev_letter':{t:'Анонимное письмо Орлову. Ваш почерк?',flag:'krug_letter',n:'p_lt'}
-    },
-    nodesPresent:{
-      p_tp:{t:'(долгая пауза) Это подделка. Я требую адвоката.',
-        o:[{t:'Запись будет в суде.',n:'p_tp2'}]},
-      p_tp2:{t:'(глухо) Он подбирался слишком близко. Рябов сказал — «решай сама». Я решила.',
-        flag:'krug_confess', o:[{t:'Спасибо. Вы арестованы.',n:'r'}]},
-      p_ph:{t:'Да, это я. И Рябов. И что с того?',
-        o:[{t:'Это создаёт мотив.',n:'r'}]},
-      p_lt:{t:'Не мой. Но я знаю, кто писал. Из тех, кто наверху.',
-        flag:'krug_up', o:[{t:'Кто?',n:'p_lt2'}]},
-      p_lt2:{t:'Рябов. Он «предупреждал» журналиста. А потом позвонил мне.',
-        o:[{t:'Спасибо.',n:'r'}]}
-    }
-  },
-  d_moroz_c2:{
-    char:'moroz',start:'r',
-    nodes:{
-      r:{t:'Я не понимаю, зачем вы снова пришли. Я не имею отношения к смерти журналиста.',
-        o:[
-          {t:'Где вы были в ночь убийства Орлова?',n:'a'},
-          {t:'Что вам известно о Рябове?',n:'b'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Достаточно.',end:true}
-        ]},
-      a:{t:'Дома. Один. Как всегда.',
-        o:[{t:'Кто-нибудь подтвердит?',n:'a2'},{t:'Назад',n:'r'}]},
-      a2:{t:'Не думаю. Я не веду дневник посещений.',
-        o:[{t:'Понятно.',n:'r'}]},
-      b:{t:'Комиссар? Я не знаю никакого комиссара. Я простой врач.',
-        o:[{t:'Он ваш куратор по проекту.',n:'b2'},{t:'Назад',n:'r'}]},
-      b2:{t:'(тихо) Вы знаете о проекте?.. Тогда вам стоит быть осторожнее. Рябов не любит, когда о нём говорят.',
-        flag:'moroz_ryab', o:[{t:'Угрожаете?',n:'b3'}]},
-      b3:{t:'Предупреждаю. Я тоже когда-то был идеалистом. Как Волков. Посмотрите, чем это закончилось.',
-        o:[{t:'Спасибо за откровенность.',n:'r'}]}
-    },
-    present:{
-      'ev_contract':{t:'Контракт с Рябовым.',flag:'moroz_contr',n:'p_ct'},
-      'ev_tape':{t:'Запись Кругловой.',flag:'moroz_tape',n:'p_tp'},
-      'ev_key':{t:'Ключ от архива №3.',flag:'moroz_key',n:'p_ky'}
-    },
-    nodesPresent:{
-      p_ct:{t:'Да, я знал о контракте. Я пытался предупредить Волкова — но он уже не слушал.',
-        flag:'moroz_warn', o:[{t:'Почему не пошли в полицию?',n:'p_ct2'}]},
-      p_ct2:{t:'К кому? К Рябову? Смешно.',
-        o:[{t:'Тогда к нам.',n:'r'}]},
-      p_tp:{t:'Круглова. Разумеется. Она давно связана с Рябовым. Волков был её главной проблемой.',
-        o:[{t:'Понятно.',n:'r'}]},
-      p_ky:{t:'Это из архива. Там хранится всё: протоколы стирания, имена кураторов, даты.',
-        flag:'moroz_arch', o:[{t:'Спасибо.',n:'r'}]}
-    }
-  },
-  /* ── Глава 3 ── */
-  d_kruglova_c3:{
-    char:'kruglova',start:'r',
-    nodes:{
-      r:{t:'(из-за стекла) Вы всё-таки докопались. Умно.',
-        o:[
-          {t:'Расскажите о проекте «Mindcase»',n:'a'},
-          {t:'Кто такой Рябов?',n:'b'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Достаточно.',end:true}
-        ]},
-      a:{t:'Проект разрабатывал Рябов. Он хотел убрать память свидетелям своих сделок. Клиника была прикрытием.',
-        flag:'krug_proj', o:[{t:'Кто разрабатывал методику?',n:'a2'}]},
-      a2:{t:'Волков. Он и Мороз. Волков в итоге отказался — и умер. Мороз продолжил — за деньги.',
-        o:[{t:'Понятно.',n:'r'}]},
-      b:{t:'Комиссар МВД. Он контролирует всё в этом городе. Я была лишь пешкой в его игре.',
-        o:[{t:'Почему не сдали его?',n:'b2'}]},
-      b2:{t:'Потому что он бы меня убил. И вы знаете, что не шучу.',
-        o:[{t:'Знаю.',n:'r'}]}
-    },
-    present:{
-      'ev_drive':{t:'Данные с флешки.',flag:'krug_drive',n:'p_dr'},
-      'ev_photo2':{t:'Рябов в лаборатории.',flag:'krug_ph2',n:'p_ph2'},
-      'ev_confess':{t:'Расписка Рябова.',flag:'krug_conf',n:'p_cf'}
-    },
-    nodesPresent:{
-      p_dr:{t:'Это копия. Оригинал у Рябова в сейфе. В его кабинете. Там же — расписки и фото.',
-        flag:'krug_safe', o:[{t:'Спасибо.',n:'r'}]},
-      p_ph2:{t:'Он лично присутствовал на каждом сеансе пациента №7. Ему нравилось смотреть.',
-        o:[{t:'Зачем?',n:'p_ph2b'}]},
-      p_ph2b:{t:'Не знаю. Возможно, власть. Возможно, страх. Он боялся, что пациент вспомнит его.',
-        o:[{t:'Спасибо.',n:'r'}]},
-      p_cf:{t:'(тихо) Это его подпись. Он вербовал меня через этот контракт. Теперь вы можете его посадить.',
-        flag:'krug_final', o:[{t:'И вас тоже.',n:'r'}]}
-    }
-  },
-  d_ryabov_c3:{
-    char:'ryabov',start:'r',
-    nodes:{
-      r:{t:'Кейн. Вы заигрались. Я даю вам последний шанс остановиться.',
-        o:[
-          {t:'Что такое «Mindcase»?',n:'a'},
-          {t:'Почему вы убивали свидетелей?',n:'b'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Это не разговор.',end:true}
-        ]},
-      a:{t:'«Mindcase» — программа, которая спасла бы сотни жизней. Мы стирали память свидетелям, чтобы они не страдали. Гуманно.',
-        flag:'ryab_human', o:[{t:'Вы убивали их.',n:'a2'}]},
-      a2:{t:'Это побочный эффект. Не все выдерживают стирание. Я не мог предвидеть.',
-        o:[{t:'Могли. Вы доктор?',n:'r'}]},
-      b:{t:'Свидетелей? Я не убивал свидетелей. Я устранял риски. Разницу понимаете?',
-        flag:'ryab_risk', o:[{t:'Волков тоже был «риском»?',n:'b2'}]},
-      b2:{t:'Волков был гением, который не умел держать язык за зубами. Мне пришлось.',
-        o:[{t:'А Орлов?',n:'b3'}]},
-      b3:{t:'Журналист лез куда не следует. Как и вы, Кейн.',
-        o:[{t:'Это была ошибка.',n:'r'}]}
-    },
-    present:{
-      'ev_drive':{t:'Данные проекта.',flag:'ryab_dr',n:'p_dr'},
-      'ev_confess':{t:'Ваша расписка.',flag:'ryab_cf',n:'p_cf'},
-      'ev_photo2':{t:'Вы в лаборатории.',flag:'ryab_ph2',n:'p_ph'}
-    },
-    nodesPresent:{
-      p_dr:{t:'Флешка? Копия. Настоящие данные у меня. И вы никогда их не получите.',
-        o:[{t:'Уже получил.',n:'p_dr2'}]},
-      p_dr2:{t:'(пауза) Что вы сделали?',
-        o:[{t:'Ваш сейф вскрыт. Фото и расписки у судьи.',n:'p_dr3'}]},
-      p_dr3:{t:'(тихо) Вы понимаете, что вас ждёт?',
-        o:[{t:'Знаю. И готов.',n:'r'}]},
-      p_cf:{t:'(встаёт) Это подделка. Мой адвокат разорвёт вас в суде.',
-        o:[{t:'Две подписи экспертами. Удачи.',n:'p_cf2'}]},
-      p_cf2:{t:'(садится, глухо) Значит, вот так.',
-        o:[{t:'Так.',n:'r'}]},
-      p_ph:{t:'(пауза) Он был пациентом №7. Он видел то, что не должен был. Я пришёл — убедиться, что «стирание» работает.',
-        flag:'ryab_confess', o:[{t:'Вы убийца.',n:'p_ph2'}]},
-      p_ph2:{t:'Я — солдат. Вы не поймёте.',
-        o:[{t:'Пойму. В суде.',n:'r'}]}
-    }
-  },
-  d_sokolova_c3:{
-    char:'sokolova',start:'r',
-    nodes:{
-      r:{t:'Алекс… Я знала, что вы докопаетесь.',
-        o:[
-          {t:'Помогите мне остановить Рябова.',n:'a'},
-          {t:'Что вы знаете о лаборатории?',n:'b'},
-          {t:'Предъявить улику…',present:true},
-          {t:'Спасибо.',end:true}
-        ]},
-      a:{t:'Я дам показания. У меня есть копии протоколов — я тайно снимала их три года.',
-        flag:'sokolova_help', o:[{t:'Почему вы молчали?',n:'a2'}]},
-      a2:{t:'Боялась. Но сейчас — терять нечего. Волков был хорошим человеком. Он не заслужил такой смерти.',
-        o:[{t:'Спасибо.',n:'r'}]},
-      b:{t:'Лаборатория под зданием. Вход — через архив, за фальш-стеной. Ключ — у Рябова, но я знаю обходной путь.',
-        flag:'sokolova_lab', o:[{t:'Какой?',n:'b2'}]},
-      b2:{t:'Через серверную. Там старая шахта вентиляции.',
-        o:[{t:'Спасибо.',n:'r'}]}
-    },
-    present:{
-      'ev_diary':{t:'Дневник пациента №7.',flag:'sokolova_diary',n:'p_dy'},
-      'ev_photo2':{t:'Рябов в лаборатории.',flag:'sokolova_ph',n:'p_ph'}
-    },
-    nodesPresent:{
-      p_dy:{t:'Это Андрей. Лебедева. Его сестра приходила ко мне — просила помочь. Я не смогла. Теперь смогу.',
-        flag:'sokolova_andrey', o:[{t:'Спасибо.',n:'r'}]},
-      p_ph:{t:'Это он. Рябов. В лаборатории. Теперь у нас есть доказательства.',
-        o:[{t:'Да.',n:'r'}]}
-    }
+  compose(o,pos,rotY,scale){
+    const c=Math.cos(rotY||0),s=Math.sin(rotY||0);
+    const sx=scale[0],sy=scale[1],sz=scale[2];
+    o[0]=c*sx;o[1]=0;o[2]=-s*sx;o[3]=0;
+    o[4]=0;o[5]=sy;o[6]=0;o[7]=0;
+    o[8]=s*sz;o[9]=0;o[10]=c*sz;o[11]=0;
+    o[12]=pos[0];o[13]=pos[1];o[14]=pos[2];o[15]=1;return o;
   }
 };
 
-/* ─────────── STATE ─────────── */
-const DEFAULT_STATE = () => ({
-  chapter:0,
-  tab:'case',
-  evidence:[],
-  visited:[],
-  met:[],
-  links:[],       // массив пар "a|b"
-  flags:{},
-  rep:100,
-  hintsUsed:0,
-  device:'auto',
-  sound:true,
-  started:false
-});
-let S = DEFAULT_STATE();
-let CUR_DLG = null;
-
-/* ─────────── UTIL ─────────── */
-const $ = (sel, root=document) => root.querySelector(sel);
-const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
-const el = (tag, attrs={}, ...kids) => {
-  const e = document.createElement(tag);
-  for (const k in attrs) {
-    if (k === 'class') e.className = attrs[k];
-    else if (k === 'html') e.innerHTML = attrs[k];
-    else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
-    else e.setAttribute(k, attrs[k]);
-  }
-  for (const k of kids) {
-    if (k == null || k === false) continue;
-    e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k);
-  }
-  return e;
+/* ============================================================
+   AUDIO
+   ============================================================ */
+const Audio = {
+  ctx: null, master:null, uiGain:null, ambGain:null, stepGain:null,
+  ambNode: null,
+  init(){
+    if (this.ctx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain(); this.master.gain.value = 0.7; this.master.connect(this.ctx.destination);
+      this.uiGain = this.ctx.createGain(); this.uiGain.gain.value = 0.8; this.uiGain.connect(this.master);
+      this.ambGain = this.ctx.createGain(); this.ambGain.gain.value = 0.4; this.ambGain.connect(this.master);
+      this.stepGain = this.ctx.createGain(); this.stepGain.gain.value = 0.6; this.stepGain.connect(this.master);
+      // ambient drone
+      const osc = this.ctx.createOscillator(); osc.type='sine'; osc.frequency.value=48;
+      const osc2 = this.ctx.createOscillator(); osc2.type='sine'; osc2.frequency.value=72;
+      const g = this.ctx.createGain(); g.gain.value=0.06;
+      osc.connect(g); osc2.connect(g); g.connect(this.ambGain);
+      osc.start(); osc2.start();
+    } catch(e){ console.warn('Audio init failed', e); }
+  },
+  resume(){ if(this.ctx && this.ctx.state==='suspended') this.ctx.resume(); },
+  tone(freq,dur,type,vol,gainNode){
+    if(!this.ctx) return;
+    try{
+      const o=this.ctx.createOscillator(); o.type=type||'sine'; o.frequency.value=freq;
+      const g=this.ctx.createGain(); g.gain.value=0;
+      const now=this.ctx.currentTime;
+      const v = vol!=null?vol:0.12;
+      g.gain.linearRampToValueAtTime(v,now+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001,now+dur);
+      o.connect(g); g.connect(gainNode||this.uiGain);
+      o.start(now); o.stop(now+dur+0.05);
+    }catch(e){}
+  },
+  click(){ this.tone(900,0.05,'square',0.05); },
+  pickup(){ this.tone(440,0.08,'triangle',0.1); setTimeout(()=>this.tone(660,0.15,'triangle',0.1),70); },
+  error(){ this.tone(200,0.2,'sawtooth',0.12); setTimeout(()=>this.tone(160,0.3,'sawtooth',0.1),120); },
+  success(){ this.tone(660,0.1,'sine',0.12); setTimeout(()=>this.tone(880,0.15,'sine',0.12),90); setTimeout(()=>this.tone(1100,0.25,'sine',0.1),190); },
+  step(){ this.tone(80+Math.random()*40,0.06,'square',0.04,this.stepGain); },
+  open(){ this.tone(320,0.15,'sine',0.09); },
+  notify(){ this.tone(880,0.08,'sine',0.1); setTimeout(()=>this.tone(1320,0.1,'sine',0.08),80); }
 };
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-/* ─────────── AUDIO ─────────── */
-let AC = null;
-function sfx(kind) {
-  if (!S.sound) return;
-  try {
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.connect(g); g.connect(AC.destination);
-    const t = AC.currentTime;
-    if (kind === 'click') { o.type='sine'; o.frequency.value=520; g.gain.setValueAtTime(0.03,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.start(t); o.stop(t+0.09); }
-    else if (kind === 'ok') { o.type='triangle'; o.frequency.setValueAtTime(523,t); o.frequency.linearRampToValueAtTime(784,t+0.14); g.gain.setValueAtTime(0.06,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.28); o.start(t); o.stop(t+0.3); }
-    else if (kind === 'err') { o.type='sawtooth'; o.frequency.setValueAtTime(200,t); o.frequency.linearRampToValueAtTime(90,t+0.2); g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.26); o.start(t); o.stop(t+0.28); }
-    else if (kind === 'ev') { o.type='sine'; o.frequency.setValueAtTime(660,t); o.frequency.setValueAtTime(880,t+0.1); g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.32); o.start(t); o.stop(t+0.34); }
-  } catch (e) {}
+/* ============================================================
+   WEBGL SETUP
+   ============================================================ */
+const canvas = document.getElementById('gl');
+let gl = null;
+try {
+  gl = canvas.getContext('webgl', {antialias:true, alpha:false, powerPreference:'high-performance'})
+    || canvas.getContext('experimental-webgl');
+} catch(e){ gl = null; }
+
+if (!gl) {
+  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#e8eef3;background:#0a0c12;height:100vh"><h1>MIND CASE</h1><p style="margin-top:20px">Не удалось инициализировать WebGL. Пожалуйста, включите аппаратное ускорение в настройках браузера или обновите браузер.</p></div>';
+  throw new Error('No WebGL');
 }
 
-/* ─────────── TOAST ─────────── */
-function toast(msg, kind='') {
-  const t = el('div', { class: 'toast ' + kind }, msg);
-  $('#toast').appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 2200);
-  setTimeout(() => t.remove(), 2600);
+function compileShader(src, type){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(s), src);
+    throw new Error('shader');
+  }
+  return s;
 }
+const vsSrc = `
+attribute vec3 aPos;
+attribute vec3 aNormal;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vN;
+varying vec3 vW;
+void main(){
+  vec4 wp = uModel * vec4(aPos,1.0);
+  vW = wp.xyz;
+  vN = mat3(uModel) * aNormal;
+  gl_Position = uProj * uView * wp;
+}`;
+const fsSrc = `
+precision mediump float;
+varying vec3 vN;
+varying vec3 vW;
+uniform vec3 uColor;
+uniform vec3 uAmbient;
+uniform float uHighlight;
+uniform vec3 uCam;
+uniform vec3 uLight1;
+uniform vec3 uLight2;
+uniform vec3 uLight3;
+uniform float uLampOn;
+uniform float uEmis;
+void main(){
+  vec3 N = normalize(vN);
+  vec3 c = uColor;
+  vec3 acc = uAmbient;
+  float d1 = max(dot(N, normalize(uLight1)), 0.0);
+  acc += vec3(0.85,0.82,0.78) * d1 * 0.7;
+  float d2 = max(dot(N, normalize(uLight2)), 0.0);
+  acc += vec3(0.55,0.6,0.75) * d2 * 0.55;
+  float d3 = max(dot(N, normalize(uLight3)), 0.0);
+  acc += vec3(0.4,0.6,0.85) * d3 * 0.5 * uEmis;
+  if (uLampOn > 0.5) {
+    vec3 L = normalize(vec3(-2.5, 1.1, -3.1) - vW);
+    float dl = max(dot(N, L), 0.0);
+    float att = 1.0 / (1.0 + length(vec3(-2.5,1.1,-3.1) - vW)*0.5);
+    acc += vec3(1.0,0.85,0.6) * dl * att * 1.2;
+  }
+  vec3 V = normalize(uCam - vW);
+  vec3 H = normalize(normalize(uLight1) + V);
+  float sp = pow(max(dot(N,H),0.0), 40.0) * 0.18;
+  vec3 col = c * acc + vec3(sp);
+  if (uHighlight > 0.001) {
+    col = mix(col, col + vec3(0.55,0.18,0.15), uHighlight);
+  }
+  gl_FragColor = vec4(col, 1.0);
+}`;
+const prog = gl.createProgram();
+gl.attachShader(prog, compileShader(vsSrc, gl.VERTEX_SHADER));
+gl.attachShader(prog, compileShader(fsSrc, gl.FRAGMENT_SHADER));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link');
+gl.useProgram(prog);
 
-/* ─────────── SAVE/LOAD ─────────── */
-const SAVE_KEY = 'mindcase_save_v1';
-function saveGame(silent) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); if (!silent) toast('Игра сохранена', 'ok'); return true; }
-  catch (e) { if (!silent) toast('Не удалось сохранить', 'err'); return false; }
-}
-function loadGame() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return false;
-    const data = JSON.parse(raw);
-    if (!data || typeof data !== 'object') return false;
-    S = Object.assign(DEFAULT_STATE(), data);
-    if (!Array.isArray(S.evidence)) S.evidence = [];
-    if (!Array.isArray(S.visited)) S.visited = [];
-    if (!Array.isArray(S.met)) S.met = [];
-    if (!Array.isArray(S.links)) S.links = [];
-    return true;
-  } catch (e) { return false; }
-}
-function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
-let saveTimer = null;
-function autoSave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveGame(true), 400); }
+const U = {
+  proj: gl.getUniformLocation(prog,'uProj'),
+  view: gl.getUniformLocation(prog,'uView'),
+  model: gl.getUniformLocation(prog,'uModel'),
+  color: gl.getUniformLocation(prog,'uColor'),
+  ambient: gl.getUniformLocation(prog,'uAmbient'),
+  highlight: gl.getUniformLocation(prog,'uHighlight'),
+  cam: gl.getUniformLocation(prog,'uCam'),
+  light1: gl.getUniformLocation(prog,'uLight1'),
+  light2: gl.getUniformLocation(prog,'uLight2'),
+  light3: gl.getUniformLocation(prog,'uLight3'),
+  lampOn: gl.getUniformLocation(prog,'uLampOn'),
+  emis: gl.getUniformLocation(prog,'uEmis')
+};
+const A = {
+  pos: gl.getAttribLocation(prog,'aPos'),
+  nrm: gl.getAttribLocation(prog,'aNormal')
+};
 
-/* ─────────── HELPERS ─────────── */
-function currentChapter() { return CHAPTERS[S.chapter] || CHAPTERS[0]; }
-function hasEv(id) { return S.evidence.includes(id); }
-function hasFlag(k) { return !!S.flags[k]; }
-function setFlag(k) { if (!S.flags[k]) { S.flags[k] = true; autoSave(); } }
-function addEv(id) {
-  if (!id || hasEv(id)) return false;
-  S.evidence.push(id); autoSave(); sfx('ev');
-  const e = EV[id];
-  if (e) toast('✦ Найдено: ' + e.n, 'ev');
-  return true;
-}
-function isLocUnlocked(id) {
-  const l = LOC[id]; if (!l) return false;
-  if (l.ch !== currentChapter().n) return false;
-  if (l.req && !hasEv(l.req)) return false;
-  return true;
-}
-function hasLink(a, b) {
-  return S.links.some(p => (p[0]===a && p[1]===b) || (p[0]===b && p[1]===a));
-}
-function chapterComplete() {
-  const ch = currentChapter();
-  return ch.keyEv.every(hasEv);
-}
-function linkCount(chN) {
-  const evIds = new Set(Object.keys(EV).filter(k => EV[k].ch === chN));
-  return S.links.filter(p => evIds.has(p[0]) && evIds.has(p[1])).length;
-}
-
-/* ─────────── DEVICE DETECTION ─────────── */
-function detectDevice() {
-  if (S.device !== 'auto') return S.device;
-  const w = window.innerWidth, h = window.innerHeight;
-  const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-  if (w >= 1600 && !touch) return 'tv';
-  if (w >= 1024) return 'pc';
-  if (w >= 700) return 'tablet';
-  return 'phone';
-}
-function applyDevice() {
-  const d = detectDevice();
-  document.body.classList.remove('dev-pc','dev-phone','dev-tablet','dev-tv');
-  document.body.classList.add('dev-' + d);
-}
-
-/* ─────────── SCREEN ─────────── */
-function show(screenId) {
-  $$('.screen').forEach(s => s.classList.remove('on'));
-  const s = document.getElementById(screenId);
-  if (s) { s.classList.add('on'); const f = s.querySelector('.fade-in'); if (f) { f.classList.remove('fade-in'); void f.offsetWidth; f.classList.add('fade-in'); } }
-}
-
-/* ─────────── RENDER MENU ─────────── */
-function renderMenu() {
-  show('s-menu');
-  const cont = $('#btn-continue');
-  cont.disabled = !hasSave();
-}
-
-/* ─────────── INTRO ─────────── */
-function startIntro() {
-  const c = $('#intro-content');
-  c.innerHTML = '';
-  c.appendChild(el('div', { class: 'tag' }, 'Пролог · 03:14'));
-  c.appendChild(el('h1', { style: 'margin:14px 0 20px;letter-spacing:2px' }, 'ТИХИЙ ГОРОД'));
-  const txt = [
-    'Дождь стучал по крыше клиники «Новый Рассвет» третий час подряд. Вы стояли в дверях кабинета и смотрели на тело, которого не должно было здесь быть.',
-    'Доктор Антон Волков, 54 года. Ведущий психиатр. Ещё вчера — уважаемый человек, лауреат, лектор. Сегодня — тело под белой простыней.',
-    '«Самоубийство», — сказал дежурный. Слишком быстро сказал. Слишком уверенно.',
-    'Вы — Алекс Кейн, следователь. Двенадцать лет в отделе. И вы давно знаете: там, где всё выглядит просто, всегда прячется ложь.',
-    'Сегодня ночью начинается ваше расследование.'
+/* ---- Mesh builder ---- */
+function buildCube(){
+  const P=[],N=[],I=[];
+  const faces=[
+    {n:[0,0,1], v:[[-0.5,-0.5,0.5],[0.5,-0.5,0.5],[0.5,0.5,0.5],[-0.5,0.5,0.5]]},
+    {n:[0,0,-1],v:[[0.5,-0.5,-0.5],[-0.5,-0.5,-0.5],[-0.5,0.5,-0.5],[0.5,0.5,-0.5]]},
+    {n:[1,0,0], v:[[0.5,-0.5,0.5],[0.5,-0.5,-0.5],[0.5,0.5,-0.5],[0.5,0.5,0.5]]},
+    {n:[-1,0,0],v:[[-0.5,-0.5,-0.5],[-0.5,-0.5,0.5],[-0.5,0.5,0.5],[-0.5,0.5,-0.5]]},
+    {n:[0,1,0], v:[[-0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,-0.5],[-0.5,0.5,-0.5]]},
+    {n:[0,-1,0],v:[[-0.5,-0.5,-0.5],[0.5,-0.5,-0.5],[0.5,-0.5,0.5],[-0.5,-0.5,0.5]]}
   ];
-  txt.forEach(t => c.appendChild(el('p', { style: 'margin-bottom:14px;line-height:1.7;color:#cfd5e2' }, t)));
-  const btn = el('button', { class: 'btn primary', style: 'margin-top:20px;padding:14px 26px', onclick: () => { sfx('click'); startNewGame(); } }, '▸ Начать расследование');
-  c.appendChild(btn);
+  faces.forEach((f,fi)=>{
+    f.v.forEach(v=>{P.push(v[0],v[1],v[2]);N.push(f.n[0],f.n[1],f.n[2]);});
+    const b=fi*4;
+    I.push(b,b+1,b+2,b,b+2,b+3);
+  });
+  return makeMesh(P,N,I);
+}
+function buildCylinder(seg){
+  seg = seg||16;
+  const P=[],N=[],I=[];
+  for(let i=0;i<seg;i++){
+    const a=(i/seg)*Math.PI*2, a2=((i+1)/seg)*Math.PI*2;
+    const c=Math.cos(a),s=Math.sin(a),c2=Math.cos(a2),s2=Math.sin(a2);
+    // side quad
+    const idx = P.length/3;
+    P.push(c*0.5,-0.5,s*0.5, c2*0.5,-0.5,s2*0.5, c2*0.5,0.5,s2*0.5, c*0.5,0.5,s*0.5);
+    N.push(c,0,s, c2,0,s2, c2,0,s2, c,0,s);
+    I.push(idx,idx+1,idx+2, idx,idx+2,idx+3);
+    // top
+    const t=idx+4;
+    P.push(0,0.5,0, c*0.5,0.5,s*0.5, c2*0.5,0.5,s2*0.5);
+    N.push(0,1,0, 0,1,0, 0,1,0);
+    I.push(t,t+1,t+2);
+    // bottom
+    const b=t+3;
+    P.push(0,-0.5,0, c2*0.5,-0.5,s2*0.5, c*0.5,-0.5,s*0.5);
+    N.push(0,-1,0, 0,-1,0, 0,-1,0);
+    I.push(b,b+1,b+2);
+  }
+  return makeMesh(P,N,I);
+}
+function makeMesh(P,N,I){
+  const vbo=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+  const nbo=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,nbo);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(N),gl.STATIC_DRAW);
+  const ibo=gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(I),gl.STATIC_DRAW);
+  return {vbo,nbo,ibo,count:I.length};
+}
+const MESH = { cube: null, cyl: null };
+MESH.cube = buildCube();
+MESH.cyl = buildCylinder(16);
+
+gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.CULL_FACE);
+gl.cullFace(gl.BACK);
+
+/* ============================================================
+   SCENE OBJECTS
+   ============================================================ */
+// Object: {mesh, pos:[x,y,z], size:[sx,sy,sz], rot:0, color:[r,g,b], emis:false, interactive:{...}}
+const scene = [];
+const interactables = [];
+
+function addObj(o){
+  scene.push(o);
+  if (o.interactive) interactables.push(o);
+  return o;
+}
+function box(pos,size,color,opts){
+  return Object.assign({mesh:'cube',pos,size,rot:0,color},opts||{});
+}
+function cyl(pos,size,color,opts){
+  return Object.assign({mesh:'cyl',pos,size,rot:0,color},opts||{});
 }
 
-function startNewGame() {
-  S = DEFAULT_STATE();
-  S.started = true;
-  autoSave();
-  enterChapter(0);
+// --- Room shell ---
+const RX = CFG.ROOM.x/2, RY = CFG.ROOM.y, RZ = CFG.ROOM.z/2;
+addObj(box([0,-0.05,0],[RX*2,0.1,RZ*2],[0.22,0.18,0.14])); // floor (wood)
+addObj(box([0,RY+0.05,0],[RX*2,0.1,RZ*2],[0.14,0.13,0.12])); // ceiling
+// walls
+addObj(box([0,RY/2,-RZ-0.05],[RX*2+0.2,RY+0.1,0.1],[0.28,0.26,0.24]));
+addObj(box([0,RY/2, RZ+0.05],[RX*2+0.2,RY+0.1,0.1],[0.28,0.26,0.24]));
+addObj(box([-RX-0.05,RY/2,0],[0.1,RY+0.1,RZ*2],[0.26,0.24,0.22]));
+addObj(box([ RX+0.05,RY/2,0],[0.1,RY+0.1,RZ*2],[0.26,0.24,0.22]));
+
+// Door (front wall) — interactive
+addObj(box([0,1.05,RZ-0.02],[1.15,2.1,0.08],[0.35,0.18,0.12],{
+  interactive:{
+    id:'door',name:'Входная дверь',action:'Осмотреть',dist:3.2,
+    text:'Заперта изнутри. Замок не взломан — никто не уходил через дверь после убийства.',
+    evidence:'ev_door'
+  }
+}));
+// Door handle
+addObj(box([0.45,1.05,RZ-0.1],[0.06,0.06,0.15],[0.55,0.5,0.3]));
+
+// Window (back wall) — interactive
+addObj(box([1.6,1.7,-RZ+0.02],[2.2,1.4,0.06],[0.15,0.2,0.28],{emis:true, transparent:false}));
+addObj(box([1.6,1.7,-RZ+0.01],[2.3,1.5,0.03],[0.35,0.3,0.25]));
+// window frame bars
+addObj(box([1.6,1.7,-RZ+0.04],[0.05,1.4,0.02],[0.1,0.1,0.1]));
+addObj(box([1.6,1.7,-RZ+0.04],[2.2,0.05,0.02],[0.1,0.1,0.1]));
+addObj(box([1.6,1.7,-RZ+0.04],[2.2,0.02,0.02],[0.1,0.1,0.1],{
+  interactive:{
+    id:'window',name:'Окно',action:'Осмотреть',dist:3.5,
+    text:'Стекло целое, шпингалеты закрыты. Окно выходит на внутренний двор — залезть сюда незаметно невозможно.',
+    evidence:'ev_window'
+  }
+}));
+
+// --- Desk ---
+addObj(box([-1.5,0.75,-2.9],[2.3,0.07,1.0],[0.32,0.22,0.14]));
+addObj(box([-2.55,0.37,-2.9],[0.08,0.75,0.9],[0.22,0.15,0.1]));
+addObj(box([-0.45,0.37,-2.9],[0.08,0.75,0.9],[0.22,0.15,0.1]));
+addObj(box([-2.55,0.37,-2.45],[0.08,0.75,0.05],[0.22,0.15,0.1]));
+addObj(box([-0.45,0.37,-2.45],[0.08,0.75,0.05],[0.22,0.15,0.1]));
+
+// Monitor
+addObj(box([-1.55,1.28,-3.1],[0.78,0.5,0.06],[0.12,0.12,0.13],{
+  interactive:{id:'monitor',name:'Компьютер',action:'Сесть за компьютер',dist:2.4,
+    text:'Рабочая станция погибшего. Экран погашен. На корпусе — следы пальцев на кнопке питания.',
+    evidence:'ev_monitor'}
+}));
+addObj(box([-1.55,1.28,-3.05],[0.7,0.42,0.02],[0.06,0.12,0.2],{emis:true}));
+addObj(box([-1.55,0.98,-3.05],[0.08,0.12,0.08],[0.1,0.1,0.1]));
+addObj(box([-1.55,0.79,-3.0],[0.4,0.02,0.25],[0.1,0.1,0.1]));
+
+// Keyboard & mouse
+addObj(box([-1.5,0.80,-2.72],[0.45,0.03,0.16],[0.1,0.1,0.11]));
+addObj(box([-1.05,0.79,-2.72],[0.08,0.025,0.12],[0.12,0.12,0.12],{
+  interactive:{id:'mouse',name:'Мышь',action:'Осмотреть',dist:2.2,
+    text:'На левой кнопке мыши — бурое пятно. Кровь погибшего. Похоже, он пытался ухватиться за стол.',
+    evidence:'ev_mouse'}
+}));
+
+// Desk lamp
+addObj(box([-2.45,0.80,-3.15],[0.18,0.02,0.18],[0.15,0.15,0.18]));
+addObj(cyl([-2.45,1.0,-3.15],[0.03,0.45,0.03],[0.15,0.15,0.18]));
+addObj(cyl([-2.45,1.25,-3.05],[0.2,0.18,0.2],[0.4,0.35,0.2],{
+  interactive:{id:'lamp',name:'Настольная лампа',action:'Включить / выключить',dist:2.4,
+    text:'Лампа выключена. Пыль на абажуре нетронута — возможно, убийца работал в темноте.',
+    evidence:'ev_lamp'}
+}));
+// Lamp cone glow
+addObj(cyl([-2.45,1.18,-3.05],[0.22,0.02,0.22],[1.0,0.9,0.6],{emis:true}));
+
+// Mug with broken handle
+addObj(cyl([-0.95,0.84,-3.15],[0.08,0.12,0.08],[0.75,0.72,0.68],{
+  interactive:{id:'mug',name:'Разбитая кружка',action:'Осмотреть',dist:2.2,
+    text:'Кружка упала, ручка отломана и лежит отдельно. Кофе разлит. Признак борьбы у стола.',
+    evidence:'ev_mug'}
+}));
+addObj(box([-0.82,0.80,-3.12],[0.05,0.02,0.02],[0.75,0.72,0.68])); // broken handle
+// coffee stain
+addObj(box([-0.9,0.78,-3.05],[0.25,0.005,0.2],[0.18,0.12,0.08]));
+
+// Papers on desk
+addObj(box([-1.85,0.79,-2.9],[0.3,0.008,0.22],[0.88,0.86,0.8],{
+  interactive:{id:'papers',name:'Бумаги на столе',action:'Изучить',dist:2.3,
+    text:'Финансовый отчёт MIND Corp. Красным обведены транзакции на оффшорный счёт. Подпись — M. Cole.',
+    evidence:'ev_papers'}
+}));
+
+// Note with password
+addObj(box([-1.35,0.79,-2.85],[0.15,0.006,0.11],[0.92,0.88,0.6],{
+  interactive:{id:'note',name:'Записка под клавиатурой',action:'Изучить',dist:2.2,
+    text:'"Пароль к рабочей станции: MIND-2019. Не забыть сменить после инцидента." — почерк погибшего.',
+    evidence:'ev_note', givesPass:true}
+}));
+
+// --- Chair ---
+addObj(box([-1.5,0.45,-2.1],[0.5,0.06,0.5],[0.16,0.12,0.1],{
+  interactive:{id:'chair',name:'Стул',action:'Сесть',dist:2.4,
+    text:'Рабочее кресло. Сядьте, чтобы работать за компьютером.',
+    evidence:null, isChair:true}
+}));
+addObj(box([-1.5,0.75,-1.85],[0.5,0.6,0.06],[0.16,0.12,0.1]));
+addObj(cyl([-1.25,0.2,-1.9],[0.05,0.5,0.05],[0.15,0.15,0.18]));
+addObj(cyl([-1.75,0.2,-1.9],[0.05,0.5,0.05],[0.15,0.15,0.18]));
+addObj(cyl([-1.25,0.2,-2.3],[0.05,0.5,0.05],[0.15,0.15,0.18]));
+addObj(cyl([-1.75,0.2,-2.3],[0.05,0.5,0.05],[0.15,0.15,0.18]));
+
+// --- Cabinet (bookshelf) ---
+addObj(box([3.3,1.0,-3.5],[1.2,2.0,0.55],[0.18,0.13,0.09],{
+  interactive:{id:'cabinet',name:'Шкаф',action:'Открыть',dist:3.0,
+    text:'Дверцы приоткрыты. Внутри — рабочие папки, несколько книг и коробка с личными вещами.',
+    evidence:'ev_cabinet'}
+}));
+// books
+addObj(box([3.3,1.6,-3.5],[1.1,0.2,0.4],[0.5,0.15,0.15]));
+addObj(box([3.3,1.85,-3.5],[1.1,0.2,0.4],[0.15,0.35,0.5]));
+addObj(box([3.3,1.35,-3.5],[1.1,0.2,0.4],[0.4,0.3,0.15]));
+// open drawer
+addObj(box([3.3,0.7,-3.2],[1.0,0.3,0.4],[0.22,0.16,0.1]));
+
+// --- Bed ---
+addObj(box([2.7,0.25,0.8],[2.0,0.3,2.6],[0.22,0.16,0.12]));
+addObj(box([2.7,0.5,0.8],[1.9,0.25,2.5],[0.25,0.28,0.35]));
+addObj(box([2.7,0.65,-0.2],[0.6,0.15,0.3],[0.75,0.78,0.82])); // pillow
+// blanket
+addObj(box([2.7,0.55,1.4],[1.9,0.1,1.3],[0.35,0.2,0.18]));
+
+// --- Bedside table + phone ---
+addObj(box([1.3,0.35,-1.0],[0.5,0.7,0.5],[0.22,0.15,0.1]));
+addObj(box([1.3,0.72,-1.0],[0.05,0.02,0.15],[0.1,0.1,0.1],{
+  interactive:{id:'phone',name:'Телефон',action:'Проверить сообщения',dist:2.2,
+    text:'Личный телефон. Последнее сообщение от "М.": "Ты пожалеешь, если отправишь это."',
+    evidence:'ev_phone'}
+}));
+addObj(box([1.3,0.74,-1.0],[0.07,0.01,0.13],[0.08,0.1,0.15],{emis:true}));
+
+// --- Picture frame ---
+addObj(box([-3.5,1.9,-2.0],[0.7,0.5,0.03],[0.35,0.25,0.15],{
+  interactive:{id:'photo',name:'Фотография',action:'Осмотреть',dist:2.8,
+    text:'Фото: Алекс, Маркус и Елена в офисе два года назад. На обороте надпись: "Пока смерть не разлучит — до первой измены".',
+    evidence:'ev_photo'}
+}));
+
+// --- Wall clock ---
+addObj(cyl([-3.5,2.4,2.0],[0.35,0.03,0.35],[0.1,0.1,0.1],{
+  interactive:{id:'clock',name:'Настенные часы',action:'Осмотреть',dist:3.0,
+    text:'Часы остановились в 23:47. По отчёту — время удара. Стрелки совпадают с моментом смерти.',
+    evidence:'ev_clock'}
+}));
+
+// --- Body outline on floor (crime scene) ---
+addObj(box([0.4,0.02,-1.2],[1.8,0.005,0.75],[0.55,0.08,0.06],{
+  interactive:{id:'body',name:'Место преступления',action:'Изучить',dist:2.8,
+    text:'Тело Алекса Ривза. Удар в висок тупым предметом. Поза указывает на неожиданное нападение — он не успел встать.',
+    evidence:'ev_body'}
+}));
+// Blood pool
+addObj(box([0.1,0.021,-1.2],[0.6,0.003,0.5],[0.22,0.03,0.03]));
+// Blood spatter
+addObj(box([-0.4,0.022,-1.0],[0.15,0.003,0.15],[0.3,0.05,0.05]));
+addObj(box([0.9,0.022,-1.4],[0.2,0.003,0.1],[0.25,0.04,0.04]));
+
+// --- Coffee stain near cabinet (hidden clue) ---
+addObj(box([2.6,0.02,-3.0],[0.3,0.004,0.25],[0.15,0.1,0.06]));
+// small shard
+addObj(box([2.45,0.03,-2.85],[0.06,0.01,0.06],[0.9,0.85,0.8],{
+  interactive:{id:'shard',name:'Осколок стекла',action:'Осмотреть',dist:2.5,
+    text:'Осколок с остатками кофе. Пятно у шкафа — кто-то стоял здесь и пил из разбитой позже кружки.',
+    evidence:'ev_shard'}
+}));
+
+// --- Rug / carpet ---
+addObj(box([0.5,0.005,1.5],[2.4,0.006,2.0],[0.15,0.1,0.08]));
+
+// --- Cigarette (hidden evidence) ---
+addObj(cyl([2.3,0.03,-2.4],[0.03,0.02,0.1],[0.9,0.85,0.8],{
+  rot:0.5,
+  interactive:{id:'cigarette',name:'Окурок',action:'Осмотреть',dist:2.2,
+    text:'Марка "Viktor & Co". Виктор курит такие. Но запах пепла здесь свежий — это странно.',
+    evidence:'ev_cigarette'}
+}));
+
+// --- Safe (hidden under bed, subtle) ---
+addObj(box([3.4,0.15,1.9],[0.5,0.3,0.4],[0.2,0.2,0.22],{
+  interactive:{id:'safe',name:'Сейф под кроватью',action:'Открыть',dist:2.4,
+    text:'Сейф открыт и пуст. Замок целый. Значит, убийца знал код — он свой.',
+    evidence:'ev_safe'}
+}));
+
+// --- Rope / cord on floor ---
+addObj(cyl([-0.7,0.02,-2.0],[0.02,0.02,0.8],[0.15,0.12,0.08],{rot:1.2}));
+
+// --- Small plant ---
+addObj(cyl([-3.3,0.2,3.0],[0.25,0.4,0.25],[0.15,0.15,0.12]));
+addObj(cyl([-3.3,0.6,3.0],[0.35,0.4,0.35],[0.18,0.35,0.18]));
+
+// --- Trash bin ---
+addObj(cyl([3.4,0.25,3.3],[0.25,0.5,0.25],[0.25,0.25,0.25],{
+  interactive:{id:'bin',name:'Мусорная корзина',action:'Осмотреть',dist:2.5,
+    text:'В корзине — обрывки бумаг и сломанная флешка. Кто-то пытался уничтожить данные.',
+    evidence:'ev_bin'}
+}));
+
+/* ============================================================
+   EVIDENCE DATABASE
+   ============================================================ */
+const EVIDENCE_DB = {
+  ev_door:{name:'Дверь изнутри',cat:'Физическая',desc:'Дверь заперта изнутри, замок цел. Убийца не уходил через вход.',people:['Алекс Ривз']},
+  ev_window:{name:'Запертое окно',cat:'Физическая',desc:'Окно и шпингалеты целые. Путь через окно исключён.',people:[]},
+  ev_monitor:{name:'Рабочая станция',cat:'Цифровая',desc:'Компьютер погибшего. Экран выключен.',people:['Алекс Ривз']},
+  ev_mouse:{name:'Кровь на мыши',cat:'Физическая',desc:'Кровь на левой кнопке — погибший пытался удержаться за стол.',people:['Алекс Ривз']},
+  ev_mug:{name:'Разбитая кружка',cat:'Физическая',desc:'Кружка упала, ручка отломана. Признак борьбы у стола.',people:['Алекс Ривз']},
+  ev_papers:{name:'Финансовый отчёт',cat:'Документ',desc:'Обведены транзакции на оффшор. Подпись — M. Cole.',people:['Маркус Коул']},
+  ev_note:{name:'Записка с паролем',cat:'Документ',desc:'Пароль: MIND-2019. Почерк Алекса.',people:['Алекс Ривз']},
+  ev_photo:{name:'Фото на стене',cat:'Фотография',desc:'Алекс, Маркус и Елена. Странная подпись.',people:['Алекс Ривз','Маркус Коул','Елена Ривз']},
+  ev_phone:{name:'Сообщение на телефоне',cat:'Свидетельство',desc:'Угроза от "М.": "Ты пожалеешь, если отправишь это."',people:['Маркус Коул']},
+  ev_clock:{name:'Часы остановились',cat:'Физическая',desc:'Время смерти — 23:47.',people:['Алекс Ривз']},
+  ev_body:{name:'Место преступления',cat:'Физическая',desc:'Удар в висок. Неожиданное нападение.',people:['Алекс Ривз']},
+  ev_cabinet:{name:'Открытый шкаф',cat:'Физическая',desc:'Дверцы приоткрыты, ящик выдвинут — что-то искали.',people:[]},
+  ev_lamp:{name:'Выключенная лампа',cat:'Физическая',desc:'Убийца работал в темноте. Он знал расположение вещей.',people:[]},
+  ev_shard:{name:'Осколок у шкафа',cat:'Физическая',desc:'Кто-то пил кофе из кружки погибшего у шкафа.',people:[]},
+  ev_cigarette:{name:'Окурок',cat:'Физическая',desc:'Марка "Viktor & Co" — как у Виктора Хейла.',people:['Виктор Хейл']},
+  ev_safe:{name:'Открытый сейф',cat:'Физическая',desc:'Убийца знал код сейфа. Действовал свой.',people:[]},
+  ev_bin:{name:'Уничтоженные данные',cat:'Цифровая',desc:'В корзине — обломки флешки. Данные пытались уничтожить.',people:[]},
+  ev_email:{name:'Переписка',cat:'Цифровая',desc:'Электронные письма с сервера погибшего.',people:['Маркус Коул','Виктор Хейл']},
+  ev_deleted:{name:'Удалённое письмо',cat:'Цифровая',desc:'Восстановленное письмо с угрозой.',people:['Маркус Коул']},
+  ev_transfer:{name:'Денежный перевод',cat:'Цифровая',desc:'Крупная сумма на счёт оффшора за 3 дня до убийства.',people:['Маркус Коул']},
+  ev_contract:{name:'Договор',cat:'Документ',desc:'Контракт о передаче данных клиенту "N". Подпись М. Коул.',people:['Маркус Коул']},
+  ev_logs:{name:'Логи доступа',cat:'Цифровая',desc:'В 23:30 в систему входил пользователь с логином MC0LE.',people:['Маркус Коул']},
+  ev_keylog:{name:'Скрытый файл',cat:'Цифровая',desc:'Файл с логами — Алекс вёл собственное расследование.',people:['Алекс Ривз','Маркус Коул']},
+  ev_concl:{name:'Ключевой вывод',cat:'Вывод',desc:'Убийца — Маркус Коул. Мотив — скрыть хищение данных.',people:['Маркус Коул']}
+};
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+const state = {
+  mode: 'menu', // menu, playing, computer, paused
+  position: [0, CFG.PLAYER.eye, 3.2],
+  yaw: Math.PI, pitch: -0.05,
+  velocity: [0,0],
+  crouch: false,
+  evidence: [],
+  visitedDocs: {},
+  connections: [],
+  boardSel: [],
+  knownPass: false,
+  loggedIn: false,
+  ending: null,
+  startTime: Date.now(),
+  lampOn: false,
+  firstTime: true,
+  toast: null,
+  sitting: false,
+  sitT: 0,
+  seatTarget: null,
+  returnPos: null,
+  returnYaw: 0,
+  returnPitch: 0
+};
+
+/* ============================================================
+   DEVICE DETECTION
+   ============================================================ */
+function detectDevice(){
+  const forced = localStorage.getItem('mind_case_force_device');
+  if (forced && forced !== 'auto') return forced;
+  const ua = navigator.userAgent;
+  const w = window.innerWidth;
+  const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (/SmartTV|Tizen|WebOS|BRAVIA|HbbTV|NetCast/i.test(ua)) return 'tv';
+  if (/iPad|Tablet/i.test(ua) || (touch && Math.min(w, window.innerHeight) > 720)) return 'tablet';
+  if (/Mobi|Android|iPhone/i.test(ua) || (touch && w < 720)) return 'phone';
+  return 'pc';
+}
+function applyDevice(){
+  const d = detectDevice();
+  document.body.dataset.device = d;
+  const isTouch = (d==='phone' || d==='tablet');
+  document.getElementById('touch').classList.toggle('on', isTouch);
 }
 
-function enterChapter(idx) {
-  S.chapter = idx;
-  S.tab = 'case';
-  autoSave();
-  renderHub();
-  show('s-hub');
-}
+/* ============================================================
+   INPUT
+   ============================================================ */
+const keys = {};
+let pointerLocked = false;
+let sens = 1.0;
 
-/* ─────────── HUB ─────────── */
-const TABS = [
-  {id:'case', t:'Дело', i:'📋'},
-  {id:'loc', t:'Локации', i:'📍'},
-  {id:'ev', t:'Улики', i:'🔎'},
-  {id:'sus', t:'Подозреваемые', i:'👥'},
-  {id:'board', t:'Доска', i:'🧩'},
-  {id:'accuse', t:'Обвинение', i:'⚖'}
-];
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'KeyE') tryInteract();
+  if (e.code === 'Escape') togglePause();
+  if (e.code === 'KeyJ') toggleJournal();
+  if (e.code === 'KeyB') toggleBoard();
+  if (e.code === 'KeyC' || e.code === 'ControlLeft' || e.code === 'ControlRight') state.crouch = true;
+});
+document.addEventListener('keyup', e => {
+  keys[e.code] = false;
+  if (e.code === 'KeyC' || e.code === 'ControlLeft' || e.code === 'ControlRight') state.crouch = false;
+});
 
-function renderHub() {
-  const ch = currentChapter();
-  $('#hud-ch').textContent = ch.n;
-  $('#hud-rep').textContent = S.rep;
-  $('#hud-loc').textContent = 'Дело: ' + (ch.title.split('.')[0]);
+canvas.addEventListener('click', () => {
+  Audio.init(); Audio.resume();
+  if (state.mode === 'playing') {
+    if (!pointerLocked && canvas.requestPointerLock) canvas.requestPointerLock();
+  }
+});
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === canvas;
+});
+document.addEventListener('mousemove', e => {
+  if (!pointerLocked) return;
+  const s = 0.0022 * sens;
+  state.yaw -= e.movementX * s;
+  state.pitch -= e.movementY * s;
+  state.pitch = Math.max(-1.4, Math.min(1.4, state.pitch));
+});
+canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-  // nav
-  const nav = $('#sidenav');
-  nav.innerHTML = '';
-  TABS.forEach(t => {
-    let badge = '';
-    if (t.id === 'loc') {
-      const unvis = ch.locs.filter(id => isLocUnlocked(id) && !S.visited.includes(id)).length;
-      if (unvis > 0) badge = String(unvis);
+/* ---- Touch controls ---- */
+const stick = document.getElementById('stick');
+const nub = document.getElementById('stickNub');
+let stickId = null, stickStart = {x:0,y:0}, stickMove = {x:0,y:0};
+let lookId = null, lookLast = {x:0,y:0};
+const lookzone = document.getElementById('lookzone');
+
+function onTouchStart(e){
+  for (const t of e.changedTouches){
+    if (stickId === null && t.target === stick || (t.target === nub && stickId === null)){
+      stickId = t.identifier; stickStart = {x:t.clientX, y:t.clientY}; stickMove = {x:0,y:0};
+    } else if (lookId === null){
+      lookId = t.identifier; lookLast = {x:t.clientX, y:t.clientY};
     }
-    if (t.id === 'ev') {
-      const unch = S.evidence.filter(k => EV[k] && EV[k].ch === ch.n && !S._evSeen?.[k]).length;
+  }
+}
+function onTouchMove(e){
+  for (const t of e.changedTouches){
+    if (t.identifier === stickId){
+      const dx = t.clientX - stickStart.x;
+      const dy = t.clientY - stickStart.y;
+      const maxR = 50;
+      const d = Math.hypot(dx,dy);
+      const f = d > maxR ? maxR/d : 1;
+      stickMove.x = dx*f; stickMove.y = dy*f;
+      nub.style.transform = `translate(${stickMove.x}px, ${stickMove.y}px)`;
+    } else if (t.identifier === lookId){
+      const dx = (t.clientX - lookLast.x) * 0.005 * sens;
+      const dy = (t.clientY - lookLast.y) * 0.005 * sens;
+      state.yaw -= dx;
+      state.pitch -= dy;
+      state.pitch = Math.max(-1.4, Math.min(1.4, state.pitch));
+      lookLast = {x:t.clientX, y:t.clientY};
     }
-    const b = el('button', { class: 'navbtn' + (S.tab === t.id ? ' on' : ''), onclick: () => { S.tab = t.id; sfx('click'); renderHub(); } },
-      el('span', { class: 'ic' }, t.i), el('span', {}, t.t), badge ? el('span', { class: 'badge' }, badge) : null
-    );
-    nav.appendChild(b);
-  });
-
-  // content
-  const c = $('#hub-content');
-  c.innerHTML = '';
-  const renderer = { case:renderCase, loc:renderLocations, ev:renderEvidence, sus:renderSuspects, board:renderBoard, accuse:renderAccuse }[S.tab];
-  if (renderer) renderer(c, ch);
+  }
+  e.preventDefault();
 }
-
-function renderCase(c, ch) {
-  const banner = el('div', { class: 'chapter-banner' });
-  banner.appendChild(el('span', { class: 'tag' }, 'Глава ' + ch.n));
-  banner.appendChild(el('h2', {}, ch.title));
-  banner.appendChild(el('p', {}, ch.brief));
-  c.appendChild(banner);
-
-  c.appendChild(el('div', { class: 'section-title' }, 'Текущая задача'));
-  c.appendChild(el('div', { class: 'panel', style: 'padding:16px' }, el('p', {}, '▸ ' + ch.objective)));
-
-  c.appendChild(el('div', { class: 'section-title' }, 'Прогресс'));
-  const evDone = ch.keyEv.filter(hasEv).length;
-  const evTotal = ch.keyEv.length;
-  const locVisited = ch.locs.filter(id => S.visited.includes(id)).length;
-  const locTotal = ch.locs.length;
-  const dlgMet = ch.suspects.filter(id => S.met.includes(id)).length;
-  const dlgTotal = ch.suspects.length;
-  const linksTotal = LINKS.filter(L => EV[L.a] && EV[L.a].ch === ch.n).length;
-  const prog = el('div', { class:'grid c3' });
-  const stat = (label, val, total) => {
-    const card = el('div', { class:'card', style:'cursor:default' });
-    card.appendChild(el('div', { class:'mu', style:'font-size:12px;text-transform:uppercase;letter-spacing:1px' }, label));
-    card.appendChild(el('div', { style:'font-size:22px;font-weight:600;margin-top:6px' }, val + ' / ' + total));
-    const bar = el('div', { style:'height:4px;background:#0a0d14;border-radius:2px;margin-top:10px;overflow:hidden' });
-    const fill = el('div', { style:`height:100%;width:${(val/total*100).toFixed(0)}%;background:linear-gradient(90deg,#e0433b,#ff5c4d);transition:width .4s` });
-    bar.appendChild(fill); card.appendChild(bar);
-    return card;
-  };
-  prog.appendChild(stat('Ключевые улики', evDone, evTotal));
-  prog.appendChild(stat('Осмотрено локаций', locVisited, locTotal));
-  prog.appendChild(stat('Допросов', dlgMet, dlgTotal));
-  prog.appendChild(stat('Связей на доске', linkCount(ch.n), linksTotal));
-  c.appendChild(prog);
-
-  if (chapterComplete()) {
-    c.appendChild(el('div', { class:'section-title' }, 'Готово к обвинению'));
-    const card = el('div', { class:'panel', style:'padding:16px;border-color:#e0433b' });
-    card.appendChild(el('p', { style:'margin-bottom:12px' }, 'Вы собрали достаточно доказательств. Переходите к выдвижению обвинения.'));
-    card.appendChild(el('button', { class:'btn primary', onclick: () => { S.tab='accuse'; renderHub(); } }, '⚖ Выдвинуть обвинение'));
-    c.appendChild(card);
+function onTouchEnd(e){
+  for (const t of e.changedTouches){
+    if (t.identifier === stickId){ stickId = null; stickMove = {x:0,y:0}; nub.style.transform = ''; }
+    if (t.identifier === lookId){ lookId = null; }
   }
 }
+if (lookzone){
+  lookzone.addEventListener('touchstart', onTouchStart, {passive:false});
+  lookzone.addEventListener('touchmove', onTouchMove, {passive:false});
+  lookzone.addEventListener('touchend', onTouchEnd);
+  lookzone.addEventListener('touchcancel', onTouchEnd);
+}
+if (stick){
+  stick.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0];
+    stickId = t.identifier; stickStart = {x:t.clientX, y:t.clientY}; stickMove = {x:0,y:0};
+    e.preventDefault();
+  }, {passive:false});
+  stick.addEventListener('touchmove', onTouchMove, {passive:false});
+  stick.addEventListener('touchend', onTouchEnd);
+}
+document.getElementById('tInteract').addEventListener('touchstart', e => { e.preventDefault(); tryInteract(); }, {passive:false});
+document.getElementById('tCrouch').addEventListener('touchstart', e => { e.preventDefault(); state.crouch = !state.crouch; }, {passive:false});
+document.getElementById('tMenu').addEventListener('click', togglePause);
+document.getElementById('tJrn').addEventListener('click', toggleJournal);
 
-function renderLocations(c, ch) {
-  c.appendChild(el('h2', {}, 'Локации · Глава ' + ch.n));
-  c.appendChild(el('p', { class:'mu', style:'margin-top:6px;margin-bottom:16px' }, 'Осмотрите места, связанные с делом. Некоторые локации открываются по мере нахождения улик.'));
-
-  const grid = el('div', { class:'grid c2' });
-  ch.locs.forEach(id => {
-    const l = LOC[id];
-    if (!l) return;
-    const locked = !isLocUnlocked(id);
-    const visited = S.visited.includes(id);
-    const card = el('div', { class:'card' + (locked ? ' locked' : '') , onclick: locked ? null : () => visitLoc(id) });
-    card.appendChild(el('div', { class:'row', style:'margin-bottom:8px' },
-      el('div', { class:'ev-icon' }, l.i),
-      el('div', { class:'grow' }, el('h4', {}, l.n), el('div', { class:'mu', style:'font-size:12px' }, locked ? '🔒 Закрыто' : (visited ? '✓ Осмотрено' : 'Доступно')))
-    ));
-    card.appendChild(el('p', {}, l.d));
-    if (l.req && !hasEv(l.req)) card.appendChild(el('div', { class:'dim', style:'font-size:12px;margin-top:8px' }, 'Нужно: ' + (EV[l.req]?.n || '???')));
-    grid.appendChild(card);
-  });
-  c.appendChild(grid);
+/* ---- Gamepad ---- */
+let padState = {lx:0,ly:0,rx:0,ry:0, btnX:false, btnOpt:false};
+function pollGamepad(){
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  const gp = pads[0];
+  if (!gp) { padState.lx=padState.ly=padState.rx=padState.ry=0; return; }
+  const dz = 0.18;
+  padState.lx = Math.abs(gp.axes[0])>dz ? gp.axes[0] : 0;
+  padState.ly = Math.abs(gp.axes[1])>dz ? gp.axes[1] : 0;
+  padState.rx = Math.abs(gp.axes[2])>dz ? gp.axes[2] : 0;
+  padState.ry = Math.abs(gp.axes[3])>dz ? gp.axes[3] : 0;
+  const bX = gp.buttons[0] && gp.buttons[0].pressed;
+  const bOpt = gp.buttons[9] && gp.buttons[9].pressed;
+  if (bX && !padState.btnX) tryInteract();
+  if (bOpt && !padState.btnOpt) togglePause();
+  padState.btnX = bX; padState.btnOpt = bOpt;
 }
 
-function visitLoc(id) {
-  const l = LOC[id];
-  if (!l || !isLocUnlocked(id)) return;
-  sfx('click');
-  let got = [];
-  (l.ev || []).forEach(eid => { if (addEv(eid)) got.push(eid); });
-  if (!S.visited.includes(id)) S.visited.push(id);
-  autoSave();
+/* ============================================================
+   COLLISION & MOVEMENT
+   ============================================================ */
+const colliders = [];
+// register AABB colliders for walls + furniture (non-interactive-and-solid)
+scene.forEach(o => {
+  if (o.noCollide) return;
+  const [px,py,pz] = o.pos;
+  const [sx,sy,sz] = o.size;
+  // Only large objects collide
+  if (sx*sy*sz < 0.15 && !o.isWall) return;
+  colliders.push({min:[px-sx/2, py-sy/2, pz-sz/2], max:[px+sx/2, py+sy/2, pz+sz/2]});
+});
+// add walls explicitly
+colliders.push({min:[-RX-0.2,-0.2,-RZ-0.2], max:[-RX+0.05,RY+0.2,RZ+0.2]});
+colliders.push({min:[ RX-0.05,-0.2,-RZ-0.2], max:[ RX+0.2,RY+0.2,RZ+0.2]});
+colliders.push({min:[-RX-0.2,-0.2,-RZ-0.2], max:[ RX+0.2,RY+0.2,-RZ+0.05]});
+colliders.push({min:[-RX-0.2,-0.2, RZ-0.05], max:[ RX+0.2,RY+0.2, RZ+0.2]});
 
-  // Модальное окно с описанием
-  const box = $('#modal-box') || createModal();
-  box.innerHTML = '';
-  box.appendChild(el('div', { class:'row', style:'margin-bottom:12px' },
-    el('div', { class:'ev-icon' }, l.i),
-    el('div', { class:'grow' }, el('h2', {}, l.n))
-  ));
-  box.appendChild(el('p', { style:'color:#aeb6c8;line-height:1.65;margin-bottom:14px' }, l.d));
-
-  if (got.length) {
-    box.appendChild(el('div', { class:'section-title', style:'margin-top:6px' }, 'Найдено'));
-    got.forEach(eid => {
-      const e = EV[eid];
-      const ecard = el('div', { class:'panel', style:'padding:12px;margin-bottom:8px;border-left:3px solid #c9a35a' });
-      ecard.appendChild(el('div', { class:'row' }, el('span', {}, e.i + '  '), el('b', {}, e.n)));
-      ecard.appendChild(el('p', { class:'mu', style:'font-size:13px;margin-top:6px' }, e.d));
-      box.appendChild(ecard);
-    });
-  } else {
-    box.appendChild(el('p', { class:'mu', style:'font-style:italic' }, 'Здесь нечего больше искать.'));
+function collideMove(px,py,pz,nx,nz){
+  const r = CFG.PLAYER.radius;
+  // check X
+  let ok = true;
+  for (const c of colliders){
+    if (py > c.max[1] || py + 1.0 < c.min[1]) continue;
+    if (nx+r > c.min[0] && nx-r < c.max[0] && pz+r > c.min[2] && pz-r < c.max[2]){ ok=false; break; }
   }
-
-  // Диалог-связка
-  const dlgId = l.dlg;
-  if (dlgId && DLG[dlgId]) {
-    box.appendChild(el('div', { class:'hr' }));
-    box.appendChild(el('button', { class:'btn primary', onclick: () => { closeModal(); startDialogue(dlgId); } }, '💬 Поговорить'));
+  if (ok) px = nx;
+  ok = true;
+  for (const c of colliders){
+    if (py > c.max[1] || py + 1.0 < c.min[1]) continue;
+    if (px+r > c.min[0] && px-r < c.max[0] && nz+r > c.min[2] && nz-r < c.max[2]){ ok=false; break; }
   }
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('button', { class:'btn', onclick: closeModal }, 'Закрыть'));
-  openModal();
-  renderHub();
+  if (ok) pz = nz;
+  return [px,pz];
 }
 
-function renderEvidence(c, ch) {
-  c.appendChild(el('h2', {}, 'Улики · Глава ' + ch.n));
-  c.appendChild(el('p', { class:'mu', style:'margin-top:6px;margin-bottom:16px' }, 'Каждая улика может стать ключом к разгадке. Связывайте их на доске расследования.'));
-
-  const evIds = S.evidence.filter(k => EV[k]);
-  const mine = evIds.filter(k => EV[k].ch <= ch.n).sort((a,b) => EV[b].ch - EV[a].ch);
-  if (!mine.length) { c.appendChild(el('p', { class:'dim' }, 'Улик пока нет. Начните с осмотра локаций.')); return; }
-  const grid = el('div', { class:'grid c2' });
-  mine.forEach(id => {
-    const e = EV[id];
-    const card = el('div', { class:'card', onclick: () => showEvidenceModal(id) });
-    card.appendChild(el('div', { class:'row', style:'margin-bottom:8px' },
-      el('div', { class:'ev-icon' }, e.i),
-      el('div', { class:'grow' }, el('h4', {}, e.n), el('div', { class:'mu', style:'font-size:12px' }, 'Глава ' + e.ch))
-    ));
-    card.appendChild(el('p', {}, e.d));
-    grid.appendChild(card);
-  });
-  c.appendChild(grid);
-}
-
-function showEvidenceModal(id) {
-  const e = EV[id]; if (!e) return;
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('div', { class:'row', style:'margin-bottom:12px' },
-    el('div', { class:'ev-icon' }, e.i),
-    el('div', {}, el('span', { class:'tag' }, 'Улика · Глава ' + e.ch), el('h2', { style:'margin-top:6px' }, e.n))
-  ));
-  box.appendChild(el('p', { style:'line-height:1.7;color:#cfd5e2' }, e.d));
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('button', { class:'btn', onclick: closeModal }, 'Закрыть'));
-  openModal();
-}
-
-function renderSuspects(c, ch) {
-  c.appendChild(el('h2', {}, 'Подозреваемые · Глава ' + ch.n));
-  c.appendChild(el('p', { class:'mu', style:'margin-top:6px;margin-bottom:16px' }, 'Допрашивайте подозреваемых, замечайте противоречия, предъявляйте улики.'));
-
-  const grid = el('div', { class:'grid c2' });
-  ch.suspects.forEach(id => {
-    const p = CH[id]; if (!p) return;
-    const dlgId = ch.dlg?.[id];
-    const met = S.met.includes(id);
-    const card = el('div', { class:'card', onclick: () => { if (dlgId) startDialogue(dlgId); else showSuspectModal(id); } });
-    card.appendChild(el('div', { class:'char-row' },
-      el('div', { class:'char-avatar' }, p.i),
-      el('div', { class:'grow' },
-        el('h4', {}, p.n),
-        el('div', { class:'mu', style:'font-size:12px' }, p.r)
-      )
-    ));
-    card.appendChild(el('p', { style:'margin-top:10px' }, p.d));
-    if (dlgId) card.appendChild(el('div', { class:'dim', style:'margin-top:8px;font-size:12px' }, met ? '✓ Допрос проведён · Нажмите, чтобы поговорить снова' : '💬 Нажмите для допроса'));
-    grid.appendChild(card);
-  });
-  c.appendChild(grid);
-}
-
-function showSuspectModal(id) {
-  const p = CH[id]; if (!p) return;
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('div', { class:'row', style:'margin-bottom:12px' },
-    el('div', { class:'char-avatar lg' }, p.i),
-    el('div', {}, el('h2', {}, p.n), el('div', { class:'mu' }, p.r))
-  ));
-  box.appendChild(el('p', { style:'line-height:1.7' }, p.d));
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('button', { class:'btn', onclick: closeModal }, 'Закрыть'));
-  openModal();
-}
-
-/* ─────────── BOARD ─────────── */
-let boardSel = [];
-function renderBoard(c, ch) {
-  c.appendChild(el('h2', {}, 'Доска расследования'));
-  c.appendChild(el('p', { class:'mu', style:'margin-top:6px;margin-bottom:16px' }, 'Выберите две улики, чтобы установить связь. Правильные пары откроют новые выводы.'));
-
-  const evIds = S.evidence.filter(k => EV[k] && EV[k].ch <= ch.n);
-  if (evIds.length < 2) { c.appendChild(el('p', { class:'dim' }, 'Нужно как минимум две улики.')); return; }
-
-  const grid = el('div', { class:'board-grid' });
-  evIds.forEach(id => {
-    const e = EV[id];
-    const sel = boardSel.includes(id);
-    const isLinked = S.links.some(p => p[0] === id || p[1] === id);
-    const node = el('div', { class:'board-node' + (sel ? ' sel' : '') + (isLinked ? ' linked' : ''), onclick: () => toggleBoard(id) },
-      el('div', { style:'font-size:20px;margin-bottom:4px' }, e.i),
-      el('div', {}, e.n)
-    );
-    grid.appendChild(node);
-  });
-  c.appendChild(grid);
-
-  c.appendChild(el('div', { class:'section-title' }, 'Установленные связи (' + S.links.length + ')'));
-  if (!S.links.length) {
-    c.appendChild(el('p', { class:'dim' }, 'Связей пока нет.'));
-  } else {
-    const list = el('div', { class:'links-list' });
-    S.links.forEach(p => {
-      const link = LINKS.find(L => (L.a===p[0] && L.b===p[1]) || (L.a===p[1] && L.b===p[0]));
-      if (!link) return;
-      const item = el('div', { class:'link-item' });
-      item.appendChild(el('div', { class:'mu' }, link.t));
-      item.appendChild(el('div', {}, link.d));
-      list.appendChild(item);
-    });
-    c.appendChild(list);
+/* ============================================================
+   RAYCAST
+   ============================================================ */
+function rayAABB(origin, dir, min, max){
+  let tmin = -Infinity, tmax = Infinity;
+  for (let i=0;i<3;i++){
+    if (Math.abs(dir[i]) < 1e-6){
+      if (origin[i] < min[i] || origin[i] > max[i]) return -1;
+    } else {
+      let t1 = (min[i]-origin[i])/dir[i];
+      let t2 = (max[i]-origin[i])/dir[i];
+      if (t1 > t2){ const tmp=t1;t1=t2;t2=tmp; }
+      if (t1 > tmin) tmin = t1;
+      if (t2 < tmax) tmax = t2;
+      if (tmin > tmax) return -1;
+    }
   }
-
-  if (boardSel.length) {
-    const row = el('div', { class:'row', style:'margin-top:14px' });
-    row.appendChild(el('span', { class:'mu' }, 'Выбрано: ' + boardSel.map(id => EV[id].n).join(' + ')));
-    row.appendChild(el('button', { class:'btn primary', onclick: tryLink }, 'Связать'));
-    row.appendChild(el('button', { class:'btn ghost', onclick: () => { boardSel=[]; renderHub(); } }, 'Сбросить'));
-    c.appendChild(row);
+  if (tmax < 0) return -1;
+  return tmin;
+}
+function getViewDir(){
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+  const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+  return [sy*cp, sp, -cy*cp];
+}
+function findTarget(){
+  const eye = state.position.slice();
+  const dir = getViewDir();
+  let best = null, bestD = Infinity;
+  for (const o of interactables){
+    const [px,py,pz] = o.pos;
+    const [sx,sy,sz] = o.size;
+    const pad = 0.05;
+    const min = [px-sx/2-pad, py-sy/2-pad, pz-sz/2-pad];
+    const max = [px+sx/2+pad, py+sy/2+pad, pz+sz/2+pad];
+    const t = rayAABB(eye, dir, min, max);
+    if (t > 0 && t < bestD && t <= (o.interactive.dist || CFG.INTERACT_DIST)){
+      best = o; bestD = t;
+    }
   }
-}
-function toggleBoard(id) {
-  sfx('click');
-  if (boardSel.includes(id)) boardSel = boardSel.filter(x => x !== id);
-  else { if (boardSel.length >= 2) boardSel.shift(); boardSel.push(id); }
-  renderHub();
-}
-function tryLink() {
-  if (boardSel.length !== 2) return;
-  const [a, b] = boardSel;
-  if (hasLink(a, b)) { toast('Связь уже установлена', 'err'); sfx('err'); boardSel=[]; renderHub(); return; }
-  const link = LINKS.find(L => (L.a===a && L.b===b) || (L.a===b && L.b===a));
-  if (!link) { toast('Между этими уликами нет прямой связи', 'err'); sfx('err'); S.rep = Math.max(0, S.rep - 2); boardSel=[]; autoSave(); renderHub(); return; }
-  S.links.push([a, b]);
-  sfx('ok');
-  toast('✦ Установлена связь: ' + link.t, 'ok');
-  boardSel = [];
-  autoSave();
-  renderHub();
+  return best;
 }
 
-/* ─────────── ACCUSE ─────────── */
-function renderAccuse(c, ch) {
-  c.appendChild(el('h2', {}, 'Выдвижение обвинения'));
-  c.appendChild(el('p', { class:'mu', style:'margin-top:6px;margin-bottom:16px' }, 'Выберите подозреваемого и предъявите ключевую улику. Ошибка снизит репутацию.'));
+/* ============================================================
+   EVIDENCE & JOURNAL
+   ============================================================ */
+function addEvidence(id){
+  if (!id || state.evidence.includes(id)) return false;
+  state.evidence.push(id);
+  const ev = EVIDENCE_DB[id];
+  if (ev) showToast(`Найдена улика: ${ev.name}`);
+  updateEvBadge();
+  Audio.pickup();
+  saveGame(true);
+  return true;
+}
+function updateEvBadge(){
+  document.getElementById('evBadge').textContent = `УЛИКИ: ${state.evidence.length}`;
+}
+function showToast(text, ms){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), ms || 2400);
+}
 
-  if (!chapterComplete()) {
-    const missing = ch.keyEv.filter(k => !hasEv(k));
-    c.appendChild(el('div', { class:'panel', style:'padding:16px;border-color:#c9a35a' },
-      el('p', { style:'color:#c9a35a;margin-bottom:8px' }, '⚠ Недостаточно доказательств'),
-      el('p', { class:'mu' }, 'Сначала найдите ключевые улики:'),
-      el('ul', { style:'margin-left:20px;margin-top:8px;color:#e8eaf0' }, ...missing.map(m => el('li', {}, EV[m].n)))
-    ));
+/* ============================================================
+   INTERACTION
+   ============================================================ */
+let currentTarget = null;
+function tryInteract(){
+  if (state.mode === 'computer'){
+    // exit? handled by OS buttons
     return;
   }
-
-  c.appendChild(el('div', { class:'section-title' }, '1. Обвиняемый'));
-  const sus = el('div', { class:'grid c3' });
-  ch.suspects.forEach(id => {
-    const p = CH[id]; if (!p) return;
-    const sel = S.accuseSuspect === id;
-    const card = el('div', { class:'card' + (sel ? ' sel' : ''), onclick: () => { S.accuseSuspect = id; sfx('click'); renderHub(); } },
-      el('div', { class:'char-row' }, el('div', { class:'char-avatar' }, p.i),
-        el('div', {}, el('h4', {}, p.n), el('div', { class:'mu', style:'font-size:12px' }, p.r)))
-    );
-    sus.appendChild(card);
-  });
-  c.appendChild(sus);
-
-  c.appendChild(el('div', { class:'section-title' }, '2. Ключевая улика'));
-  const evWrap = el('div', { class:'grid c3' });
-  S.evidence.filter(k => EV[k] && EV[k].ch <= ch.n).forEach(id => {
-    const e = EV[id];
-    const sel = S.accuseEv === id;
-    const card = el('div', { class:'card' + (sel ? ' sel' : ''), onclick: () => { S.accuseEv = id; sfx('click'); renderHub(); } },
-      el('div', { class:'row' }, el('div', { class:'ev-icon' }, e.i), el('div', {}, el('h4', {}, e.n))));
-    evWrap.appendChild(card);
-  });
-  c.appendChild(evWrap);
-
-  c.appendChild(el('div', { class:'hr' }));
-  const ready = S.accuseSuspect && S.accuseEv;
-  c.appendChild(el('button', { class:'btn primary', disabled: !ready, style:'padding:14px 26px', onclick: submitAccusation }, '⚖ Предъявить обвинение'));
-}
-
-function submitAccusation() {
-  const ch = currentChapter();
-  const sus = S.accuseSuspect, ev = S.accuseEv;
-  if (!sus || !ev) return;
-  if (sus === ch.culprit && ev === ch.proof) {
-    sfx('ok');
-    showChapterEnding(true, ch);
-  } else {
-    sfx('err');
-    S.rep = Math.max(0, S.rep - 15);
-    toast('✖ Обвинение отклонено. Суд не принял доводы.', 'err');
-    autoSave();
-    renderHub();
+  if (state.mode !== 'playing') return;
+  if (!currentTarget) return;
+  const ia = currentTarget.interactive;
+  Audio.click();
+  if (ia.isChair){
+    sitAtComputer();
+    return;
   }
+  if (ia.id === 'lamp'){
+    state.lampOn = !state.lampOn;
+    showToast(state.lampOn ? 'Лампа включена' : 'Лампа выключена');
+    Audio.click();
+  }
+  // Show dialogue with info
+  openInfo(ia);
+  if (ia.evidence) addEvidence(ia.evidence);
+  if (ia.givesPass){
+    state.knownPass = true;
+  }
+  saveGame(true);
 }
 
-function showChapterEnding(success, ch) {
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('div', { class:'tag' }, 'Глава ' + ch.n + ' завершена'));
-  box.appendChild(el('h2', { style:'margin:12px 0 16px' }, 'Вердикт: ' + CH[ch.culprit].n));
-  box.appendChild(el('p', { style:'line-height:1.7;color:#cfd5e2;margin-bottom:14px' }, ch.truth));
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('div', { class:'mu', style:'margin-bottom:8px' }, 'Репутация: ' + S.rep));
-  const btnText = ch.n < 3 ? '▸ Следующая глава' : '▸ К финалу';
-  box.appendChild(el('button', { class:'btn primary', onclick: () => { closeModal(); nextChapter(); } }, btnText));
-  openModal();
+function openInfo(ia){
+  const dlg = document.getElementById('dlg');
+  document.getElementById('dlgWho').textContent = ia.name;
+  document.getElementById('dlgTxt').textContent = ia.text || '';
+  const opts = document.getElementById('dlgOpts');
+  opts.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'dOpt';
+  btn.textContent = 'Закрыть';
+  btn.onclick = () => { dlg.classList.remove('show'); };
+  opts.appendChild(btn);
+  if (ia.evidence && !state.evidence.includes(ia.evidence)){
+    const btn2 = document.createElement('button');
+    btn2.className = 'dOpt';
+    btn2.textContent = 'Внести в дело как улику';
+    btn2.onclick = () => {
+      addEvidence(ia.evidence);
+      dlg.classList.remove('show');
+    };
+    opts.insertBefore(btn2, btn);
+  }
+  dlg.classList.add('show');
 }
 
-function nextChapter() {
-  if (S.chapter >= CHAPTERS.length - 1) { showEnding(); return; }
-  enterChapter(S.chapter + 1);
-}
-
-/* ─────────── ENDING ─────────── */
-function showEnding() {
-  const c = $('#end-content');
-  c.innerHTML = '';
-  const rep = S.rep;
-  let title, text, color;
-  if (rep >= 85) { title = 'ПРАВОСУДИЕ'; color = '#3ecf8e'; text = 'Рябов получил 22 года строгого режима. Круглова — 15. Проект «Mindcase» закрыт навсегда. Семьи жертв получили компенсации. Ваша работа вошла в учебники.'; }
-  else if (rep >= 60) { title = 'ЦЕНА ПРАВДЫ'; color = '#c9a35a'; text = 'Рябов признан виновным, но адвокаты добились смягчения — 12 лет. Круглова вышла под залог и покинула страну. Часть правды осталась в тени. Но главное — вы остановили проект.'; }
-  else { title = 'ТЕНЬ СОМНЕНИЯ'; color = '#e0433b'; text = 'Суд признал Рябова виновным, но приговор обжалован. Круглова оправдана за недостатком доказательств. Проект «Mindcase» официально «не существовал». Вы остались с ощущением, что не всё сказали.'; }
-
-  c.appendChild(el('div', { class:'tag' }, 'Финал'));
-  c.appendChild(el('div', { class:'end-title', style:'color:' + color }, title));
-  c.appendChild(el('p', { style:'color:#cfd5e2;line-height:1.75;max-width:640px;margin:16px auto 0' }, text));
-
-  const stats = el('div', { class:'end-stat' });
-  const rows = [
-    ['Глав завершено', CHAPTERS.length + ' / 3'],
-    ['Улик собрано', S.evidence.length + ' / ' + Object.keys(EV).length],
-    ['Связей установлено', S.links.length + ' / ' + LINKS.length],
-    ['Подозреваемых опрошено', S.met.length],
-    ['Подсказок использовано', String(S.hintsUsed)],
-    ['Репутация', String(rep)]
-  ];
-  rows.forEach(([k, v]) => { stats.appendChild(el('div', { class:'k' }, k)); stats.appendChild(el('div', { class:'v' }, v)); });
-  c.appendChild(stats);
-
-  c.appendChild(el('div', { class:'hr' }));
-  c.appendChild(el('button', { class:'btn primary', onclick: () => { try { localStorage.removeItem(SAVE_KEY); } catch(e){} renderMenu(); } }, '↻ Новая игра'));
-  c.appendChild(el('button', { class:'btn', style:'margin-left:8px', onclick: () => { S = DEFAULT_STATE(); renderMenu(); } }, 'Меню'));
-  show('s-end');
-}
-
-/* ─────────── DIALOGUE ─────────── */
-function startDialogue(id) {
-  const dlg = DLG[id];
-  if (!dlg) return;
-  CUR_DLG = { id, dlg, node: dlg.start };
-  if (!S.met.includes(dlg.char)) { S.met.push(dlg.char); autoSave(); }
-  renderDialogue();
-  show('s-dlg');
-  sfx('click');
-}
-
-function renderDialogue() {
-  if (!CUR_DLG) return;
-  const { dlg, node } = CUR_DLG;
-  const person = CH[dlg.char];
-  const head = $('#dlg-head');
-  head.innerHTML = '';
-  head.appendChild(el('div', { class:'char-avatar lg' }, person.i));
-  head.appendChild(el('div', {},
-    el('h3', {}, person.n),
-    el('div', { class:'mu', style:'font-size:12px' }, person.r)
-  ));
-
-  const body = $('#dlg-body');
-  body.innerHTML = '';
-
-  const cur = dlg.nodes[node];
-  if (!cur) { endDialogue(); return; }
-
-  const text = el('div', { class:'dlg-text' }, cur.t);
-  body.appendChild(text);
-
-  if (cur.flag) setFlag(cur.flag);
-
-  const opts = el('div', { class:'dlg-opts' });
-
-  if (cur.o) {
-    cur.o.forEach(o => {
-      const b = el('button', { class:'dlg-opt', onclick: () => {
-        sfx('click');
-        if (o.end) { endDialogue(); return; }
-        if (o.present) { openPresentPicker(); return; }
-        if (o.n) { CUR_DLG.node = o.n; renderDialogue(); }
-      }}, o.t);
-      opts.appendChild(b);
+/* ============================================================
+   COMPUTER OS
+   ============================================================ */
+const OS = {
+  windows: [],
+  winId: 0,
+  zTop: 100,
+  files: {
+    documents: [
+      {name:'Отчёт Q3.docx', icon:'📄', content:`<h3>ФИНАНСОВЫЙ ОТЧЁТ Q3 — MIND Corp</h3>
+      <p>По итогам квартала выявлены несоответствия в бухгалтерской отчётности.</p>
+      <p>Ключевая транзакция: <b style="color:#e05050">§ 250 000</b> на счёт <b>N-CLIENT-SECURE</b> от 12 октября.</p>
+      <p>Подпись ответственного: <b>M. Cole</b></p>
+      <p>Примечание: перевод совершён без согласования с Советом директоров.</p>`},
+      {name:'Договор.docx', icon:'📄', content:`<h3>ДОГОВОР О ПЕРЕДАЧЕ ДАННЫХ</h3>
+      <p>Стороны: MIND Corp и «N-CLIENT-SECURE».</p>
+      <p>Предмет договора: передача конфиденциального массива данных клиентов (12 000 записей).</p>
+      <p>Ответственный: <b>Маркус Коул</b>.</p>
+      <p>Дата подписания: 10 октября.</p>
+      <p>Сумма: <b style="color:#e05050">§ 250 000</b>.</p>`},
+      {name:'Черновик.docx', icon:'📄', content:`<h3>ЧЕРНОВИК ПИСЬМА</h3>
+      <p>"Я знаю о переводе. Если ты не остановишься — я передам данные в совет директоров." — А.Р.</p>
+      <p>Не отправлено. Сохранено 11 октября, 22:14.</p>`}
+    ],
+    photos: [
+      {name:'office_2019.jpg', label:'Офис, 2019 — Алекс и Маркус'},
+      {name:'cash_meeting.jpg', label:'Встреча с незнакомцем в кафе'},
+      {name:'family.jpg', label:'Алекс и Елена, годовщина'}
+    ],
+    messages: [
+      {who:'M.', me:false, t:'22 окт, 21:12', msg:'Ты уверен, что хочешь это сделать?'},
+      {who:'Я', me:true, t:'22 окт, 21:14', msg:'Да. Отчёт готов. Совет получит его завтра.'},
+      {who:'M.', me:false, t:'22 окт, 21:30', msg:'Ты пожалеешь, если отправишь это.'},
+      {who:'Я', me:true, t:'22 окт, 21:32', msg:'Ты сделал свой выбор. Я — свой.'},
+      {who:'V.', me:false, t:'22 окт, 22:04', msg:'Алекс, я бы на твоём месте не лез в это.'},
+      {who:'Я', me:true, t:'22 окт, 22:10', msg:'Виктор, ты знаешь, что он сделал?'},
+      {who:'V.', me:false, t:'22 окт, 22:11', msg:'Ничего не знаю. Забудь.'}
+    ],
+    investigation: [
+      {name:'log_oct.txt', icon:'📝', content:`<h3>ЛИЧНЫЕ ЗАМЕТКИ А. РИВЗА</h3>
+      <p>23:47 — я вычислил. Перевод, договор, клиент "N". Всё сходится.</p>
+      <p>Маркус звонил, требовал не лезть. Я отказался.</p>
+      <p>Он знает код моего сейфа. Он знает пароль от системы.</p>
+      <p>Если что-то случится — ищите в папке <b>INVESTIGATION</b>.</p>
+      <p>— А.</p>`},
+      {name:'access.log', icon:'📝', content:`<h3>ЛОГ ДОСТУПА</h3>
+      <p>22 окт 23:28 — вход пользователя MC0LE (М. Коул)</p>
+      <p>22 окт 23:30 — запрос файла clients.db</p>
+      <p>22 окт 23:31 — удалён файл договор.docx</p>
+      <p>22 окт 23:33 — выход пользователя MC0LE</p>
+      <p style="color:#e05050">Пользователь MC0LE работал с системы удалённо за минуту до смерти.</p>`}
+    ],
+    trash: [
+      {name:'письмо (удалено).eml', icon:'🗑', content:`<h3>УДАЛЁННОЕ ПИСЬМО — восстановлено</h3>
+      <p>От: M. Cole</p>
+      <p>Кому: A. Reeves</p>
+      <p>Тема: (без темы)</p>
+      <p style="color:#e05050">"Отправь совету — и я закончу с тобой. У меня нет выбора."</p>
+      <p>Отправлено: 22 окт, 23:29</p>`}
+    ]
+  },
+  init(){
+    const icons = document.getElementById('osIcons');
+    icons.innerHTML = '';
+    const list = [
+      {id:'docs', name:'Документы', icon:'📁'},
+      {id:'photos', name:'Изображения', icon:'🖼'},
+      {id:'messages', name:'Сообщения', icon:'💬'},
+      {id:'invest', name:'Расследование', icon:'🔎'},
+      {id:'browser', name:'Браузер', icon:'🌐'},
+      {id:'trash', name:'Корзина', icon:'🗑'}
+    ];
+    list.forEach(it => {
+      const d = document.createElement('div');
+      d.className = 'osIcon';
+      d.innerHTML = `<div class="ic">${it.icon}</div>${it.name}`;
+      d.onclick = () => OS.open(it.id, it.name);
+      icons.appendChild(d);
+    });
+    document.getElementById('osStart').onclick = () => OS.open('settings','Системные настройки');
+    document.getElementById('osLogin').onclick = OS.tryLogin;
+    document.getElementById('osPass').addEventListener('keydown', e => { if (e.key==='Enter') OS.tryLogin(); });
+    setInterval(() => {
+      const c = document.getElementById('osClock');
+      const d = new Date();
+      if (c) c.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }, 5000);
+  },
+  tryLogin(){
+    const val = document.getElementById('osPass').value.trim().toUpperCase();
+    const msg = document.getElementById('osLockMsg');
+    if (val === 'MIND-2019' || val === 'MIND2019'){
+      Audio.success();
+      document.getElementById('osLock').style.display = 'none';
+      document.getElementById('osDesk').classList.add('on');
+      state.loggedIn = true;
+      addEvidence('ev_email');
+      saveGame(true);
+    } else {
+      Audio.error();
+      msg.textContent = 'Неверный пароль';
+      setTimeout(()=>{ msg.textContent=''; }, 2000);
+    }
+  },
+  open(id, title){
+    // Check if window already open
+    const ex = OS.windows.find(w => w.id === id);
+    if (ex){ OS.bringToFront(ex); return; }
+    const w = {id, title, el: null};
+    const el = document.createElement('div');
+    el.className = 'osWin';
+    const rect = {w: 420, h: 320};
+    const off = OS.windows.length * 22;
+    el.style.left = (40 + off) + 'px';
+    el.style.top = (40 + off) + 'px';
+    el.style.width = rect.w + 'px';
+    el.style.height = rect.h + 'px';
+    el.innerHTML = `<div class="bar"><span>${title}</span><div class="cl">✕</div></div><div class="body"></div>`;
+    const body = el.querySelector('.body');
+    body.appendChild(OS.buildBody(id));
+    el.querySelector('.cl').onclick = () => OS.close(w);
+    el.addEventListener('mousedown', () => OS.bringToFront(w));
+    document.getElementById('osWindows').appendChild(el);
+    w.el = el;
+    OS.windows.push(w);
+    // dragging
+    const bar = el.querySelector('.bar');
+    let dragging=false, dx=0, dy=0;
+    bar.addEventListener('mousedown', e => { dragging=true; dx=e.clientX-el.offsetLeft; dy=e.clientY-el.offsetTop; e.preventDefault(); });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      el.style.left = Math.max(0, Math.min(window.innerWidth-rect.w, e.clientX-dx)) + 'px';
+      el.style.top = Math.max(0, Math.min(window.innerHeight-rect.h, e.clientY-dy)) + 'px';
+    });
+    document.addEventListener('mouseup', () => dragging=false);
+    // tasks
+    OS.updateTasks();
+    Audio.open();
+  },
+  buildBody(id){
+    const wrap = document.createElement('div');
+    if (id === 'docs'){
+      OS.files.documents.forEach(f => {
+        const it = document.createElement('div');
+        it.className = 'fitem';
+        it.innerHTML = `<span class="ficon">${f.icon}</span>${f.name}`;
+        it.onclick = () => OS.open('doc:'+f.name, f.name, f.content);
+        wrap.appendChild(it);
+      });
+      if (!state.visitedDocs['docs']) { state.visitedDocs['docs']=true; addEvidence('ev_papers'); }
+    }
+    else if (id === 'photos'){
+      const grid = document.createElement('div');
+      grid.className = 'photoGrid';
+      OS.files.photos.forEach(p => {
+        const b = document.createElement('div');
+        b.className='photoBox';
+        b.textContent = p.label;
+        b.onclick = () => { showToast('Фото: '+p.label); addEvidence('ev_photo'); };
+        grid.appendChild(b);
+      });
+      wrap.appendChild(grid);
+    }
+    else if (id === 'messages'){
+      OS.files.messages.forEach(m => {
+        const d = document.createElement('div');
+        d.className = 'msg' + (m.me?' me':'');
+        d.innerHTML = `<div class="who">${m.who}</div>${m.msg}<div class="tm">${m.t}</div>`;
+        wrap.appendChild(d);
+      });
+      addEvidence('ev_phone');
+    }
+    else if (id === 'invest'){
+      OS.files.investigation.forEach(f => {
+        const it = document.createElement('div');
+        it.className = 'fitem';
+        it.innerHTML = `<span class="ficon">${f.icon}</span>${f.name}`;
+        it.onclick = () => OS.open('inv:'+f.name, f.name, f.content);
+        wrap.appendChild(it);
+      });
+      addEvidence('ev_keylog');
+      addEvidence('ev_logs');
+    }
+    else if (id === 'browser'){
+      const bar = document.createElement('div');
+      bar.className='browserBar';
+      bar.innerHTML = '<input readonly value="mind://history">';
+      wrap.appendChild(bar);
+      const hist = [
+        {t:'22 окт 23:29', u:'mail.mind.local — Входящие'},
+        {t:'22 окт 22:55', u:'search: "как отправить данные в совет директоров анонимно"'},
+        {t:'22 окт 22:41', u:'search: "статья 272 УК РФ неправомерный доступ"'},
+        {t:'12 окт 10:14', u:'bank.offshore-account-n.com / transfer confirm'},
+        {t:'10 окт 18:02', u:'n-client-secure.docs — договор.pdf'}
+      ];
+      hist.forEach(h => {
+        const d = document.createElement('div');
+        d.className='hist';
+        d.innerHTML = `<div class="t">${h.t}</div>${h.u}`;
+        d.onclick = () => { showToast('Запись неактивна'); };
+        wrap.appendChild(d);
+      });
+      addEvidence('ev_transfer');
+      addEvidence('ev_contract');
+    }
+    else if (id === 'trash'){
+      OS.files.trash.forEach(f => {
+        const it = document.createElement('div');
+        it.className='fitem';
+        it.innerHTML = `<span class="ficon">${f.icon}</span>${f.name}`;
+        it.onclick = () => OS.open('trash:'+f.name, f.name, f.content);
+        wrap.appendChild(it);
+      });
+    }
+    else if (id === 'settings'){
+      wrap.innerHTML = `<h3>СИСТЕМНЫЕ НАСТРОЙКИ</h3>
+        <div class="row"><label>Имя ПК</label><span>CASE-STATION-04</span></div>
+        <div class="row"><label>Владелец</label><span>A. REEVES</span></div>
+        <div class="row"><label>Пароль изменён</label><span>18 октября</span></div>
+        <div class="row"><label>Последний вход</label><span>22 окт, 23:33 (MC0LE)</span></div>
+        <p style="margin-top:10px;color:#e05050">Подсказка: в папке "Расследование" — личные заметки погибшего.</p>`;
+    }
+    else if (id.startsWith('doc:') || id.startsWith('inv:') || id.startsWith('trash:')){
+      const content = OS._pendingContent || '';
+      wrap.innerHTML = content;
+      if (id.startsWith('trash:')) addEvidence('ev_deleted');
+    }
+    return wrap;
+  },
+  open(id, title, content){
+    OS._pendingContent = content;
+    OS.open2(id, title);
+  },
+  open2(id, title){
+    const ex = OS.windows.find(w => w.id === id);
+    if (ex){ OS.bringToFront(ex); return; }
+    const w = {id, title};
+    const el = document.createElement('div');
+    el.className = 'osWin';
+    el.style.left = (60 + OS.windows.length*24) + 'px';
+    el.style.top = (60 + OS.windows.length*24) + 'px';
+    el.style.width = '460px';
+    el.style.height = '340px';
+    el.innerHTML = `<div class="bar"><span>${title}</span><div class="cl">✕</div></div><div class="body">${OS._pendingContent||''}</div>`;
+    el.querySelector('.cl').onclick = () => OS.close(w);
+    el.addEventListener('mousedown', () => OS.bringToFront(w));
+    document.getElementById('osWindows').appendChild(el);
+    w.el = el;
+    OS.windows.push(w);
+    const bar = el.querySelector('.bar');
+    let dragging=false, dx=0, dy=0;
+    bar.addEventListener('mousedown', e => { dragging=true; dx=e.clientX-el.offsetLeft; dy=e.clientY-el.offsetTop; e.preventDefault(); });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      el.style.left = Math.max(0, Math.min(window.innerWidth-200, e.clientX-dx)) + 'px';
+      el.style.top = Math.max(0, Math.min(window.innerHeight-40, e.clientY-dy)) + 'px';
+    });
+    document.addEventListener('mouseup', () => dragging=false);
+    OS.updateTasks();
+    Audio.open();
+  },
+  close(w){
+    if (w.el && w.el.parentNode) w.el.parentNode.removeChild(w.el);
+    OS.windows = OS.windows.filter(x => x !== w);
+    OS.updateTasks();
+    Audio.click();
+  },
+  bringToFront(w){
+    if (!w.el) return;
+    OS.zTop++;
+    w.el.style.zIndex = OS.zTop;
+  },
+  updateTasks(){
+    const t = document.getElementById('osTasks');
+    t.innerHTML = '';
+    OS.windows.forEach(w => {
+      const b = document.createElement('div');
+      b.className = 'osTask';
+      b.textContent = w.title;
+      b.onclick = () => OS.bringToFront(w);
+      t.appendChild(b);
     });
   }
-  body.appendChild(opts);
-  body.scrollTop = 0;
+};
+
+/* ============================================================
+   SIT AT COMPUTER
+   ============================================================ */
+function sitAtComputer(){
+  if (state.sitting) return;
+  state.sitting = true;
+  state.sitT = 0;
+  state.returnPos = state.position.slice();
+  state.returnYaw = state.yaw;
+  state.returnPitch = state.pitch;
+  state.seatTarget = {
+    pos: [-1.5, 1.15, -2.15],
+    yaw: Math.PI,       // looking toward -Z (monitor)
+    pitch: -0.08
+  };
+  // target yaw: looking at monitor from seat: forward = (0,0,-1) → yaw so that (-sin(yaw),0,-cos(yaw)) = (0,0,-1) → yaw=0
+  state.seatTarget.yaw = 0;
+  Audio.step();
+}
+function standUp(){
+  state.sitting = false;
+  if (state.returnPos){
+    state.position = state.returnPos.slice();
+    state.yaw = state.returnYaw;
+    state.pitch = state.returnPitch;
+  }
 }
 
-function openPresentPicker() {
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('h2', { style:'margin-bottom:6px' }, 'Предъявить улику'));
-  box.appendChild(el('p', { class:'mu', style:'margin-bottom:14px' }, 'Какую улику показать?'));
-  const wrap = el('div', { class:'grid c2' });
-  S.evidence.filter(k => EV[k]).forEach(id => {
-    const e = EV[id];
-    const card = el('div', { class:'card', onclick: () => { closeModal(); presentEvidence(id); } },
-      el('div', { class:'row' }, el('div', { class:'ev-icon' }, e.i), el('div', {}, el('h4', {}, e.n))));
-    wrap.appendChild(card);
-  });
-  if (!S.evidence.length) box.appendChild(el('p', { class:'dim' }, 'У вас нет улик.'));
-  else box.appendChild(wrap);
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('button', { class:'btn', onclick: closeModal }, 'Отмена'));
-  openModal();
+function enterComputerMode(){
+  state.mode = 'computer';
+  OS.init();
+  document.getElementById('os').classList.add('show');
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('touch').style.display = 'none';
+  if (document.exitPointerLock) document.exitPointerLock();
+}
+function exitComputerMode(){
+  state.mode = 'playing';
+  document.getElementById('os').classList.remove('show');
+  document.getElementById('hud').style.display = '';
+  if (document.body.dataset.device === 'phone' || document.body.dataset.device === 'tablet') {
+    document.getElementById('touch').style.display = '';
+  }
+  standUp();
+  if (canvas.requestPointerLock && (document.body.dataset.device === 'pc' || document.body.dataset.device === 'tv')) {
+    canvas.requestPointerLock();
+  }
 }
 
-function presentEvidence(id) {
-  if (!CUR_DLG) return;
-  const { dlg, node } = CUR_DLG;
-  const cur = dlg.nodes[node];
-  if (!cur || !cur.present) return;
-  const p = cur.present[id];
-  const e = EV[id];
-  if (p) {
-    // Ответ на улику
-    if (p.flag) setFlag(p.flag);
-    // Показать реакцию в тексте, потом перейти к узлу
-    const body = $('#dlg-body');
-    const reaction = el('div', { class:'dlg-text narr' }, 'Вы предъявляете: ' + e.n);
-    body.appendChild(reaction);
-    const next = dlg.nodesPresent && dlg.nodesPresent[p.n];
-    if (next) {
-      CUR_DLG.node = 'PRESENT_' + p.n;
-      // подменяем на узел
-      dlg.nodes['PRESENT_' + p.n] = next;
-      setTimeout(() => { CUR_DLG.node = 'PRESENT_' + p.n; renderDialogue(); }, 400);
-    }
-    sfx('ok');
+/* ============================================================
+   JOURNAL & BOARD
+   ============================================================ */
+let currentTab = 'ev';
+function toggleJournal(){
+  const j = document.getElementById('journal');
+  const open = j.classList.toggle('open');
+  document.getElementById('journalClose').classList.toggle('show', open);
+  if (open) renderJournal();
+}
+document.getElementById('journalClose').onclick = () => { document.getElementById('journal').classList.remove('open'); document.getElementById('journalClose').classList.remove('show'); };
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  currentTab = t.dataset.tab;
+  renderJournal();
+});
+document.getElementById('btnJournal').onclick = toggleJournal;
+document.getElementById('btnBoard').onclick = toggleBoard;
+
+function renderJournal(){
+  const c = document.getElementById('journalContent');
+  if (currentTab === 'ev'){
+    if (state.evidence.length === 0){ c.innerHTML = '<p style="color:#8f97a3;font-size:12px">Улик пока нет. Исследуйте комнату.</p>'; return; }
+    c.innerHTML = '';
+    state.evidence.forEach(id => {
+      const e = EVIDENCE_DB[id]; if (!e) return;
+      const d = document.createElement('div');
+      d.className = 'evItem';
+      d.innerHTML = `<h4>${e.name}</h4><p>${e.desc}</p><div class="cat">${e.cat}</div>`;
+      c.appendChild(d);
+    });
+  } else if (currentTab === 'sub'){
+    const subs = [
+      {n:'Маркус Коул', r:'Деловой партнёр', d:'Совладелец MIND Corp. Контролировал финансы. Мотив — скрыть хищение.'},
+      {n:'Елена Ривз', r:'Бывшая жена', d:'Развод полгода назад. Финансовых претензий нет. Алиби: дома, подтверждено камерами.'},
+      {n:'Виктор Хейл', r:'Коллега', d:'Технический директор. Курит "Viktor & Co". Не заинтересован в смерти.'}
+    ];
+    c.innerHTML = '';
+    subs.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'evItem';
+      d.innerHTML = `<h4>${s.n}</h4><p><b>${s.r}</b><br>${s.d}</p>`;
+      c.appendChild(d);
+    });
+  } else if (currentTab === 'tl'){
+    c.innerHTML = `<div class="evItem"><h4>18 окт — 14:00</h4><p>Алекс меняет пароль рабочей станции.</p></div>
+      <div class="evItem"><h4>20 окт — 22:55</h4><p>Алекс ищет в браузере информацию о незаконном доступе к данным.</p></div>
+      <div class="evItem"><h4>22 окт — 21:30</h4><p>Угрожающее сообщение от "М." на телефон.</p></div>
+      <div class="evItem"><h4>22 окт — 23:28</h4><p>В систему входит пользователь MC0LE.</p></div>
+      <div class="evItem"><h4>22 окт — 23:47</h4><p>Время смерти. Часы на стене остановились.</p></div>`;
   } else {
-    const body = $('#dlg-body');
-    body.appendChild(el('div', { class:'dlg-text narr' }, '— ' + dlg.char + ' не реагирует. Эта улика здесь ни к чему.'));
-    sfx('err');
-    S.rep = Math.max(0, S.rep - 1);
-    autoSave();
-    setTimeout(() => { CUR_DLG.node = dlg.start; renderDialogue(); }, 900);
+    const ta = document.createElement('textarea');
+    ta.style.width = '100%';
+    ta.style.minHeight = '200px';
+    ta.style.background = 'rgba(10,12,18,.8)';
+    ta.style.border = '1px solid rgba(120,130,150,.3)';
+    ta.style.color = '#cfd6dd';
+    ta.style.padding = '10px';
+    ta.style.fontFamily = 'inherit';
+    ta.style.fontSize = '12px';
+    ta.value = localStorage.getItem('mind_case_notes') || '';
+    ta.oninput = () => localStorage.setItem('mind_case_notes', ta.value);
+    c.innerHTML = '';
+    c.appendChild(ta);
   }
 }
 
-function endDialogue() {
-  CUR_DLG = null;
-  autoSave();
-  show('s-hub');
-  renderHub();
+/* ---- Board ---- */
+function toggleBoard(){
+  const b = document.getElementById('board');
+  b.classList.toggle('show');
+  if (b.classList.contains('show')) renderBoard();
 }
+document.getElementById('boardClose').onclick = () => document.getElementById('board').classList.remove('show');
 
-/* ─────────── HINTS ─────────── */
-function giveHint() {
-  const ch = currentChapter();
-  const missingEv = ch.keyEv.filter(k => !hasEv(k));
-  if (missingEv.length) { toast('Подсказка: найдите «' + EV[missingEv[0]].n + '».', 'ok'); S.hintsUsed++; autoSave(); return; }
-  const missingLinks = LINKS.filter(L => (EV[L.a]?.ch === ch.n || EV[L.b]?.ch === ch.n) && !hasLink(L.a, L.b));
-  if (missingLinks.length) {
-    const L = missingLinks[0];
-    toast('Подсказка: свяжите «' + EV[L.a].n + '» и «' + EV[L.b].n + '».', 'ok');
-    S.hintsUsed++; autoSave(); return;
-  }
-  const unvisited = ch.locs.filter(id => isLocUnlocked(id) && !S.visited.includes(id));
-  if (unvisited.length) { toast('Подсказка: осмотрите «' + LOC[unvisited[0]].n + '».', 'ok'); S.hintsUsed++; autoSave(); return; }
-  const unMet = ch.suspects.filter(id => !S.met.includes(id));
-  if (unMet.length) { toast('Подсказка: допросите ' + CH[unMet[0]].n + '.', 'ok'); S.hintsUsed++; autoSave(); return; }
-  toast('Подсказка: вы готовы выдвинуть обвинение.', 'ok');
-  S.hintsUsed++; autoSave();
-}
-
-/* ─────────── MODAL ─────────── */
-function createModal() {
-  let m = document.getElementById('game-modal');
-  if (m) m.remove();
-  m = el('div', { class:'modal', id:'game-modal', onclick: (e) => { if (e.target === m) closeModal(); } });
-  const box = el('div', { class:'modal-box', id:'modal-box' });
-  m.appendChild(box);
-  document.body.appendChild(m);
-  return box;
-}
-function openModal() { const m = document.getElementById('game-modal'); if (m) m.classList.add('on'); }
-function closeModal() { const m = document.getElementById('game-modal'); if (m) { m.classList.remove('on'); setTimeout(() => m.remove(), 200); } }
-
-/* ─────────── SETTINGS ─────────── */
-function openSettings() {
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('h2', { style:'margin-bottom:14px' }, '⚙ Настройки'));
-  box.appendChild(el('div', { class:'row', style:'margin-bottom:14px' },
-    el('span', { class:'grow' }, 'Звук'),
-    el('button', { class:'btn', onclick: (e) => { S.sound = !S.sound; e.target.textContent = S.sound ? 'Вкл' : 'Выкл'; autoSave(); } }, S.sound ? 'Вкл' : 'Выкл')
-  ));
-  box.appendChild(el('div', { class:'section-title' }, 'Устройство интерфейса'));
-  const devices = [['auto','Авто'], ['pc','ПК'], ['phone','Телефон'], ['tablet','Планшет'], ['tv','ТВ']];
-  const row = el('div', { class:'row' });
-  devices.forEach(([k, t]) => {
-    const b = el('button', { class:'btn' + (S.device === k ? ' primary' : ''), onclick: () => { S.device = k; autoSave(); applyDevice(); closeModal(); openSettings(); } }, t);
-    row.appendChild(b);
+function renderBoard(){
+  const grid = document.getElementById('boardGrid');
+  grid.innerHTML = '';
+  const cards = [];
+  state.evidence.forEach(id => {
+    const e = EVIDENCE_DB[id]; if (!e) return;
+    cards.push({id:'ev:'+id, title:e.name, sub:e.cat});
   });
-  box.appendChild(row);
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('button', { class:'btn', onclick: closeModal }, 'Закрыть'));
-  openModal();
-}
-
-function openAbout() {
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('h2', { style:'margin-bottom:14px' }, 'О игре'));
-  box.appendChild(el('p', { style:'line-height:1.7;color:#cfd5e2' }, 'MIND CASE — детективный триллер о следователе Алексе Кейне и его расследовании, которое вскрывает тайный проект по стиранию памяти.'));
-  box.appendChild(el('p', { style:'margin-top:10px;line-height:1.7;color:#cfd5e2' }, 'Три главы. Три дела. Одна правда.'));
-  box.appendChild(el('div', { class:'hr' }));
-  box.appendChild(el('button', { class:'btn', onclick: closeModal }, 'Закрыть'));
-  openModal();
-}
-
-function openPause() {
-  const box = createModal();
-  box.innerHTML = '';
-  box.appendChild(el('h2', { style:'margin-bottom:14px' }, '⏸ Пауза'));
-  box.appendChild(el('button', { class:'btn primary', style:'width:100%;margin-bottom:8px', onclick: () => { saveGame(); closeModal(); } }, '💾 Сохранить'));
-  box.appendChild(el('button', { class:'btn', style:'width:100%;margin-bottom:8px', onclick: () => { closeModal(); openSettings(); } }, '⚙ Настройки'));
-  box.appendChild(el('button', { class:'btn', style:'width:100%;margin-bottom:8px', onclick: () => { if (confirm('Вернуться в меню? Несохранённый прогресс будет потерян.')) { closeModal(); renderMenu(); } } }, '⌂ В главное меню'));
-  box.appendChild(el('button', { class:'btn ghost', style:'width:100%', onclick: closeModal }, 'Продолжить'));
-  openModal();
-}
-
-/* ─────────── INIT / EVENTS ─────────── */
-function bindEvents() {
-  $('#btn-new').addEventListener('click', () => {
-    sfx('click');
-    if (hasSave() && !confirm('Начать новую игру? Текущее сохранение будет удалено.')) return;
-    try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-    startIntro();
-    show('s-intro');
+  ['Маркус Коул','Елена Ривз','Виктор Хейл'].forEach((n,i) => {
+    cards.push({id:'p:'+i, title:n, sub:'Подозреваемый'});
   });
-  $('#btn-continue').addEventListener('click', () => {
-    sfx('click');
-    if (loadGame()) { renderHub(); show('s-hub'); }
-    else toast('Сохранение не найдено', 'err');
+  cards.push({id:'t:death', title:'23:47', sub:'Время смерти'});
+  cards.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'bcard';
+    d.innerHTML = `<h5>${c.title}</h5><p>${c.sub}</p>`;
+    d.onclick = () => boardSelect(c, d);
+    d.dataset.id = c.id;
+    grid.appendChild(d);
   });
-  $('#btn-settings').addEventListener('click', () => { sfx('click'); openSettings(); });
-  $('#btn-about').addEventListener('click', () => { sfx('click'); openAbout(); });
-
-  $('#btn-save').addEventListener('click', () => { sfx('click'); saveGame(); });
-  $('#btn-hint').addEventListener('click', () => { sfx('click'); giveHint(); });
-  $('#btn-pause').addEventListener('click', () => { sfx('click'); openPause(); });
-  $('#btn-dlg-back').addEventListener('click', () => { sfx('click'); endDialogue(); });
-
-  window.addEventListener('resize', () => {
-    applyDevice();
-    if ($('#s-hub').classList.contains('on')) renderHub();
-  });
-  window.addEventListener('beforeunload', () => { if (S.started) saveGame(true); });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      const m = document.getElementById('game-modal');
-      if (m && m.classList.contains('on')) { closeModal(); return; }
-      if ($('#s-hub').classList.contains('on')) openPause();
+  renderConnections();
+}
+function boardSelect(card, el){
+  if (state.boardSel.includes(card.id)){
+    state.boardSel = state.boardSel.filter(x => x !== card.id);
+    el.classList.remove('sel');
+  } else {
+    state.boardSel.push(card.id);
+    el.classList.add('sel');
+    if (state.boardSel.length === 2){
+      const [a,b] = state.boardSel;
+      tryConnect(a,b);
+      state.boardSel = [];
+      document.querySelectorAll('.bcard.sel').forEach(x => x.classList.remove('sel'));
     }
+  }
+}
+function tryConnect(a, b){
+  // valid: Marcus + cash transfer, Marcus + email threat, Marcus + logs, safe + Marcus
+  const valid = [
+    ['p:0','ev:ev_transfer'],
+    ['p:0','ev:ev_email'],
+    ['p:0','ev:ev_logs'],
+    ['p:0','ev:ev_deleted'],
+    ['p:0','ev:ev_contract'],
+    ['p:0','t:death'],
+    ['p:0','ev:ev_safe'],
+    ['ev:ev_phone','p:0'],
+    ['ev:ev_papers','p:0']
+  ];
+  const norm = [a,b].sort().join('|');
+  const ok = valid.some(([x,y]) => [x,y].sort().join('|') === norm);
+  if (ok){
+    if (!state.connections.some(c => c === norm)){
+      state.connections.push(norm);
+      Audio.success();
+      showToast('Связь установлена: '+a+' ↔ '+b);
+      if (state.connections.length >= 3 && !state.evidence.includes('ev_concl')){
+        addEvidence('ev_concl');
+      }
+      saveGame(true);
+    }
+    renderConnections();
+  } else {
+    Audio.error();
+    showToast('Логика связи не подтверждается.');
+  }
+}
+function renderConnections(){
+  const c = document.getElementById('connItems');
+  if (!c) return;
+  c.innerHTML = '';
+  if (state.connections.length === 0){ c.innerHTML = '<p style="color:#8f97a3;font-size:11px">Связи не установлены.</p>'; return; }
+  state.connections.forEach(con => {
+    const d = document.createElement('div');
+    d.className = 'connItem';
+    d.textContent = '↔ ' + con.replace(/\|/g,' — ');
+    c.appendChild(d);
   });
 }
 
-function init() {
-  applyDevice();
-  bindEvents();
-  renderMenu();
+/* ============================================================
+   MENU & PAUSE
+   ============================================================ */
+function showScreen(id){
+  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('show'));
+  if (id) document.getElementById(id).classList.add('show');
+}
+function hideAllScreens(){ document.querySelectorAll('.overlay').forEach(o => o.classList.remove('show')); }
+
+document.getElementById('mNew').onclick = () => { startNewGame(); };
+document.getElementById('mCont').onclick = () => { loadGame(); startPlaying(); };
+document.getElementById('mSettings').onclick = () => showScreen('settingsMenu');
+document.getElementById('mControls').onclick = () => showScreen('controlsMenu');
+document.getElementById('mAbout').onclick = () => showScreen('aboutMenu');
+document.getElementById('mClear').onclick = () => {
+  if (confirm('Удалить сохранение?')){
+    try { localStorage.removeItem(CFG.SAVE_KEY); } catch(e){}
+    updateContinueBtn();
+    showToast('Сохранение удалено');
+  }
+};
+document.getElementById('setBack').onclick = () => showScreen('mainMenu');
+document.getElementById('ctrlBack').onclick = () => showScreen('mainMenu');
+document.getElementById('aboutBack').onclick = () => showScreen('mainMenu');
+document.getElementById('pResume').onclick = () => togglePause();
+document.getElementById('pJournal').onclick = () => { hideAllScreens(); toggleJournal(); };
+document.getElementById('pBoard').onclick = () => { hideAllScreens(); toggleBoard(); };
+document.getElementById('pSave').onclick = () => { saveGame(false); showToast('Игра сохранена'); };
+document.getElementById('pSettings').onclick = () => showScreen('settingsMenu');
+document.getElementById('pMain').onclick = () => { saveGame(true); state.mode = 'menu'; showScreen('mainMenu'); };
+document.getElementById('btnPause').onclick = togglePause;
+
+function togglePause(){
+  if (state.mode === 'playing'){
+    state.mode = 'paused';
+    showScreen('pauseMenu');
+    if (document.exitPointerLock) document.exitPointerLock();
+  } else if (state.mode === 'paused'){
+    hideAllScreens();
+    state.mode = 'playing';
+    if (canvas.requestPointerLock && (document.body.dataset.device === 'pc' || document.body.dataset.device === 'tv')){
+      canvas.requestPointerLock();
+    }
+  } else if (state.mode === 'computer'){
+    exitComputerMode();
+  }
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+function updateContinueBtn(){
+  const raw = localStorage.getItem(CFG.SAVE_KEY);
+  document.getElementById('mCont').disabled = !raw;
+}
+
+function startNewGame(){
+  state.evidence = [];
+  state.visitedDocs = {};
+  state.connections = [];
+  state.loggedIn = false;
+  state.position = [0, CFG.PLAYER.eye, 3.2];
+  state.yaw = Math.PI;
+  state.pitch = -0.05;
+  state.lampOn = false;
+  state.ending = null;
+  localStorage.removeItem('mind_case_notes');
+  startPlaying();
+  updateEvBadge();
+  showToast('Найдите улики и разгадайте дело');
+}
+
+function startPlaying(){
+  hideAllScreens();
+  state.mode = 'playing';
+  document.getElementById('hud').style.display = '';
+  if (document.body.dataset.device === 'phone' || document.body.dataset.device === 'tablet'){
+    document.getElementById('touch').style.display = '';
+  }
+  updateEvBadge();
+  Audio.init(); Audio.resume();
+}
+
+/* ============================================================
+   SAVE / LOAD
+   ============================================================ */
+function saveGame(auto){
+  try {
+    const data = {
+      v: 1,
+      evidence: state.evidence.slice(),
+      visitedDocs: state.visitedDocs,
+      connections: state.connections.slice(),
+      loggedIn: state.loggedIn,
+      position: state.position.slice(),
+      yaw: state.yaw,
+      pitch: state.pitch,
+      lampOn: state.lampOn,
+      ending: state.ending,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(CFG.SAVE_KEY, JSON.stringify(data));
+  } catch(e){ console.warn('save fail', e); }
+}
+function loadGame(){
+  try {
+    const raw = localStorage.getItem(CFG.SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (!d || d.v !== 1) return false;
+    state.evidence = Array.isArray(d.evidence) ? d.evidence.filter(x => EVIDENCE_DB[x]) : [];
+    state.visitedDocs = d.visitedDocs || {};
+    state.connections = Array.isArray(d.connections) ? d.connections : [];
+    state.loggedIn = !!d.loggedIn;
+    if (Array.isArray(d.position) && d.position.length === 3) state.position = d.position;
+    if (typeof d.yaw === 'number') state.yaw = d.yaw;
+    if (typeof d.pitch === 'number') state.pitch = d.pitch;
+    state.lampOn = !!d.lampOn;
+    state.ending = d.ending || null;
+    updateEvBadge();
+    return true;
+  } catch(e){ console.warn('load fail', e); return false; }
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function bindSettings(){
+  const sm = document.getElementById('sMaster');
+  const su = document.getElementById('sUi');
+  const sa = document.getElementById('sAmb');
+  const ss = document.getElementById('sStep');
+  const sd = document.getElementById('sDevice');
+  const sn = document.getElementById('sSens');
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(CFG.SETTINGS_KEY))||{}; } catch(e){ return {}; } })();
+  if (saved.master!=null) sm.value = saved.master;
+  if (saved.ui!=null) su.value = saved.ui;
+  if (saved.amb!=null) sa.value = saved.amb;
+  if (saved.step!=null) ss.value = saved.step;
+  if (saved.sens!=null) sn.value = saved.sens;
+  if (saved.device) sd.value = saved.device;
+
+  function apply(){
+    if (Audio.master) Audio.master.gain.value = sm.value/100;
+    if (Audio.uiGain) Audio.uiGain.gain.value = su.value/100;
+    if (Audio.ambGain) Audio.ambGain.gain.value = sa.value/100;
+    if (Audio.stepGain) Audio.stepGain.gain.value = ss.value/100;
+    sens = sn.value/100;
+    try { localStorage.setItem(CFG.SETTINGS_KEY, JSON.stringify({
+      master:+sm.value, ui:+su.value, amb:+sa.value, step:+ss.value, sens:+sn.value, device: sd.value
+    })); } catch(e){}
+    try { localStorage.setItem('mind_case_force_device', sd.value); } catch(e){}
+    applyDevice();
+  }
+  [sm,su,sa,ss,sn,sd].forEach(el => el.addEventListener('input', apply));
+  apply();
+}
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+let lastT = performance.now();
+let stepTimer = 0;
+
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = Math.floor(w*dpr);
+  canvas.height = Math.floor(h*dpr);
+  canvas.style.width = w+'px';
+  canvas.style.height = h+'px';
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+
+const projMat = M4.create();
+const viewMat = M4.create();
+const modelMat = M4.create();
+
+function drawScene(camPos, camDir){
+  gl.clearColor(0.02, 0.025, 0.04, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  const aspect = canvas.width / canvas.height;
+  M4.perspective(projMat, 1.15, aspect, 0.05, 60);
+  const up = [0,1,0];
+  const center = [camPos[0]+camDir[0], camPos[1]+camDir[1], camPos[2]+camDir[2]];
+  M4.lookAt(viewMat, camPos, center, up);
+  gl.uniformMatrix4fv(U.proj, false, projMat);
+  gl.uniformMatrix4fv(U.view, false, viewMat);
+  gl.uniform3fv(U.cam, camPos);
+  gl.uniform3f(U.light1, 0.3, 1.0, 0.4);
+  gl.uniform3f(U.light2, -0.5, 0.4, 0.6);
+  gl.uniform3f(U.light3, 0.4, -0.2, -0.6);
+  gl.uniform1f(U.lampOn, state.lampOn ? 1 : 0);
+  gl.uniform3f(U.ambient, 0.09, 0.10, 0.13);
+
+  for (const o of scene){
+    if (o.hidden) continue;
+    M4.compose(modelMat, o.pos, o.rot||0, o.size);
+    gl.uniformMatrix4fv(U.model, false, modelMat);
+    gl.uniform3fv(U.color, o.color);
+    gl.uniform1f(U.highlight, o === currentTarget ? 1.0 : 0.0);
+    gl.uniform1f(U.emis, o.emis ? 1 : 0);
+    const mesh = o.mesh === 'cyl' ? MESH.cyl : MESH.cube;
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo);
+    gl.enableVertexAttribArray(A.pos);
+    gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.nbo);
+    gl.enableVertexAttribArray(A.nrm);
+    gl.vertexAttribPointer(A.nrm, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ibo);
+    gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_SHORT, 0);
+  }
+}
+
+function updatePlayer(dt){
+  // Input direction
+  let mf = 0, ms = 0;
+  if (keys['KeyW']) mf += 1;
+  if (keys['KeyS']) mf -= 1;
+  if (keys['KeyA']) ms -= 1;
+  if (keys['KeyD']) ms += 1;
+  if (Math.abs(padState.ly) > 0.05) mf -= padState.ly;
+  if (Math.abs(padState.lx) > 0.05) ms += padState.lx;
+  if (stickMove.x || stickMove.y){
+    mf -= stickMove.y/50;
+    ms += stickMove.x/50;
+  }
+  // gamepad look
+  if (Math.abs(padState.rx) > 0.05) state.yaw -= padState.rx * dt * 2.2;
+  if (Math.abs(padState.ry) > 0.05) state.pitch -= padState.ry * dt * 2.2;
+  state.pitch = Math.max(-1.4, Math.min(1.4, state.pitch));
+
+  const len = Math.hypot(mf, ms);
+  if (len > 1){ mf /= len; ms /= len; }
+  const speed = CFG.PLAYER.speed * ((keys['ShiftLeft']||keys['ShiftRight'])?CFG.PLAYER.runMult:1);
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+  // forward = (sy, 0, -cy); right = (cy, 0, sy)
+  const vx = (sy*mf + cy*ms) * speed * dt;
+  const vz = (-cy*mf + sy*ms) * speed * dt;
+  const [nx, nz] = collideMove(state.position[0], state.position[1], state.position[2], state.position[0]+vx, state.position[2]+vz);
+  state.position[0] = nx;
+  state.position[2] = nz;
+
+  // head bob + step sound
+  if (len > 0.05){
+    stepTimer -= dt;
+    if (stepTimer <= 0){
+      Audio.step();
+      stepTimer = 0.42 / ((keys['ShiftLeft']||keys['ShiftRight'])?CFG.PLAYER.runMult:1);
+    }
+  } else stepTimer = 0;
+
+  const targetEye = state.crouch ? CFG.PLAYER.crouchH : CFG.PLAYER.eye;
+  state.position[1] += (targetEye - state.position[1]) * Math.min(1, dt*8);
+}
+
+function updateSitting(dt){
+  if (!state.sitting) return;
+  state.sitT += dt;
+  const t = Math.min(1, state.sitT / 1.1);
+  // ease
+  const e = t*t*(3-2*t);
+  const start = state.returnPos || state.position;
+  const end = state.seatTarget.pos;
+  state.position[0] = start[0] + (end[0]-start[0])*e;
+  state.position[1] = start[1] + (end[1]-start[1])*e;
+  state.position[2] = start[2] + (end[2]-start[2])*e;
+  // yaw: shorten shortest path
+  let dy = state.seatTarget.yaw - state.returnYaw;
+  while (dy > Math.PI) dy -= 2*Math.PI;
+  while (dy < -Math.PI) dy += 2*Math.PI;
+  state.yaw = state.returnYaw + dy*e;
+  state.pitch = state.returnPitch + (state.seatTarget.pitch - state.returnPitch)*e;
+  if (t >= 1){
+    state.sitting = false;
+    enterComputerMode();
+  }
+}
+
+function frame(now){
+  const dt = Math.min(0.05, (now - lastT)/1000);
+  lastT = now;
+  pollGamepad();
+
+  if (state.mode === 'playing'){
+    if (state.sitting){
+      updateSitting(dt);
+    } else {
+      updatePlayer(dt);
+    }
+    const dir = getViewDir();
+    drawScene(state.position, dir);
+    // interaction
+    currentTarget = findTarget();
+    const crosshair = document.getElementById('crosshair');
+    const prompt = document.getElementById('prompt');
+    if (currentTarget){
+      crosshair.classList.add('active');
+      prompt.style.display = 'block';
+      prompt.querySelector('.pn').textContent = currentTarget.interactive.name;
+      prompt.querySelector('.pa').textContent = '[' + (document.body.dataset.device === 'pc' ? 'E' : 'E') + '] ' + currentTarget.interactive.action;
+    } else {
+      crosshair.classList.remove('active');
+      prompt.style.display = 'none';
+    }
+  } else if (state.mode === 'computer' || state.mode === 'paused'){
+    // still render 3D scene behind
+    drawScene(state.position, getViewDir());
+  } else {
+    // menu — render static
+    drawScene(state.position, getViewDir());
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   PS4 CURSOR for TV
+   ============================================================ */
+(function initOsCursor(){
+  const cur = document.getElementById('osCursor');
+  let cx = window.innerWidth/2, cy = window.innerHeight/2;
+  function isCursorMode(){
+    return document.body.dataset.device === 'tv' || document.body.dataset.device === 'phone' === false && navigator.getGamepads && navigator.getGamepads()[0];
+  }
+  function updateCursor(){
+    if (!document.getElementById('os').classList.contains('show')){ cur.classList.remove('on'); return; }
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = pads[0];
+    const isTv = document.body.dataset.device === 'tv';
+    if (!gp && !isTv){ cur.classList.remove('on'); return; }
+    cur.classList.add('on');
+    if (gp){
+      cx += (gp.axes[2]||0) * 14;
+      cy += (gp.axes[3]||0) * 14;
+      cx = Math.max(0, Math.min(window.innerWidth-1, cx));
+      cy = Math.max(0, Math.min(window.innerHeight-1, cy));
+    }
+    cur.style.left = cx + 'px';
+    cur.style.top = cy + 'px';
+    // hit-test
+    if (gp && gp.buttons[0] && gp.buttons[0].pressed && !initOsCursor._lastA){
+      const el = document.elementFromPoint(cx, cy);
+      if (el && el.closest) el.closest('.osIcon,.fitem,.cl,button,.osTask,.hist')?.click();
+    }
+    initOsCursor._lastA = gp && gp.buttons[0] && gp.buttons[0].pressed;
+    requestAnimationFrame(updateCursor);
+  }
+  updateCursor();
+})();
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  resize();
+  applyDevice();
+  bindSettings();
+  updateContinueBtn();
+  updateEvBadge();
+  showScreen('mainMenu');
+  Audio.init();
+
+  window.addEventListener('click', () => { Audio.resume(); }, {once:false});
+
+  // first user gesture — resume audio
+  document.addEventListener('touchstart', () => Audio.resume(), {once:true, passive:true});
+  document.addEventListener('click', () => Audio.resume(), {once:true});
+  document.addEventListener('keydown', () => Audio.resume(), {once:true});
+
+  requestAnimationFrame(frame);
+}
+
+init();
+
 </script>
 </body>
 </html>
