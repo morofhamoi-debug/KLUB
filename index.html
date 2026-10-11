@@ -154,64 +154,6 @@ html.mc-high-contrast {
 #mc-modal-layer { z-index: 3; }
 #mc-notify-layer{ z-index: 4; }
 
-/* ---- Boot-экран ------------------------------------------- */
-.mc-boot {
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background: var(--mc-bg-0);
-  transition: opacity var(--mc-t-slow) var(--mc-ease);
-}
-.mc-boot[data-state="done"] { opacity: 0; pointer-events: none; }
-.mc-boot__inner { text-align: center; max-width: 520px; padding: var(--mc-s-5); }
-.mc-boot__logo {
-  font-family: var(--mc-font-mono);
-  font-size: var(--mc-fs-3xl);
-  letter-spacing: .22em;
-  color: var(--mc-fg-0);
-  text-shadow: 0 0 22px rgba(79,179,201,.35);
-  margin-bottom: var(--mc-s-2);
-}
-.mc-boot__sub {
-  color: var(--mc-fg-2);
-  font-size: var(--mc-fs-sm);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  margin-bottom: var(--mc-s-5);
-}
-.mc-boot__status {
-  font-family: var(--mc-font-mono);
-  font-size: var(--mc-fs-xs);
-  color: var(--mc-fg-2);
-  line-height: 1.9;
-  text-align: left;
-  display: inline-block;
-}
-.mc-boot__status b { color: var(--mc-accent); font-weight: 600; }
-.mc-boot__status i { color: var(--mc-warn); font-style: normal; }
-.mc-boot__bar {
-  margin-top: var(--mc-s-4);
-  width: 260px; height: 3px;
-  background: var(--mc-bg-2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.mc-boot__bar > i {
-  display: block; height: 100%; width: 0%;
-  background: linear-gradient(90deg, var(--mc-accent), #7fd6e6);
-  transition: width var(--mc-t-mid) linear;
-}
-.mc-boot__error {
-  margin-top: var(--mc-s-4);
-  color: var(--mc-danger);
-  font-family: var(--mc-font-mono);
-  font-size: var(--mc-fs-xs);
-  min-height: 1em;
-  white-space: pre-wrap;
-}
-
 /* ---- Базовые компоненты ----------------------------------- */
 .mc-btn {
   appearance: none;
@@ -337,22 +279,6 @@ html.mc-high-contrast {
 
   <!-- Регион для озвучивания статусов -->
   <div id="mc-live" class="mc-sr-only" aria-live="polite" aria-atomic="true"></div>
-
-  <!-- Экран загрузки / boot -->
-  <div id="mc-boot" class="mc-boot" data-state="booting">
-    <div class="mc-boot__inner">
-      <div class="mc-boot__logo">MIND&nbsp;CASE</div>
-      <div class="mc-boot__sub">Правда всегда оставляет след</div>
-      <div class="mc-boot__status" id="mc-boot-status">
-        <div>Автономный режим: <b>включён</b></div>
-        <div>Внешние загрузки: <b>отключены</b></div>
-        <div>Сетевые запросы: <b>не используются</b></div>
-        <div>Состояние сохранений: <i>определяется…</i></div>
-      </div>
-      <div class="mc-boot__bar"><i id="mc-boot-bar"></i></div>
-      <div class="mc-boot__error" id="mc-boot-error" role="alert"></div>
-    </div>
-  </div>
 
 </div>
 
@@ -825,7 +751,6 @@ html.mc-high-contrast {
       status: () => Object.assign({}, status),
       local: ls,
       idb,
-      // Удобный «персистентный» метод: сначала IDB, при недоступности — localStorage.
       persist(key, value) {
         if (status.idb === 'ok') {
           return idb.put(Constants.IDB.STORES.SAVES, { id: key, value, t: Date.now() })
@@ -856,10 +781,10 @@ html.mc-high-contrast {
       musicVolume: 0.6,
       sfxVolume: 0.8,
       subtitle: true,
-      fontSize: 'md',          // 'sm' | 'md' | 'lg' | 'xl'
+      fontSize: 'md',
       highContrast: false,
       reducedMotion: false,
-      graphicsQuality: 'auto', // 'low' | 'mid' | 'high' | 'auto'
+      graphicsQuality: 'auto',
       canvasEffects: true,
       stickDeadzone: 0.18,
       cameraSensitivity: 1.0,
@@ -947,7 +872,6 @@ html.mc-high-contrast {
 
   /* --------------------------------------------------------------------------
      7. GameState — единственный источник игрового состояния.
-     Пока часть 1 наполняет только базовую схему; главы/улики — в частях 9–16.
      -------------------------------------------------------------------------- */
 
   const GameState = (() => {
@@ -956,22 +880,20 @@ html.mc-high-contrast {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       slotId: null,
-      // Прогресс
       chapterId: null,
       chapterStartedAt: null,
-      // Контент-структуры (наполняются в следующих частях)
-      discoveredEvidence: [],   // [{ id, t }]
-      analysedEvidence: {},     // { [id]: true }
+      discoveredEvidence: [],
+      analysedEvidence: {},
       unlockedDocuments: [],
-      testimonies: [],          // [{ id, charId, t }]
-      storyFlags: {},           // { [flag]: true|number|string }
-      boardConnections: [],     // [{ id, from, to, type, t }]
-      boardLayout: {},          // { [cardId]: {x,y} }
-      notes: {},                // { [id]: string }
-      decisions: [],            // [{ id, choice, t }]
-      interviews: {},           // { [charId]: { askedIds: [], shownEvidence: [] } }
-      locationState: {},        // { [locId]: { inspectedIds: [] } }
-      timeline: [],             // [{ id, t, label }]
+      testimonies: [],
+      storyFlags: {},
+      boardConnections: [],
+      boardLayout: {},
+      notes: {},
+      decisions: [],
+      interviews: {},
+      locationState: {},
+      timeline: [],
       achievedEndings: [],
       achievements: {},
       playtimeMs: 0,
@@ -1010,7 +932,6 @@ html.mc-high-contrast {
     const isDirty = () => dirty;
     const markClean = () => { dirty = false; };
 
-    // Мелкие хелперы, которые пригодятся дальше.
     const hasFlag = (name) => !!state.storyFlags[name];
     const setFlag = (name, value) => {
       state.storyFlags[name] = value === undefined ? true : value;
@@ -1046,7 +967,7 @@ html.mc-high-contrast {
   })();
 
   /* --------------------------------------------------------------------------
-     8. PlatformDetector — определение профиля платформы (логика, без UI).
+     8. PlatformDetector — определение профиля платформы.
      -------------------------------------------------------------------------- */
 
   const PlatformDetector = (() => {
@@ -1096,7 +1017,6 @@ html.mc-high-contrast {
       for (const fn of subscribers) { try { fn(clone(info)); } catch (_) {} }
     };
 
-    // Автоматически обновляем ориентацию/размеры.
     let rafId = 0;
     const schedule = () => {
       if (rafId) return;
@@ -1149,14 +1069,12 @@ html.mc-high-contrast {
     const clear = () => { incidents.length = 0; };
     const count = () => incidents.length;
 
-    /** Статический аудит автономности. Возвращает отчёт. */
     const auditAutonomy = () => {
       const report = {
         ok: true,
         issues: [],
         checkedAt: nowISO()
       };
-      // Ищем внешние ресурсы в DOM.
       try {
         const externalScripts = Array.from(document.querySelectorAll('script[src]'));
         if (externalScripts.length) {
@@ -1183,7 +1101,6 @@ html.mc-high-contrast {
       } catch (e) {
         report.issues.push({ kind: 'dom-audit-error', error: String(e && e.message || e) });
       }
-      // Отсутствие запрещённых API в текущем модуле — гарантируется построчно.
       return report;
     };
 
@@ -1209,7 +1126,6 @@ html.mc-high-contrast {
       const options = Object.assign({ kind: 'info', timeoutMs: 4200 }, opts || {});
       if (!Constants.NOTIFY_KINDS.includes(options.kind)) options.kind = 'info';
 
-      // Ограничение количества одновременно видимых уведомлений.
       while (h.children.length >= Constants.LIMITS.NOTIFY_MAX) {
         h.removeChild(h.firstChild);
       }
@@ -1222,7 +1138,6 @@ html.mc-high-contrast {
 
       h.appendChild(el);
 
-      // Автоскрытие с корректной очисткой таймера.
       let timer = 0;
       const dismiss = () => {
         if (timer) { clearTimeout(timer); timer = 0; }
@@ -1240,151 +1155,45 @@ html.mc-high-contrast {
       const region = document.getElementById('mc-live');
       if (!region) return;
       region.textContent = '';
-      // Небольшая задержка для гарантии озвучивания повторных сообщений.
       setTimeout(() => { region.textContent = String(text || ''); }, 30);
     };
 
     return { notify, live };
   })();
 
-  /* --------------------------------------------------------------------------
-     11. App — каркас жизненного цикла приложения.
-     -------------------------------------------------------------------------- */
-
+  /* 11. App — немедленная инициализация без экрана загрузки */
   const App = (() => {
     const status = {
-      phase: 'idle',    // 'idle' | 'booting' | 'ready' | 'fatal'
-      startedAt: 0,
+      phase: 'ready',
+      startedAt: Date.now(),
       bootError: null
     };
 
-    const setBootStatus = (html) => {
-      const el = document.getElementById('mc-boot-status');
-      if (el) el.innerHTML = html;
-    };
-
-    const setBootProgress = (pct) => {
-      const bar = document.getElementById('mc-boot-bar');
-      if (bar) bar.style.width = clamp(pct, 0, 100) + '%';
-    };
-
-    const setBootError = (msg) => {
-      const el = document.getElementById('mc-boot-error');
-      if (el) el.textContent = String(msg || '');
-    };
-
-    const hideBoot = () => {
-      const el = document.getElementById('mc-boot');
-      if (!el) return;
-      el.setAttribute('data-state', 'done');
-      setTimeout(() => { try { el.remove(); } catch (_) {} }, 520);
-    };
-
-    const storageStatusLine = () => {
-      const s = StorageAdapter.status();
-      const localOk = s.local === 'ok';
-      const idbOk   = s.idb === 'ok';
-      if (idbOk)   return 'IndexedDB: <b>доступно</b>';
-      if (localOk) return 'IndexedDB: <i>недоступно</i>, используется localStorage';
-      return 'Сохраняется только в памяти (браузер заблокировал хранилища)';
-    };
-
-    const boot = async () => {
-      status.phase = 'booting';
-      status.startedAt = Date.now();
-
-      Logger.info('app', 'boot start');
-
-      setBootProgress(8);
-      setBootStatus([
-        'Автономный режим: <b>включён</b>',
-        'Внешние загрузки: <b>отключены</b>',
-        'Сетевые запросы: <b>не используются</b>',
-        'Состояние сохранений: <i>определяется…</i>'
-      ].join('<br>'));
-
-      // 1) Проверка автономности.
+    const initApp = () => {
+      Logger.info('app', 'instant start');
       const audit = Diagnostics.auditAutonomy();
       if (!audit.ok) {
         Logger.warn('app', 'autonomy audit issues', audit.issues);
-        NotificationManager.notify('Обнаружены внешние ресурсы в DOM. Игра может работать некорректно.', { kind: 'warn', timeoutMs: 8000 });
-      } else {
-        Logger.info('app', 'autonomy audit: ok');
       }
-      setBootProgress(22);
-
-      // 2) Инициализация хранилища.
       StorageAdapter.init();
-      setBootProgress(45);
-
-      // 3) Загрузка настроек.
-      try {
-        SettingsStore.load();
-      } catch (e) {
+      try { SettingsStore.load(); } catch (e) {
         Diagnostics.push(Constants.ERR.STORAGE_UNAVAILABLE, 'settings', 'Не удалось загрузить настройки', e);
       }
-      setBootProgress(62);
-
-      // 4) Платформа.
-      try { PlatformDetector.attach(); }
-      catch (e) { Logger.warn('app', 'platform attach failed', e); }
-      setBootProgress(76);
-
-      // 5) Отчёт о хранилищах в boot-экране.
-      const s = StorageAdapter.status();
-      setBootStatus([
-        'Автономный режим: <b>включён</b>',
-        'Внешние загрузки: <b>отключены</b>',
-        'Сетевые запросы: <b>не используются</b>',
-        'Хранилище: ' + storageStatusLine()
-      ].join('<br>'));
-      setBootProgress(90);
-
-      // 6) Финализация.
-      status.phase = 'ready';
-      setBootProgress(100);
-      Logger.info('app', 'boot ready in ' + (Date.now() - status.startedAt) + 'ms');
-
-      // Сообщим подписчикам.
+      try { PlatformDetector.attach(); } catch (e) { Logger.warn('app', 'platform attach failed', e); }
       EventBus.emit('app:ready', { at: Date.now() });
-      // Оставим короткую паузу для визуального завершения прогресса.
-      setTimeout(hideBoot, 260);
-    };
-
-    const fatal = (err, code) => {
-      status.phase = 'fatal';
-      status.bootError = err || new Error('unknown');
-      const id = code || Constants.ERR.BOOT_FAIL;
-      Diagnostics.push(id, 'app', 'Fatal during boot', err);
-      setBootError('Код ошибки: ' + id + '\n' + (err && err.message ? err.message : String(err)));
-      setBootStatus([
-        'Автономный режим: <b>включён</b>',
-        'Внешние загрузки: <b>отключены</b>',
-        'Сетевые запросы: <b>не используются</b>',
-        'Статус: <i style="color:#c8424b">критическая ошибка запуска</i>'
-      ].join('<br>'));
     };
 
     const start = () => {
-      // Единая точка входа. Все ошибки попадают в Diagnostics.
-      const onReady = () => {
-        boot().catch((e) => fatal(e, Constants.ERR.BOOT_FAIL));
-      };
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', onReady, { once: true });
+        document.addEventListener('DOMContentLoaded', initApp, { once: true });
       } else {
-        onReady();
+        initApp();
       }
     };
 
     return {
       status: () => Object.assign({}, status),
-      start,
-      fatal,
-      // Экспортируем утилиты, которые пригодятся частям 2–20.
-      ui: {
-        setBootStatus, setBootProgress, setBootError, hideBoot
-      }
+      start
     };
   })();
 
@@ -1404,13 +1213,10 @@ html.mc-high-contrast {
     Diagnostics,
     NotificationManager,
     App,
-    // Публичные утилиты для последующих частей.
     util: { clone, clamp, uid, safeJSONParse, isPlainObject, HAS, nowISO }
   };
 
-  // Защита от повторной инициализации при горячей перезагрузке скрипта.
   if (global.MindCaseApp && global.MindCaseApp.__initialized) {
-    // Уже инициализировано — не создаём дубликаты.
     Logger.warn('app', 'MindCaseApp уже инициализирован, повторная инициализация пропущена');
   } else {
     Object.defineProperty(MindCaseApp, '__initialized', {
@@ -1418,7 +1224,6 @@ html.mc-high-contrast {
     });
     global.MindCaseApp = MindCaseApp;
 
-    // Обработчики необработанных ошибок — только один раз.
     global.addEventListener('error', (ev) => {
       try {
         Diagnostics.push(Constants.ERR.UNKNOWN, 'window', ev.message || 'Uncaught error', ev.error);
@@ -1430,7 +1235,6 @@ html.mc-high-contrast {
       } catch (_) {}
     });
 
-    // Готовность к загрузке.
     App.start();
   }
 
@@ -1438,10 +1242,7 @@ html.mc-high-contrast {
 
 /* ============================================================================
    КОНЕЦ ЧАСТИ 1.
-   Тег <script> остаётся ОТКРЫТЫМ.
-   Следующий блок (Часть 2) продолжит этот же <script> и добавит дизайн-систему,
-   базовые UI-компоненты, модальные окна и полноценный слой уведомлений.
-   Закрытие </script></body></html> произойдёт в Части 20.
+   Тег <script> остаётся ОТКРЫТЫМ для последующих частей.
    ========================================================================== */
 <script>
 'use strict';
