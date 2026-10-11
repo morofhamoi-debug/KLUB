@@ -1,0 +1,17 @@
+{
+  "name": "3d-multiplayer-room",
+  "version": "1.0.0",
+  "description": "3D online multiplayer room built with Babylon.js, Node.js and WebSocket. Deployed on Render as a single web service.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "license": "MIT"
+}
