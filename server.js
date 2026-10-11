@@ -4,7 +4,6 @@
    Хранит комнаты в памяти, синхронизирует игроков.
    ========================================================= */
 
-const path = require('path');
 const http = require('http');
 const crypto = require('crypto');
 const express = require('express');
@@ -13,17 +12,6 @@ const WebSocket = require('ws');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-
-/* ---------- Раздача статики (index.html, style.css, client.js) ---------- */
-app.use(
-  express.static(__dirname, {
-    setHeaders(res, filePath) {
-      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
-    },
-  })
-);
-
-app.get('/health', (_req, res) => res.json({ ok: true, rooms: rooms.size }));
 
 /* ---------- Ограничения ---------- */
 const MAX_PLAYERS_PER_ROOM = 10;
@@ -36,6 +24,18 @@ const BOUNDS = { minX: -13.4, maxX: 13.4, minZ: -13.4, maxZ: 13.4, minY: 0, maxY
 /* ---------- Хранилище комнат ---------- */
 const rooms = new Map(); // code -> { code, players: Map<id, player>, createdAt }
 
+/* ---------- Раздача статики (index.html, style.css, client.js) ---------- */
+app.use(
+  express.static(__dirname, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  })
+);
+
+app.get('/health', (_req, res) => res.json({ ok: true, rooms: rooms.size }));
+
+/* ---------- Генерация кода комнаты ---------- */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function generateRoomCode() {
   let code;
@@ -163,10 +163,11 @@ function joinPlayerToRoom(ws, room, name) {
     moving: p.moving, running: p.running,
   }));
 
+  // === ИСПРАВЛЕНО: было "p.name", стало "player.name" ===
   send(ws, {
     type: 'roomState',
     code: room.code,
-    you: { id: ws.id, name: p.name, color: player.color },
+    you: { id: ws.id, name: player.name, color: player.color },
     players: snapshot,
   });
 
