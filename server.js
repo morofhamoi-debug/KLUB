@@ -906,4 +906,662 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0b10;
     shadowGen.addShadowCaster(armR);
 
     for (var i = -1; i <= 1; i++) {
-      var c = BABYLON.M
+      var c = BABYLON.MeshBuilder.CreateBox('sofaCush' + i,
+        { width: 1.1, height: 0.15, depth: 1.1 }, scene);
+      c.position.set(x + i * 1.2, 0.67, z);
+      var cm = new BABYLON.StandardMaterial('cm' + i, scene);
+      cm.diffuseColor = new BABYLON.Color3(0.35, 0.22, 0.38);
+      c.material = cm;
+    }
+  }
+
+  function buildTable(scene, shadowGen, x, z) {
+    var mat = new BABYLON.StandardMaterial('matTable', scene);
+    mat.diffuseColor = new BABYLON.Color3(0.42, 0.27, 0.16);
+    mat.specularColor = new BABYLON.Color3(0.15, 0.1, 0.05);
+
+    var top = BABYLON.MeshBuilder.CreateBox('tableTop',
+      { width: 2.6, height: 0.12, depth: 1.6 }, scene);
+    top.position.set(x, 0.85, z);
+    top.material = mat;
+    top.receiveShadows = true;
+    shadowGen.addShadowCaster(top);
+
+    var legPos = [
+      [x - 1.15, z - 0.65], [x + 1.15, z - 0.65],
+      [x - 1.15, z + 0.65], [x + 1.15, z + 0.65]
+    ];
+    for (var i = 0; i < legPos.length; i++) {
+      var l = BABYLON.MeshBuilder.CreateBox('tleg' + i,
+        { width: 0.1, height: 0.85, depth: 0.1 }, scene);
+      l.position.set(legPos[i][0], 0.42, legPos[i][1]);
+      l.material = mat;
+    }
+  }
+
+  function buildChair(scene, shadowGen, x, z, rot) {
+    var mat = new BABYLON.StandardMaterial('matChair' + x + z, scene);
+    mat.diffuseColor = new BABYLON.Color3(0.32, 0.2, 0.13);
+
+    var root = new BABYLON.TransformNode('chair' + x + z, scene);
+    root.position.set(x, 0, z);
+    root.rotation.y = rot || 0;
+
+    var seat = BABYLON.MeshBuilder.CreateBox('chSeat',
+      { width: 0.7, height: 0.08, depth: 0.7 }, scene);
+    seat.position.y = 0.45;
+    seat.material = mat;
+    seat.parent = root;
+    seat.receiveShadows = true;
+    shadowGen.addShadowCaster(seat);
+
+    var back = BABYLON.MeshBuilder.CreateBox('chBack',
+      { width: 0.7, height: 0.7, depth: 0.08 }, scene);
+    back.position.set(0, 0.8, -0.31);
+    back.material = mat;
+    back.parent = root;
+    shadowGen.addShadowCaster(back);
+
+    var lg = [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]];
+    for (var i = 0; i < lg.length; i++) {
+      var l = BABYLON.MeshBuilder.CreateBox('chLeg' + i,
+        { width: 0.06, height: 0.45, depth: 0.06 }, scene);
+      l.position.set(lg[i][0], 0.22, lg[i][1]);
+      l.material = mat;
+      l.parent = root;
+    }
+  }
+
+  function buildBookshelf(scene, shadowGen, x, z) {
+    var mat = new BABYLON.StandardMaterial('matBs', scene);
+    mat.diffuseColor = new BABYLON.Color3(0.35, 0.22, 0.15);
+
+    var body = BABYLON.MeshBuilder.CreateBox('bs',
+      { width: 1.2, height: 2.4, depth: 4.0 }, scene);
+    body.position.set(x, 1.2, z);
+    body.material = mat;
+    body.receiveShadows = true;
+    shadowGen.addShadowCaster(body);
+
+    var matBook = new BABYLON.StandardMaterial('matBook', scene);
+    matBook.diffuseColor = new BABYLON.Color3(0.7, 0.25, 0.25);
+
+    for (var s = 0; s < 4; s++) {
+      for (var b = 0; b < 4; b++) {
+        var bk = BABYLON.MeshBuilder.CreateBox('bk' + s + b,
+          { width: 0.9, height: 0.35, depth: 0.5 }, scene);
+        bk.position.set(x + 0.15, 0.5 + s * 0.55, z - 1.4 + b * 0.9);
+        var bmat = new BABYLON.StandardMaterial('bm' + s + b, scene);
+        bmat.diffuseColor = new BABYLON.Color3(
+          0.4 + (s * 0.15 + b * 0.07) % 0.5,
+          0.25 + (s * 0.1 + b * 0.13) % 0.5,
+          0.5 - (b * 0.08) % 0.4
+        );
+        bk.material = bmat;
+      }
+    }
+  }
+
+  function buildCabinet(scene, shadowGen, x, z) {
+    var mat = new BABYLON.StandardMaterial('matCab', scene);
+    mat.diffuseColor = new BABYLON.Color3(0.3, 0.24, 0.18);
+
+    var body = BABYLON.MeshBuilder.CreateBox('cab',
+      { width: 2.2, height: 1.4, depth: 1.2 }, scene);
+    body.position.set(x, 0.7, z);
+    body.material = mat;
+    body.receiveShadows = true;
+    shadowGen.addShadowCaster(body);
+
+    var matMetal = new BABYLON.StandardMaterial('cabM', scene);
+    matMetal.diffuseColor = new BABYLON.Color3(0.8, 0.75, 0.4);
+    var h1 = BABYLON.MeshBuilder.CreateSphere('cabH1', { diameter: 0.08 }, scene);
+    h1.position.set(x - 0.35, 0.85, z - 0.62);
+    h1.material = matMetal;
+    var h2 = BABYLON.MeshBuilder.CreateSphere('cabH2', { diameter: 0.08 }, scene);
+    h2.position.set(x + 0.35, 0.85, z - 0.62);
+    h2.material = matMetal;
+  }
+
+  /* ================== CHARACTER ================== */
+  function buildCharacter(scene, colorHex, name) {
+    var root = new BABYLON.TransformNode('char_' + Math.random().toString(36).slice(2), scene);
+
+    var clothMat = new BABYLON.StandardMaterial('cloth_' + Math.random(), scene);
+    clothMat.diffuseColor = BABYLON.Color3.FromHexString(colorHex);
+    clothMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+
+    var skinMat = new BABYLON.StandardMaterial('skin_' + Math.random(), scene);
+    skinMat.diffuseColor = new BABYLON.Color3(0.95, 0.78, 0.62);
+
+    var pantsMat = new BABYLON.StandardMaterial('pants_' + Math.random(), scene);
+    pantsMat.diffuseColor = new BABYLON.Color3(0.18, 0.22, 0.32);
+
+    var hairMat = new BABYLON.StandardMaterial('hair_' + Math.random(), scene);
+    hairMat.diffuseColor = new BABYLON.Color3(0.15, 0.1, 0.08);
+
+    // Legs
+    var legL = new BABYLON.TransformNode('legLPivot', scene);
+    legL.parent = root;
+    legL.position.set(-0.14, 0.7, 0);
+    var legLMesh = BABYLON.MeshBuilder.CreateBox('legLMesh',
+      { width: 0.22, height: 0.7, depth: 0.22 }, scene);
+    legLMesh.position.y = -0.35;
+    legLMesh.material = pantsMat;
+    legLMesh.parent = legL;
+
+    var legR = new BABYLON.TransformNode('legRPivot', scene);
+    legR.parent = root;
+    legR.position.set(0.14, 0.7, 0);
+    var legRMesh = BABYLON.MeshBuilder.CreateBox('legRMesh',
+      { width: 0.22, height: 0.7, depth: 0.22 }, scene);
+    legRMesh.position.y = -0.35;
+    legRMesh.material = pantsMat;
+    legRMesh.parent = legR;
+
+    // Torso
+    var torso = BABYLON.MeshBuilder.CreateBox('torso',
+      { width: 0.6, height: 0.75, depth: 0.32 }, scene);
+    torso.position.y = 1.07;
+    torso.material = clothMat;
+    torso.parent = root;
+
+    // Arms
+    var armL = new BABYLON.TransformNode('armLPivot', scene);
+    armL.parent = root;
+    armL.position.set(-0.4, 1.4, 0);
+    var armLMesh = BABYLON.MeshBuilder.CreateBox('armLMesh',
+      { width: 0.18, height: 0.72, depth: 0.18 }, scene);
+    armLMesh.position.y = -0.36;
+    armLMesh.material = clothMat;
+    armLMesh.parent = armL;
+
+    var armR = new BABYLON.TransformNode('armRPivot', scene);
+    armR.parent = root;
+    armR.position.set(0.4, 1.4, 0);
+    var armRMesh = BABYLON.MeshBuilder.CreateBox('armRMesh',
+      { width: 0.18, height: 0.72, depth: 0.18 }, scene);
+    armRMesh.position.y = -0.36;
+    armRMesh.material = clothMat;
+    armRMesh.parent = armR;
+
+    // Head
+    var head = BABYLON.MeshBuilder.CreateSphere('head',
+      { diameter: 0.42 }, scene);
+    head.position.y = 1.7;
+    head.material = skinMat;
+    head.parent = root;
+
+    // Hair
+    var hair = BABYLON.MeshBuilder.CreateSphere('hair',
+      { diameter: 0.44 }, scene);
+    hair.position.y = 1.76;
+    hair.scaling.y = 0.65;
+    hair.material = hairMat;
+    hair.parent = root;
+
+    // Name tag
+    var dt = new BABYLON.DynamicTexture('nt_' + Math.random(),
+      { width: 512, height: 128 }, scene, true);
+    dt.hasAlpha = true;
+    dt.drawText(name, null, 90, 'bold 56px Arial', '#ffffff', 'transparent', true);
+    var ntMat = new BABYLON.StandardMaterial('ntMat_' + Math.random(), scene);
+    ntMat.diffuseTexture = dt;
+    ntMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
+    ntMat.disableLighting = true;
+    ntMat.useAlphaFromDiffuseTexture = true;
+    ntMat.backFaceCulling = false;
+    var plane = BABYLON.MeshBuilder.CreatePlane('ntPlane',
+      { width: 1.4, height: 0.35 }, scene);
+    plane.material = ntMat;
+    plane.position.y = 2.2;
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+    plane.parent = root;
+
+    return {
+      root: root,
+      parts: { legL: legL, legR: legR, armL: armL, armR: armR, torso: torso, head: head },
+      walkPhase: 0,
+      moving: false,
+      running: false,
+      current: { x: 0, y: 0, z: 0, ry: 0 },
+      target: { x: 0, y: 0, z: 0, ry: 0 }
+    };
+  }
+
+  function animateCharacter(ch, dt) {
+    var speed = ch.running ? 13 : 9;
+    if (ch.moving) {
+      ch.walkPhase += dt * speed;
+    } else {
+      ch.walkPhase *= 0.85;
+    }
+    var amp = ch.moving ? (ch.running ? 0.95 : 0.65) : 0.0;
+    var s = Math.sin(ch.walkPhase);
+    ch.parts.legL.rotation.x = s * amp * 0.8;
+    ch.parts.legR.rotation.x = -s * amp * 0.8;
+    ch.parts.armL.rotation.x = -s * amp * 0.7;
+    ch.parts.armR.rotation.x = s * amp * 0.7;
+    // Head bob
+    ch.parts.head.position.y = 1.7 + Math.abs(s) * amp * 0.02;
+  }
+
+  /* ================== COLLISION ================== */
+  function resolveCollision(nx, nz, ox, oz) {
+    var r = PLAYER_RADIUS;
+    var lim = HALF - WALL_THICK - r;
+
+    nx = Math.max(-lim, Math.min(lim, nx));
+    nz = Math.max(-lim, Math.min(lim, nz));
+
+    for (var i = 0; i < FURNITURE.length; i++) {
+      var f = FURNITURE[i];
+      var minX = f.x - f.w / 2 - r;
+      var maxX = f.x + f.w / 2 + r;
+      var minZ = f.z - f.d / 2 - r;
+      var maxZ = f.z + f.d / 2 + r;
+      if (nx > minX && nx < maxX && nz > minZ && nz < maxZ) {
+        var dxL = nx - minX;
+        var dxR = maxX - nx;
+        var dzL = nz - minZ;
+        var dzR = maxZ - nz;
+        var m = Math.min(dxL, dxR, dzL, dzR);
+        if (m === dxL) nx = minX;
+        else if (m === dxR) nx = maxX;
+        else if (m === dzL) nz = minZ;
+        else nz = maxZ;
+      }
+    }
+    return { x: nx, z: nz };
+  }
+
+  /* ================== INPUT ================== */
+  function setupDesktopInput() {
+    window.addEventListener('keydown', function (e) {
+      if (e.repeat) return;
+      var k = e.key.toLowerCase();
+      state.keys[k] = true;
+      if (k === ' ' || k === 'spacebar') { state.keys['space'] = true; }
+      if (['w', 'a', 's', 'd', 'shift', ' '].indexOf(k) >= 0) e.preventDefault();
+    });
+    window.addEventListener('keyup', function (e) {
+      var k = e.key.toLowerCase();
+      state.keys[k] = false;
+      if (k === ' ' || k === 'spacebar') state.keys['space'] = false;
+    });
+    window.addEventListener('blur', function () { state.keys = {}; });
+
+    canvas.addEventListener('click', function () {
+      if (state.inGame && !isMobile && canvas.requestPointerLock) {
+        canvas.requestPointerLock();
+      }
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (document.pointerLockElement !== canvas) return;
+      state.cameraYaw -= e.movementX * 0.0025;
+      state.cameraBeta -= e.movementY * 0.0025;
+      state.cameraBeta = Math.max(0.25, Math.min(1.5, state.cameraBeta));
+    });
+    canvas.addEventListener('wheel', function (e) {
+      state.cameraDist += e.deltaY * 0.005;
+      state.cameraDist = Math.max(3, Math.min(12, state.cameraDist));
+      e.preventDefault();
+    }, { passive: false });
+  }
+
+  function setupMobileInput() {
+    var joyActive = false;
+    var joyId = null;
+    var joyCenter = { x: 0, y: 0 };
+    var joyRadius = 55;
+
+    function startJoy(e) {
+      var t = e.changedTouches ? e.changedTouches[0] : e;
+      joyId = t.identifier !== undefined ? t.identifier : 'mouse';
+      var rect = joystickBase.getBoundingClientRect();
+      joyCenter.x = rect.left + rect.width / 2;
+      joyCenter.y = rect.top + rect.height / 2;
+      joyActive = true;
+      moveJoy(t.clientX, t.clientY);
+      e.preventDefault();
+    }
+    function moveJoy(cx, cy) {
+      var dx = cx - joyCenter.x;
+      var dy = cy - joyCenter.y;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d > joyRadius) {
+        dx = dx / d * joyRadius;
+        dy = dy / d * joyRadius;
+      }
+      joystickKnob.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
+      state.input.right = dx / joyRadius;
+      state.input.fwd = -dy / joyRadius;
+    }
+    function endJoy() {
+      joyActive = false;
+      joyId = null;
+      joystickKnob.style.transform = 'translate(-50%, -50%)';
+      state.input.right = 0;
+      state.input.fwd = 0;
+    }
+
+    joystickBase.addEventListener('touchstart', startJoy, { passive: false });
+    joystickBase.addEventListener('touchmove', function (e) {
+      if (!joyActive) return;
+      var t = e.changedTouches[0];
+      if (t.identifier !== joyId) return;
+      moveJoy(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+    joystickBase.addEventListener('touchend', endJoy);
+    joystickBase.addEventListener('touchcancel', endJoy);
+    joystickBase.addEventListener('mousedown', startJoy);
+    window.addEventListener('mousemove', function (e) {
+      if (joyActive && joyId === 'mouse') moveJoy(e.clientX, e.clientY);
+    });
+    window.addEventListener('mouseup', function () {
+      if (joyId === 'mouse') endJoy();
+    });
+
+    // Camera swipe on right side
+    var camId = null;
+    var camLast = { x: 0, y: 0 };
+    canvas.addEventListener('touchstart', function (e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        if (t.clientX > window.innerWidth / 2 && camId === null) {
+          camId = t.identifier;
+          camLast.x = t.clientX;
+          camLast.y = t.clientY;
+        }
+      }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', function (e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        if (t.identifier === camId) {
+          var dx = t.clientX - camLast.x;
+          var dy = t.clientY - camLast.y;
+          state.cameraYaw -= dx * 0.006;
+          state.cameraBeta -= dy * 0.006;
+          state.cameraBeta = Math.max(0.25, Math.min(1.5, state.cameraBeta));
+          camLast.x = t.clientX;
+          camLast.y = t.clientY;
+          e.preventDefault();
+        }
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', function (e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === camId) camId = null;
+      }
+    });
+
+    // Run button
+    function runOn(e) { state.input.run = true; runBtn.classList.add('active'); e.preventDefault(); }
+    function runOff(e) { state.input.run = false; runBtn.classList.remove('active'); if (e) e.preventDefault(); }
+    runBtn.addEventListener('touchstart', runOn, { passive: false });
+    runBtn.addEventListener('touchend', runOff);
+    runBtn.addEventListener('touchcancel', runOff);
+    runBtn.addEventListener('mousedown', runOn);
+    window.addEventListener('mouseup', function () { if (state.input.run) runOff(); });
+  }
+
+  function updateDesktopInput() {
+    if (isMobile) return;
+    var f = 0, r = 0;
+    if (state.keys['w'] || state.keys['ц']) f += 1;
+    if (state.keys['s'] || state.keys['ы']) f -= 1;
+    if (state.keys['a'] || state.keys['ф']) r -= 1;
+    if (state.keys['d'] || state.keys['в']) r += 1;
+    state.input.fwd = f;
+    state.input.right = r;
+    state.input.run = !!state.keys['shift'];
+  }
+
+  /* ================== GAME LOOP ================== */
+  function updateLocal(dt) {
+    var mx = state.input.right;
+    var mz = state.input.fwd;
+    var len = Math.sqrt(mx * mx + mz * mz);
+    if (len > 0.15) {
+      var speed = state.input.run ? 7.5 : 3.6;
+      var angle = state.cameraYaw;
+      var fX = Math.sin(angle);
+      var fZ = Math.cos(angle);
+      var rX = Math.cos(angle);
+      var rZ = -Math.sin(angle);
+      var dx = fX * mz + rX * mx;
+      var dz = fZ * mz + rZ * mx;
+      var dl = Math.sqrt(dx * dx + dz * dz);
+      if (dl > 0) { dx /= dl; dz /= dl; }
+      var nx = state.local.x + dx * speed * dt;
+      var nz = state.local.z + dz * speed * dt;
+      var res = resolveCollision(nx, nz, state.local.x, state.local.z);
+      state.local.x = res.x;
+      state.local.z = res.z;
+
+      var targetRy = Math.atan2(dx, dz);
+      var diff = targetRy - state.local.ry;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      state.local.ry += diff * Math.min(1, dt * 14);
+
+      state.local.moving = true;
+      state.local.running = state.input.run;
+    } else {
+      state.local.moving = false;
+      state.local.running = false;
+    }
+  }
+
+  function updateCamera(dt) {
+    var cam = state.camera;
+    var target = new BABYLON.Vector3(
+      state.local.x,
+      state.local.y + 1.4,
+      state.local.z
+    );
+    var smooth = Math.min(1, dt * 10);
+    cam.target = BABYLON.Vector3.Lerp(cam.target, target, smooth);
+    cam.alpha = -state.cameraYaw - Math.PI / 2;
+    cam.beta = state.cameraBeta;
+    cam.radius = state.cameraDist;
+
+    // Camera wall clamp
+    var pos = cam.position;
+    var lim = HALF - 0.3;
+    if (pos.x > lim || pos.x < -lim || pos.z > lim || pos.z < -lim) {
+      var cl = Math.max(-lim, Math.min(lim, pos.x));
+      var cz = Math.max(-lim, Math.min(lim, pos.z));
+      cam.setPosition(new BABYLON.Vector3(cl, Math.max(0.5, pos.y), cz));
+    }
+  }
+
+  function updateRemotePlayers(dt) {
+    var smooth = Math.min(1, dt * 10);
+    state.players.forEach(function (ch, id) {
+      if (id === state.selfId) return;
+      ch.current.x += (ch.target.x - ch.current.x) * smooth;
+      ch.current.y += (ch.target.y - ch.current.y) * smooth;
+      ch.current.z += (ch.target.z - ch.current.z) * smooth;
+      var dr = ch.target.ry - ch.current.ry;
+      while (dr > Math.PI) dr -= Math.PI * 2;
+      while (dr < -Math.PI) dr += Math.PI * 2;
+      ch.current.ry += dr * smooth;
+      ch.root.position.set(ch.current.x, ch.current.y, ch.current.z);
+      ch.root.rotation.y = ch.current.ry;
+      animateCharacter(ch, dt);
+    });
+
+    // Local character
+    var local = state.players.get(state.selfId);
+    if (local) {
+      local.root.position.set(state.local.x, state.local.y, state.local.z);
+      local.root.rotation.y = state.local.ry;
+      local.moving = state.local.moving;
+      local.running = state.local.running;
+      animateCharacter(local, dt);
+    }
+  }
+
+  function sendPosition() {
+    if (!state.connected || !state.selfId) return;
+    var now = performance.now();
+    if (now - state.lastSent < 50) return;
+    state.lastSent = now;
+    send({
+      type: 'playerMoved',
+      x: state.local.x,
+      y: state.local.y,
+      z: state.local.z,
+      ry: state.local.ry,
+      moving: state.local.moving,
+      running: state.local.running
+    });
+  }
+
+  /* ================== MAIN ================== */
+  var engine, scene;
+
+  function startGame() {
+    menuEl.classList.add('hidden');
+    hudEl.classList.remove('hidden');
+    if (isMobile) joystickEl.classList.remove('hidden');
+    state.inGame = true;
+
+    if (!state.engine) {
+      engine = initScene();
+      scene = state.scene;
+
+      engine.runRenderLoop(function () {
+        var dt = engine.getDeltaTime() / 1000;
+        if (dt > 0.1) dt = 0.1;
+
+        updateDesktopInput();
+        updateLocal(dt);
+        updateRemotePlayers(dt);
+        updateCamera(dt);
+        sendPosition();
+
+        scene.render();
+      });
+    }
+  }
+
+  function backToMenu() {
+    // Dispose scene
+    if (state.engine) {
+      try { state.engine.stopRenderLoop(); } catch (e) {}
+    }
+    if (state.scene) {
+      try { state.scene.dispose(); } catch (e) {}
+    }
+    state.engine = null;
+    state.scene = null;
+    state.camera = null;
+    state.players.clear();
+    state.selfId = null;
+    state.roomCode = null;
+    state.inGame = false;
+    state.reconnect.active = false;
+
+    if (document.pointerLockElement === canvas) {
+      try { document.exitPointerLock(); } catch (e) {}
+    }
+    hudEl.classList.add('hidden');
+    joystickEl.classList.add('hidden');
+    menuEl.classList.remove('hidden');
+    setStatus('');
+    if (state.ws && state.ws.readyState === 1) {
+      try { state.ws.close(); } catch (e) {}
+    }
+    state.ws = null;
+  }
+
+  function doCreate() {
+    var name = (nameInput.value || '').trim();
+    if (name.length < 1) { menuStatus.textContent = 'Введите имя'; return; }
+    if (name.length > 20) { menuStatus.textContent = 'Имя слишком длинное'; return; }
+    state.playerName = name;
+    menuStatus.textContent = 'Создание комнаты...';
+    connectWS(function () {
+      send({ type: 'createRoom', name: name });
+      menuStatus.textContent = '';
+      startGame();
+    });
+  }
+
+  function doJoin() {
+    var name = (nameInput.value || '').trim();
+    var code = (codeInput.value || '').trim().toUpperCase();
+    if (name.length < 1) { menuStatus.textContent = 'Введите имя'; return; }
+    if (!/^[A-Z0-9]{6}$/.test(code)) { menuStatus.textContent = 'Код должен быть 6 символов'; return; }
+    state.playerName = name;
+    menuStatus.textContent = 'Подключение...';
+    connectWS(function () {
+      send({ type: 'joinRoom', name: name, code: code });
+      menuStatus.textContent = '';
+      startGame();
+    });
+  }
+
+  createBtn.addEventListener('click', doCreate);
+  joinBtn.addEventListener('click', doJoin);
+  codeInput.addEventListener('input', function () {
+    codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  });
+  nameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doCreate();
+  });
+  codeInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doJoin();
+  });
+
+  copyBtn.addEventListener('click', function () {
+    if (!state.roomCode) return;
+    var text = state.roomCode;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        notify('Код скопирован: ' + text, '#6ee7a8');
+      }).catch(function () {
+        notify('Код: ' + text, '#7ab8ff');
+      });
+    } else {
+      notify('Код: ' + text, '#7ab8ff');
+    }
+  });
+
+  exitBtn.addEventListener('click', function () {
+    backToMenu();
+  });
+
+  setupDesktopInput();
+  if (isMobile) setupMobileInput();
+
+  // Prevent page scroll / pinch
+  document.addEventListener('touchmove', function (e) {
+    if (e.target && e.target.closest && e.target.closest('#menu')) return;
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+
+  // Save name
+  try {
+    var saved = localStorage.getItem('mpg_name');
+    if (saved) nameInput.value = saved;
+  } catch (e) {}
+  nameInput.addEventListener('change', function () {
+    try { localStorage.setItem('mpg_name', nameInput.value); } catch (e) {}
+  });
+
+  setStatus('Готово', 'ok');
+})();
+</script>
+</body>
+</html>`;
+
+/* ============================== START ============================== */
+server.listen(PORT, () => {
+  console.log('Server listening on port ' + PORT);
+});
