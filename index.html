@@ -1,83 +1,1332 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0a14" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>3D Multiplayer Room</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🚗 Русские Номера: SVG Контур</title>
+<style>
+:root{
+  --common:#a0a0b0; --uncommon:#4caf50; --rare:#2196f3;
+  --epic:#9c27b0; --legendary:#ff9800; --mythic:#ff4081;
+  --accent:#00ddff;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:#03030a;
+  color:#eaeaf5;overflow-x:hidden;position:relative;
+  min-height:100vh;
+}
+svg text{font-family:'Arial Black','Arial',sans-serif;font-weight:900;user-select:none;}
+
+/* ===== ФОН (SVG) ===== */
+#bg-svg{position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none;}
+#particle-canvas{position:fixed;inset:0;z-index:100;pointer-events:none;}
+.flash{position:fixed;inset:0;background:#fff;z-index:250;pointer-events:none;opacity:0;}
+.flash.active{animation:flashAnim .6s;}
+@keyframes flashAnim{0%{opacity:0}20%{opacity:.7}100%{opacity:0}}
+
+/* ===== КОМПОНОВКА ===== */
+.app{
+  position:relative;z-index:1;max-width:860px;margin:0 auto;padding:20px;
+  min-height:100vh;display:flex;flex-direction:column;gap:16px;
+  transition:transform .05s;
+}
+header{text-align:center;padding:6px 0 0;}
+
+h1.title-svg{width:100%;max-width:640px;display:block;margin:0 auto;height:auto;}
+
+.subtitle{
+  font-size:11px;color:#6666aa;letter-spacing:4px;text-transform:uppercase;
+  margin-top:6px;font-weight:600;
+}
+
+/* ===== СТАТИСТИКА ===== */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.stat{
+  position:relative;padding:12px 8px;text-align:center;
+  background:rgba(255,255,255,.02);
+  border-radius:12px;
+}
+.stat svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.stat .label{font-size:10px;color:#6666aa;text-transform:uppercase;letter-spacing:1.5px;position:relative;}
+.stat .value{font-size:22px;font-weight:900;color:#fff;margin-top:2px;position:relative;
+  text-shadow:0 0 12px rgba(0,221,255,.5);}
+
+/* ===== ГЛАВНЫЙ АВТОМАТ ===== */
+.slot-machine{
+  position:relative;padding:22px 16px 20px;border-radius:20px;
+  background:linear-gradient(145deg,rgba(15,15,35,.8),rgba(5,5,15,.9));
+  backdrop-filter:blur(12px);overflow:hidden;
+}
+.slot-machine > svg.frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+/* ===== SVG НОМЕРНОЙ ЗНАК ===== */
+.plate-wrapper{
+  position:relative;width:100%;max-width:640px;margin:0 auto;
+  transition:filter .3s;
+}
+.plate-svg{width:100%;height:auto;display:block;transition:filter .35s;}
+.plate-svg .plate-bg{fill:#0a0a18;transition:fill .35s;}
+.plate-svg .plate-border{
+  fill:none;stroke:#2a2a4a;stroke-width:3;transition:stroke .35s,stroke-width .35s;
+}
+.plate-svg .plate-divider,
+.plate-svg .plate-rus-line{
+  stroke:#2a2a4a;stroke-width:2;transition:stroke .35s;
+}
+.plate-svg .plate-rus{
+  fill:#2a2a4a;font-size:16px;letter-spacing:2px;
+  text-anchor:middle;font-weight:900;transition:fill .35s;
+}
+.plate-svg .plate-char{
+  fill:#ffffff;font-size:84px;text-anchor:middle;
+  transition:fill .2s,filter .3s;
+}
+.plate-svg .plate-char.spinning{fill:#00ddff;filter:drop-shadow(0 0 10px #00ddff);}
+.plate-svg .plate-region{font-size:52px;}
+
+.plate-svg .plate-scan{
+  fill:url(#scanGradient);
+  animation:scanMove 3s linear infinite;
+  opacity:.5;
+}
+@keyframes scanMove{
+  0%{transform:translateY(-120px);}
+  100%{transform:translateY(220px);}
+}
+
+/* ===== СВЕЧЕНИЕ РЕДКОСТИ ===== */
+[data-rarity="common"] .plate-border{stroke:var(--common);}
+[data-rarity="common"] .plate-divider,
+[data-rarity="common"] .plate-rus-line{stroke:var(--common);}
+[data-rarity="common"] .plate-rus{fill:var(--common);}
+
+[data-rarity="uncommon"] .plate-border{stroke:var(--uncommon);stroke-width:3.5;}
+[data-rarity="uncommon"] .plate-divider,
+[data-rarity="uncommon"] .plate-rus-line{stroke:var(--uncommon);}
+[data-rarity="uncommon"] .plate-rus{fill:var(--uncommon);}
+[data-rarity="uncommon"] .plate-svg{filter:drop-shadow(0 0 12px rgba(76,175,80,.6));}
+
+[data-rarity="rare"] .plate-border{stroke:var(--rare);stroke-width:4;}
+[data-rarity="rare"] .plate-divider,
+[data-rarity="rare"] .plate-rus-line{stroke:var(--rare);}
+[data-rarity="rare"] .plate-rus{fill:var(--rare);}
+[data-rarity="rare"] .plate-svg{filter:drop-shadow(0 0 16px rgba(33,150,243,.7));}
+
+[data-rarity="epic"] .plate-border{stroke:var(--epic);stroke-width:4.5;}
+[data-rarity="epic"] .plate-divider,
+[data-rarity="epic"] .plate-rus-line{stroke:var(--epic);}
+[data-rarity="epic"] .plate-rus{fill:var(--epic);}
+[data-rarity="epic"] .plate-svg{filter:drop-shadow(0 0 22px rgba(156,39,176,.85));}
+
+[data-rarity="legendary"] .plate-border{stroke:var(--legendary);stroke-width:5;}
+[data-rarity="legendary"] .plate-divider,
+[data-rarity="legendary"] .plate-rus-line{stroke:var(--legendary);}
+[data-rarity="legendary"] .plate-rus{fill:var(--legendary);}
+[data-rarity="legendary"] .plate-svg{
+  filter:drop-shadow(0 0 28px rgba(255,152,0,.9));
+  animation:legendShake 2.4s ease-in-out infinite;
+}
+@keyframes legendShake{
+  0%,100%{filter:drop-shadow(0 0 26px rgba(255,152,0,.85));}
+  50%{filter:drop-shadow(0 0 46px rgba(255,152,0,1));}
+}
+
+[data-rarity="mythic"] .plate-border{stroke:var(--mythic);stroke-width:5.5;animation:mythicStroke 1.4s linear infinite;}
+[data-rarity="mythic"] .plate-divider,
+[data-rarity="mythic"] .plate-rus-line{stroke:var(--mythic);}
+[data-rarity="mythic"] .plate-rus{fill:var(--mythic);}
+[data-rarity="mythic"] .plate-svg{
+  filter:drop-shadow(0 0 34px rgba(255,64,129,1)) hue-rotate(0deg);
+  animation:mythicGlow 1.6s ease-in-out infinite;
+}
+@keyframes mythicGlow{
+  0%,100%{filter:drop-shadow(0 0 28px rgba(255,64,129,.9)) hue-rotate(0deg);}
+  50%{filter:drop-shadow(0 0 60px rgba(255,64,129,1)) hue-rotate(80deg);}
+}
+@keyframes mythicStroke{
+  0%{stroke-dasharray:0 0;}
+  100%{stroke-dasharray:0 0;}
+}
+
+/* ===== ЛЕЙБЛ РЕДКОСТИ ===== */
+.rarity-label{
+  text-align:center;margin-top:14px;font-size:14px;font-weight:900;
+  letter-spacing:5px;text-transform:uppercase;min-height:20px;
+  transition:color .3s;
+}
+
+/* ===== КНОПКИ (SVG-КОНТУР) ===== */
+.btn{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;padding:14px 24px;font-size:15px;font-weight:900;font-family:inherit;
+  letter-spacing:1.5px;text-transform:uppercase;border:none;background:transparent;
+  cursor:pointer;user-select:none;color:#fff;border-radius:12px;
+  transition:transform .18s;overflow:hidden;
+}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn:not(:disabled):hover{transform:translateY(-2px);}
+.btn:not(:disabled):active{transform:translateY(0);}
+.btn > span{position:relative;z-index:2;}
+.btn-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.btn-rect{
+  fill:rgba(255,51,102,.06);
+  stroke:#ff3366;stroke-width:2;
+  transition:all .25s;
+}
+.btn:not(:disabled):hover .btn-rect{
+  fill:rgba(255,51,102,.16);
+  stroke-dasharray:10 6;
+  animation:dashMove 0.7s linear infinite;
+  filter:drop-shadow(0 0 10px rgba(255,51,102,.9));
+}
+@keyframes dashMove{to{stroke-dashoffset:-32;}}
+
+.btn-primary{width:100%;padding:18px;font-size:17px;margin-top:16px;}
+.btn-primary .btn-rect{stroke-width:2.5;}
+.btn-primary:not(:disabled){animation:btnPulse 2.2s ease-in-out infinite;}
+@keyframes btnPulse{
+  0%,100%{filter:drop-shadow(0 0 0 transparent);}
+  50%{filter:drop-shadow(0 0 14px rgba(255,51,102,.6));}
+}
+
+.btn-secondary .btn-rect{fill:rgba(0,221,255,.05);stroke:#00ddff;}
+.btn-secondary:not(:disabled):hover .btn-rect{
+  fill:rgba(0,221,255,.14);
+  filter:drop-shadow(0 0 10px rgba(0,221,255,.9));
+}
+
+.btn-ghost .btn-rect{fill:rgba(255,255,255,.02);stroke:rgba(255,255,255,.25);stroke-dasharray:4 4;}
+.btn-ghost:not(:disabled):hover .btn-rect{
+  fill:rgba(255,255,255,.06);
+  stroke:rgba(255,255,255,.5);
+}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;}
+.controls .btn{flex:1;min-width:120px;padding:12px 16px;font-size:12.5px;}
+
+/* ===== МОДАЛКИ ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(14px);
+  z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
+  animation:fadeIn .3s;
+}
+.modal-overlay.active{display:flex;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  position:relative;background:rgba(8,8,20,.96);
+  border-radius:20px;padding:26px;
+  max-width:640px;width:100%;max-height:85vh;overflow-y:auto;
+  animation:scaleIn .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 20px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.05);
+}
+.modal > svg.corner-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+@keyframes scaleIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h2{
+  font-size:20px;margin-bottom:18px;letter-spacing:3px;text-transform:uppercase;
+  color:#fff;position:relative;font-weight:900;
+}
+.modal h2::before{
+  content:'//';color:var(--accent);margin-right:8px;letter-spacing:0;
+}
+.modal-close{
+  position:absolute;top:14px;right:14px;width:38px;height:38px;
+  background:transparent;border:none;cursor:pointer;padding:0;
+}
+.modal-close svg{width:100%;height:100%;}
+.modal-close circle{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.2);stroke-width:1.5;transition:all .2s;}
+.modal-close line{stroke:#fff;stroke-width:2;stroke-linecap:round;}
+.modal-close:hover circle{fill:rgba(255,51,102,.15);stroke:#ff3366;}
+
+/* ===== КОЛЛЕКЦИЯ ===== */
+.coll-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;
+  color:#6666aa;text-transform:uppercase;letter-spacing:1.5px;}
+.coll-stats b{color:#fff;font-size:14px;}
+
+.filter-bar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.filter-chip{
+  position:relative;padding:5px 12px;background:transparent;border:none;cursor:pointer;
+  font-size:11px;color:#aaa;font-family:inherit;font-weight:700;
+  letter-spacing:1px;border-radius:14px;transition:color .2s;
+}
+.filter-chip svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.filter-chip rect{
+  fill:rgba(255,255,255,.02);stroke:rgba(255,255,255,.15);stroke-width:1.5;
+  rx:14;transition:all .2s;
+}
+.filter-chip:hover{color:#fff;}
+.filter-chip:hover rect{stroke:rgba(255,255,255,.35);}
+.filter-chip.active{color:#fff;}
+.filter-chip.active rect{
+  fill:rgba(255,51,102,.12);stroke:#ff3366;stroke-width:2;
+  filter:drop-shadow(0 0 6px rgba(255,51,102,.6));
+}
+
+.collection-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:10px;
+}
+.coll-item{
+  position:relative;cursor:pointer;transition:transform .2s;
+  animation:cardIn .4s backwards;
+}
+@keyframes cardIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.coll-item:hover{transform:translateY(-3px);}
+
+.mini-plate{width:100%;height:auto;display:block;}
+.mini-plate .mp-frame{
+  fill:#0a0a18;stroke:#2a2a4a;stroke-width:1.5;transition:stroke .25s,filter .25s;
+}
+.mini-plate .mp-div{stroke:#2a2a4a;stroke-width:1;transition:stroke .25s;}
+.mini-plate .mp-char{
+  fill:#fff;font-size:22px;font-weight:900;
+  font-family:'Arial Black','Arial',sans-serif;
+  transition:fill .25s;
+}
+.mini-plate .mp-rus{
+  fill:#2a2a4a;font-size:6px;font-weight:900;letter-spacing:.5px;
+  text-anchor:middle;transition:fill .25s;
+}
+.mini-plate .mp-region{
+  fill:#fff;font-size:18px;font-weight:900;
+  font-family:'Arial Black','Arial',sans-serif;
+  text-anchor:middle;transition:fill .25s;
+}
+
+/* редкость у мини-номера */
+.coll-item[data-rarity="common"] .mini-plate .mp-frame{stroke:var(--common);}
+.coll-item[data-rarity="common"] .mini-plate .mp-div{stroke:var(--common);}
+.coll-item[data-rarity="common"] .mini-plate .mp-rus{fill:var(--common);}
+
+.coll-item[data-rarity="uncommon"] .mini-plate .mp-frame{stroke:var(--uncommon);stroke-width:2;}
+.coll-item[data-rarity="uncommon"] .mini-plate .mp-div{stroke:var(--uncommon);}
+.coll-item[data-rarity="uncommon"] .mini-plate .mp-rus{fill:var(--uncommon);}
+.coll-item[data-rarity="uncommon"] .mini-plate{filter:drop-shadow(0 0 4px rgba(76,175,80,.5));}
+
+.coll-item[data-rarity="rare"] .mini-plate .mp-frame{stroke:var(--rare);stroke-width:2;}
+.coll-item[data-rarity="rare"] .mini-plate .mp-div{stroke:var(--rare);}
+.coll-item[data-rarity="rare"] .mini-plate .mp-rus{fill:var(--rare);}
+.coll-item[data-rarity="rare"] .mini-plate{filter:drop-shadow(0 0 6px rgba(33,150,243,.6));}
+
+.coll-item[data-rarity="epic"] .mini-plate .mp-frame{stroke:var(--epic);stroke-width:2.5;}
+.coll-item[data-rarity="epic"] .mini-plate .mp-div{stroke:var(--epic);}
+.coll-item[data-rarity="epic"] .mini-plate .mp-rus{fill:var(--epic);}
+.coll-item[data-rarity="epic"] .mini-plate{filter:drop-shadow(0 0 8px rgba(156,39,176,.7));}
+
+.coll-item[data-rarity="legendary"] .mini-plate .mp-frame{stroke:var(--legendary);stroke-width:3;}
+.coll-item[data-rarity="legendary"] .mini-plate .mp-div{stroke:var(--legendary);}
+.coll-item[data-rarity="legendary"] .mini-plate .mp-rus{fill:var(--legendary);}
+.coll-item[data-rarity="legendary"] .mini-plate{filter:drop-shadow(0 0 10px rgba(255,152,0,.85));}
+
+.coll-item[data-rarity="mythic"] .mini-plate .mp-frame{stroke:var(--mythic);stroke-width:3;}
+.coll-item[data-rarity="mythic"] .mini-plate .mp-div{stroke:var(--mythic);}
+.coll-item[data-rarity="mythic"] .mini-plate .mp-rus{fill:var(--mythic);}
+.coll-item[data-rarity="mythic"] .mini-plate{filter:drop-shadow(0 0 12px rgba(255,64,129,1));}
+.coll-item[data-rarity="mythic"] .mini-plate .mp-frame{animation:mythicStroke 1.4s linear infinite;}
+
+.coll-empty{text-align:center;color:#555;padding:40px 20px;font-style:italic;
+  grid-column:1/-1;font-size:13px;}
+
+/* ===== ДОСТИЖЕНИЯ ===== */
+.ach-list{display:flex;flex-direction:column;gap:8px;}
+.ach-item{
+  position:relative;display:flex;align-items:center;gap:14px;
+  padding:12px 14px;border-radius:12px;transition:all .25s;
+}
+.ach-item > svg.ach-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.ach-item .ach-frame rect{
+  fill:rgba(255,255,255,.02);stroke:rgba(255,255,255,.1);stroke-width:1.5;
+  rx:12;transition:all .25s;
+}
+.ach-item.unlocked .ach-frame rect{
+  fill:rgba(255,215,0,.05);stroke:rgba(255,215,0,.5);
+  stroke-dasharray:6 4;animation:dashMove 2s linear infinite;
+}
+.ach-item .icon{width:34px;height:34px;position:relative;z-index:1;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;}
+.ach-item .icon svg{width:100%;height:100%;}
+.ach-item .icon svg *{stroke:#555;stroke-width:1.5;fill:none;transition:stroke .3s;}
+.ach-item.unlocked .icon svg *{stroke:#ffd700;filter:drop-shadow(0 0 4px rgba(255,215,0,.8));}
+.ach-item .info{flex:1;position:relative;z-index:1;}
+.ach-item .name{font-weight:800;font-size:13.5px;letter-spacing:.5px;}
+.ach-item.unlocked .name{color:#ffd700;}
+.ach-item .desc{font-size:11.5px;color:#7777aa;margin-top:3px;}
+.ach-item .status{font-size:11px;font-weight:900;letter-spacing:1px;
+  color:#555;position:relative;z-index:1;}
+.ach-item.unlocked .status{color:#ffd700;}
+
+/* ===== ТОСТЫ ===== */
+.toast-container{
+  position:fixed;top:20px;right:20px;z-index:300;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:320px;
+}
+.toast{
+  position:relative;padding:12px 16px;
+  background:rgba(8,8,20,.96);backdrop-filter:blur(20px);
+  border-radius:12px;font-size:13px;pointer-events:auto;
+  animation:toastIn .4s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 10px 40px rgba(0,0,0,.5);
+}
+.toast > svg.toast-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.toast-frame rect{fill:none;stroke:#00ddff;stroke-width:1.5;rx:12;}
+.toast.legendary .toast-frame rect{stroke:var(--legendary);stroke-width:2;}
+.toast.mythic .toast-frame rect{stroke:var(--mythic);stroke-width:2.5;
+  stroke-dasharray:8 4;animation:dashMove 1s linear infinite;}
+.toast.removing{animation:toastOut .3s forwards;}
+@keyframes toastIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{to{transform:translateX(400px);opacity:0}}
+.toast .title{font-weight:900;margin-bottom:3px;position:relative;letter-spacing:1px;}
+.toast .body{position:relative;font-family:'Courier New',monospace;font-size:14px;
+  letter-spacing:1px;}
+.toast.legendary .title{color:var(--legendary);}
+.toast.mythic .title{color:var(--mythic);}
+
+/* ===== МОБИЛЬНЫЕ ===== */
+@media (max-width:600px){
+  .app{padding:12px;gap:12px;}
+  .stat .value{font-size:16px;}
+  .stat .label{font-size:9px;}
+  .toast-container{left:20px;right:20px;max-width:none;}
+  .controls .btn{min-width:80px;font-size:11px;padding:10px 8px;}
+  .collection-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  .rarity-label{letter-spacing:3px;font-size:12px;}
+}
+</style>
 </head>
 <body>
-  <div id="app">
 
-    <!-- ================ МЕНЮ ================ -->
-    <div id="menu" class="screen">
-      <div class="menu-card">
-        <h1>3D Multiplayer</h1>
-        <p class="subtitle">Комнатная вечеринка в браузере</p>
+<!-- ФОН В SVG -->
+<svg id="bg-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+      <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#00ddff" stroke-width="0.5" opacity="0.08"/>
+    </pattern>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.8"/>
+    </radialGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+  <g id="bg-stars"></g>
+  <g id="bg-roads"></g>
+  <rect width="100%" height="100%" fill="url(#vignette)"/>
+</svg>
 
-        <label for="nameInput">Ваше имя</label>
-        <input id="nameInput" type="text" maxlength="20" placeholder="Введите имя" autocomplete="off" />
+<canvas id="particle-canvas"></canvas>
+<div class="flash" id="flash"></div>
 
-        <button id="createBtn" class="btn primary">Создать комнату</button>
+<div class="app">
+  <header>
+    <svg class="title-svg" viewBox="0 0 640 80" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ff3366"/>
+          <stop offset="50%" stop-color="#ffd700"/>
+          <stop offset="100%" stop-color="#00ddff"/>
+        </linearGradient>
+      </defs>
+      <text x="320" y="52" text-anchor="middle" font-size="46" font-weight="900"
+            fill="none" stroke="url(#titleGrad)" stroke-width="1.5"
+            style="letter-spacing:6px;font-family:'Arial Black',sans-serif;">
+        РУССКИЕ НОМЕРА
+      </text>
+      <text x="320" y="52" text-anchor="middle" font-size="46" font-weight="900"
+            fill="url(#titleGrad)" opacity="0.15"
+            style="letter-spacing:6px;font-family:'Arial Black',sans-serif;">
+        РУССКИЕ НОМЕРА
+      </text>
+    </svg>
+    <div class="subtitle">SVG · Полный дроп · Все регионы</div>
+  </header>
 
-        <div class="divider"><span>или</span></div>
-
-        <label for="roomInput">Код комнаты</label>
-        <input id="roomInput" type="text" maxlength="5" placeholder="ABCDE" autocomplete="off" autocapitalize="characters" />
-
-        <button id="joinBtn" class="btn">Войти по коду</button>
-
-        <div id="error" class="error"></div>
-
-        <div class="status-row">
-          <span id="statusDot" class="dot"></span>
-          <span id="statusText">Не подключено</span>
-        </div>
-      </div>
+  <div class="stats">
+    <div class="stat">
+      <svg viewBox="0 0 120 70" preserveAspectRatio="none">
+        <rect x="1" y="1" width="118" height="68" rx="12" fill="none"
+              stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+      </svg>
+      <div class="label">Дропов</div>
+      <div class="value" id="stat-drops">0</div>
     </div>
-
-    <!-- ================ ИГРА ================ -->
-    <div id="game" class="screen hidden">
-      <canvas id="renderCanvas" touch-action="none"></canvas>
-
-      <div id="hud">
-        <div class="hud-top-left">
-          <div class="panel room-info">
-            <div class="room-label">Код комнаты</div>
-            <div class="room-code-row">
-              <span id="roomCodeDisplay">-----</span>
-              <button id="copyBtn" class="icon-btn" title="Скопировать">⧉</button>
-            </div>
-          </div>
-
-          <div class="panel players-panel">
-            <div class="players-title">Игроки (<span id="playersCount">0</span>)</div>
-            <ul id="playersList"></ul>
-            <div class="local-name">Вы: <span id="localName">—</span></div>
-          </div>
-        </div>
-
-        <div class="hud-top-right">
-          <button id="leaveBtn" class="btn small danger">Выйти</button>
-          <div class="conn-status"><span id="connStatus">online</span></div>
-        </div>
-
-        <div id="notification" class="notification"></div>
-      </div>
-
-      <div id="joystick" class="joystick hidden">
-        <div id="joystickKnob" class="joystick-knob"></div>
-      </div>
-
-      <div id="runBtn" class="run-btn hidden">RUN</div>
+    <div class="stat">
+      <svg viewBox="0 0 120 70" preserveAspectRatio="none">
+        <rect x="1" y="1" width="118" height="68" rx="12" fill="none"
+              stroke="rgba(0,221,255,.3)" stroke-width="1.5"/>
+      </svg>
+      <div class="label">Уникальных</div>
+      <div class="value" id="stat-unique">0</div>
+    </div>
+    <div class="stat">
+      <svg viewBox="0 0 120 70" preserveAspectRatio="none">
+        <rect x="1" y="1" width="118" height="68" rx="12" fill="none"
+              stroke="rgba(255,152,0,.4)" stroke-width="1.5"/>
+      </svg>
+      <div class="label">Топ</div>
+      <div class="value" id="stat-legend">0</div>
     </div>
   </div>
 
-  <script src="client.js"></script>
+  <div class="slot-machine">
+    <svg class="frame" viewBox="0 0 800 500" preserveAspectRatio="none">
+      <rect x="1" y="1" width="798" height="498" rx="20" fill="none"
+            stroke="rgba(0,221,255,.2)" stroke-width="1.5"/>
+      <path d="M 20 40 L 20 20 L 40 20" fill="none" stroke="#00ddff" stroke-width="2" opacity="0.6"/>
+      <path d="M 780 40 L 780 20 L 760 20" fill="none" stroke="#00ddff" stroke-width="2" opacity="0.6"/>
+      <path d="M 20 460 L 20 480 L 40 480" fill="none" stroke="#00ddff" stroke-width="2" opacity="0.6"/>
+      <path d="M 780 460 L 780 480 L 760 480" fill="none" stroke="#00ddff" stroke-width="2" opacity="0.6"/>
+    </svg>
+
+    <div class="plate-wrapper">
+      <svg class="plate-svg" id="plate-svg" viewBox="0 0 640 180"
+           xmlns="http://www.w3.org/2000/svg" data-rarity="common">
+        <defs>
+          <linearGradient id="scanGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00ddff" stop-opacity="0"/>
+            <stop offset="50%" stop-color="#00ddff" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#00ddff" stop-opacity="0"/>
+          </linearGradient>
+          <clipPath id="plate-clip">
+            <rect x="10" y="10" width="620" height="160" rx="14"/>
+          </clipPath>
+        </defs>
+
+        <!-- Основной контур -->
+        <rect class="plate-bg" x="10" y="10" width="620" height="160" rx="14"/>
+        <rect class="plate-border" x="10" y="10" width="620" height="160" rx="14"/>
+
+        <!-- Разделители -->
+        <line class="plate-divider" x1="470" y1="14" x2="470" y2="166"/>
+        <line class="plate-rus-line" x1="472" y1="54" x2="628" y2="54"/>
+
+        <!-- RUS -->
+        <text class="plate-rus" x="550" y="42">RUS</text>
+
+        <!-- Символы номера -->
+        <text class="plate-char" data-slot="l1" x="60" y="120">А</text>
+        <text class="plate-char" data-slot="d1" x="130" y="120">0</text>
+        <text class="plate-char" data-slot="d2" x="195" y="120">0</text>
+        <text class="plate-char" data-slot="d3" x="260" y="120">1</text>
+        <text class="plate-char" data-slot="l2" x="332" y="120">А</text>
+        <text class="plate-char" data-slot="l3" x="400" y="120">А</text>
+        <text class="plate-char plate-region" data-slot="region" x="550" y="130">01</text>
+
+        <!-- Скан-линия -->
+        <g clip-path="url(#plate-clip)">
+          <rect class="plate-scan" x="10" y="10" width="620" height="40"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="rarity-label" id="rarity-label">Нажми «КРУТИТЬ»!</div>
+
+    <button class="btn btn-primary" id="btn-drop">
+      <svg class="btn-svg" viewBox="0 0 400 70" preserveAspectRatio="none">
+        <rect class="btn-rect" x="2" y="2" width="396" height="66" rx="12"/>
+      </svg>
+      <span>🎰 КРУТИТЬ</span>
+    </button>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-secondary" id="btn-collection">
+      <svg class="btn-svg" viewBox="0 0 200 50" preserveAspectRatio="none">
+        <rect class="btn-rect" x="1.5" y="1.5" width="197" height="47" rx="10"/>
+      </svg>
+      <span>📚 Коллекция</span>
+    </button>
+    <button class="btn btn-secondary" id="btn-achievements">
+      <svg class="btn-svg" viewBox="0 0 200 50" preserveAspectRatio="none">
+        <rect class="btn-rect" x="1.5" y="1.5" width="197" height="47" rx="10"/>
+      </svg>
+      <span>🏆 Награды</span>
+    </button>
+    <button class="btn btn-ghost" id="btn-reset">
+      <svg class="btn-svg" viewBox="0 0 200 50" preserveAspectRatio="none">
+        <rect class="btn-rect" x="1.5" y="1.5" width="197" height="47" rx="10"/>
+      </svg>
+      <span>🗑️ Сброс</span>
+    </button>
+  </div>
+</div>
+
+<!-- МОДАЛКА: КОЛЛЕКЦИЯ -->
+<div class="modal-overlay" id="modal-collection">
+  <div class="modal">
+    <svg class="corner-frame" viewBox="0 0 600 800" preserveAspectRatio="none">
+      <rect x="1" y="1" width="598" height="798" rx="20" fill="none"
+            stroke="rgba(0,221,255,.25)" stroke-width="1.5"/>
+      <path d="M 20 50 L 20 20 L 50 20" fill="none" stroke="#00ddff" stroke-width="2"/>
+      <path d="M 580 50 L 580 20 L 550 20" fill="none" stroke="#00ddff" stroke-width="2"/>
+      <path d="M 20 750 L 20 780 L 50 780" fill="none" stroke="#00ddff" stroke-width="2"/>
+      <path d="M 580 750 L 580 780 L 550 780" fill="none" stroke="#00ddff" stroke-width="2"/>
+    </svg>
+    <button class="modal-close" data-close="modal-collection">
+      <svg viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="16"/>
+        <line x1="14" y1="14" x2="26" y2="26"/>
+        <line x1="26" y1="14" x2="14" y2="26"/>
+      </svg>
+    </button>
+    <h2>Коллекция</h2>
+    <div class="coll-stats">
+      <div>Всего: <b id="coll-total">0</b></div>
+      <div>Уникальных: <b id="coll-unique">0</b></div>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="collection-grid" id="collection-grid"></div>
+  </div>
+</div>
+
+<!-- МОДАЛКА: ДОСТИЖЕНИЯ -->
+<div class="modal-overlay" id="modal-achievements">
+  <div class="modal">
+    <svg class="corner-frame" viewBox="0 0 600 800" preserveAspectRatio="none">
+      <rect x="1" y="1" width="598" height="798" rx="20" fill="none"
+            stroke="rgba(255,215,0,.25)" stroke-width="1.5"/>
+      <path d="M 20 50 L 20 20 L 50 20" fill="none" stroke="#ffd700" stroke-width="2"/>
+      <path d="M 580 50 L 580 20 L 550 20" fill="none" stroke="#ffd700" stroke-width="2"/>
+      <path d="M 20 750 L 20 780 L 50 780" fill="none" stroke="#ffd700" stroke-width="2"/>
+      <path d="M 580 750 L 580 780 L 550 780" fill="none" stroke="#ffd700" stroke-width="2"/>
+    </svg>
+    <button class="modal-close" data-close="modal-achievements">
+      <svg viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="16"/>
+        <line x1="14" y1="14" x2="26" y2="26"/>
+        <line x1="26" y1="14" x2="14" y2="26"/>
+      </svg>
+    </button>
+    <h2>Достижения</h2>
+    <div class="ach-list" id="ach-list"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ============================================================
+   РУССКИЕ НОМЕРА: SVG КОНТУР
+   ============================================================ */
+
+const LETTERS = ['А','В','Е','К','М','Н','О','Р','С','Т','У','Х'];
+
+const REGIONS = [
+  '01','02','03','04','05','06','07','08','09','10','11','12','13','14','15',
+  '16','17','18','19','20','21','22','23','24','25','26','27','28','29','30',
+  '31','32','33','34','35','36','37','38','39','40','41','42','43','44','45',
+  '46','47','48','49','50','51','52','53','54','55','56','57','58','59','60',
+  '61','62','63','64','65','66','67','68','69','70','71','72','73','74','75',
+  '76','77','78','79','80','81','82','83','84','85','86','87','88','89','90',
+  '91','92','93','94','95','96','97','98','99',
+  '102','103','116','123','125','126','127','128','129','134','136','138',
+  '142','150','152','154','156','158','159','161','163','164','166','168',
+  '170','172','173','174','175','176','177','178','179','180','181','182',
+  '183','184','185','186','187','188','189','190','191','192','193','194',
+  '195','196','197','198','199','250','550','750','777','799','977','999'
+];
+
+const RARITY = {
+  common:    { name:'Обычный',     color:'#a0a0b0', weight:65,   coins:1 },
+  uncommon:  { name:'Необычный',   color:'#4caf50', weight:20,   coins:5 },
+  rare:      { name:'Редкий',      color:'#2196f3', weight:8,    coins:25 },
+  epic:      { name:'Эпический',   color:'#9c27b0', weight:5,    coins:100 },
+  legendary: { name:'ЛЕГЕНДАРНЫЙ', color:'#ff9800', weight:1.8,  coins:1000 },
+  mythic:    { name:'МИФИЧЕСКИЙ',  color:'#ff4081', weight:0.2,  coins:10000 }
+};
+const RARITY_ORDER = ['common','uncommon','rare','epic','legendary','mythic'];
+
+/* SVG-иконки для достижений */
+const ACH_ICONS = {
+  target:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`,
+  ten:`<svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="900" fill="none" stroke="currentColor">10</text></svg>`,
+  hundred:`<svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="11" font-weight="900" fill="none" stroke="currentColor">100</text></svg>`,
+  fire:`<svg viewBox="0 0 24 24"><path d="M12 2 C 12 8, 6 10, 6 15 a6 6 0 0 0 12 0 c0-3-2-5-4-7 c-1 3-3 4-3 4 c0-3 2-6 1-10z"/></svg>`,
+  epic:`<svg viewBox="0 0 24 24"><polygon points="12,3 21,9 18,20 6,20 3,9"/></svg>`,
+  legend:`<svg viewBox="0 0 24 24"><polygon points="12,3 15,10 22,10 16,14 18,21 12,17 6,21 8,14 2,10 9,10"/></svg>`,
+  mythic:`<svg viewBox="0 0 24 24"><path d="M3 20 L 3 10 L 8 14 L 12 6 L 16 14 L 21 10 L 21 20 Z"/></svg>`,
+  reg:`<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><line x1="15" y1="6" x2="15" y2="18"/></svg>`,
+  coins:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><text x="12" y="17" text-anchor="middle" font-size="12" font-weight="900" fill="none" stroke="currentColor">₽</text></svg>`,
+  first:`<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="6"/><path d="M9 15 L 8 22 L 12 20 L 16 22 L 15 15"/></svg>`,
+  last:`<svg viewBox="0 0 24 24"><path d="M4 4 L 20 20 M 4 20 L 20 4 M 4 4 L 20 4 M 4 20 L 20 20"/></svg>`
+};
+
+const ACHIEVEMENTS = [
+  { id:'first',    icon:'target',  name:'Первый дроп',  desc:'Выбей любой номер',             check:s=>s.totalDrops>=1 },
+  { id:'ten',      icon:'ten',     name:'Разогрев',     desc:'Выбей 10 номеров',              check:s=>s.totalDrops>=10 },
+  { id:'hundred',  icon:'hundred', name:'Коллекционер', desc:'Собери 100 уникальных номеров', check:s=>s.collection.length>=100 },
+  { id:'thousand', icon:'fire',    name:'Маньяк',       desc:'Выбей 1000 номеров',            check:s=>s.totalDrops>=1000 },
+  { id:'epic1',    icon:'epic',    name:'Эпик!',        desc:'Выбей эпический номер',         check:s=>s.stats.epic>=1 },
+  { id:'legend1',  icon:'legend',  name:'Легенда',      desc:'Выбей легендарный номер',       check:s=>s.stats.legendary>=1 },
+  { id:'mythic1',  icon:'mythic',  name:'МИФ',          desc:'Выбей мифический номер',        check:s=>s.stats.mythic>=1 },
+  { id:'reg77',    icon:'reg',     name:'Фанат 77',     desc:'Собери 50 номеров региона 77',  check:s=>s.collection.filter(n=>n.endsWith(' 77')).length>=50 },
+  { id:'coins10k', icon:'coins',   name:'Богач',        desc:'Накопи 10 000 монет',           check:s=>s.coins>=10000 },
+  { id:'first_num',icon:'first',   name:'А001АА01',     desc:'Выбей самый первый номер',      check:s=>s.collection.includes('А001АА 01') },
+  { id:'last_num', icon:'last',    name:'Х999ХХ99',     desc:'Выбей последний номер',         check:s=>s.collection.includes('Х999ХХ 99') }
+];
+
+const STORAGE_KEY = 'russian_plates_svg_v1';
+let state = {
+  totalDrops: 0,
+  coins: 0,
+  collection: [],
+  stats: { common:0, uncommon:0, rare:0, epic:0, legendary:0, mythic:0 },
+  unlockedAchievements: [],
+  isSpinning: false
+};
+
+function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      state = { ...state, ...p, isSpinning:false };
+      if(!state.stats) state.stats = {common:0,uncommon:0,rare:0,epic:0,legendary:0,mythic:0};
+      if(!state.collection) state.collection = [];
+      if(!state.unlockedAchievements) state.unlockedAchievements = [];
+    }
+  }catch(e){}
+}
+
+/* ---------- АУДИО ---------- */
+let audioCtx = null;
+function initAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  }
+  if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTone(freq,dur,type='sine',vol=0.08,delay=0){
+  if(!audioCtx) return;
+  const t0 = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq,t0);
+  gain.gain.setValueAtTime(0,t0);
+  gain.gain.linearRampToValueAtTime(vol,t0+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.05);
+}
+function sfxTick(){ playTone(1200+Math.random()*400,0.03,'square',0.02); }
+function sfxStop(){ playTone(440,0.15,'triangle',0.06); }
+function sfxByRarity(tier){
+  switch(tier){
+    case 'common': playTone(523,0.15,'sine',0.06); break;
+    case 'uncommon':
+      playTone(523,0.12,'sine',0.07);
+      playTone(659,0.15,'sine',0.07,0.08); break;
+    case 'rare':
+      [523,659,784].forEach((f,i)=>playTone(f,0.15,'triangle',0.08,i*0.08)); break;
+    case 'epic':
+      [523,659,784,1047].forEach((f,i)=>playTone(f,0.18,'sawtooth',0.07,i*0.1)); break;
+    case 'legendary':
+      [523,659,784,1047,1319].forEach((f,i)=>playTone(f,0.25,'square',0.07,i*0.08));
+      playTone(1568,0.5,'square',0.09,0.4); break;
+    case 'mythic':
+      playTone(80,0.8,'sawtooth',0.15);
+      playTone(120,0.6,'sawtooth',0.10,0.1);
+      [523,659,784,1047,1319,1568,2093].forEach((f,i)=>playTone(f,0.5,'square',0.08,0.3+i*0.08));
+      break;
+  }
+}
+
+/* ---------- SVG ФОН: ЗВЁЗДЫ + ДОРОГИ ---------- */
+const bgStarsGroup = document.getElementById('bg-stars');
+const bgRoadsGroup = document.getElementById('bg-roads');
+let bgStars = [];
+let bgRoadLines = [];
+
+function initBg(){
+  const svg = document.getElementById('bg-svg');
+  const W = window.innerWidth, H = window.innerHeight;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  // Звёзды
+  bgStarsGroup.innerHTML = '';
+  bgStars = [];
+  const count = Math.min(140, Math.floor((W*H)/14000));
+  const ns = 'http://www.w3.org/2000/svg';
+  for(let i=0;i<count;i++){
+    const c = document.createElementNS(ns,'circle');
+    const star = {
+      x: Math.random()*W,
+      y: Math.random()*H,
+      r: Math.random()*1.4 + 0.3,
+      speed: Math.random()*0.25 + 0.08,
+      el: c
+    };
+    c.setAttribute('r', star.r);
+    c.setAttribute('fill', Math.random()<0.5 ? '#ff3366' : '#00ddff');
+    c.setAttribute('opacity', 0.4 + Math.random()*0.4);
+    bgStarsGroup.appendChild(c);
+    bgStars.push(star);
+  }
+
+  // Дорожные линии (горизонтальные, движутся)
+  bgRoadsGroup.innerHTML = '';
+  bgRoadLines = [];
+  const lineCount = 6;
+  for(let i=0;i<lineCount;i++){
+    const line = document.createElementNS(ns,'line');
+    const y = (H / lineCount) * i + 40;
+    line.setAttribute('x1', 0);
+    line.setAttribute('x2', W);
+    line.setAttribute('y1', y);
+    line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#00ddff');
+    line.setAttribute('stroke-width', '0.6');
+    line.setAttribute('stroke-dasharray', '20 200');
+    line.setAttribute('opacity', 0.12);
+    bgRoadsGroup.appendChild(line);
+    bgRoadLines.push({ el: line, offset: Math.random()*200, speed: 0.15 + Math.random()*0.3 });
+  }
+}
+function animateBg(){
+  for(const s of bgStars){
+    s.y += s.speed;
+    if(s.y > window.innerHeight + 5){ s.y = -5; s.x = Math.random()*window.innerWidth; }
+    s.el.setAttribute('cx', s.x);
+    s.el.setAttribute('cy', s.y);
+  }
+  for(const l of bgRoadLines){
+    l.offset -= l.speed;
+    if(l.offset < -220) l.offset = 220;
+    l.el.setAttribute('stroke-dashoffset', l.offset);
+  }
+  requestAnimationFrame(animateBg);
+}
+
+/* ---------- ЧАСТИЦЫ ---------- */
+const pCanvas = document.getElementById('particle-canvas');
+const pCtx = pCanvas.getContext('2d');
+let particles = [];
+function resizeParticles(){ pCanvas.width = innerWidth; pCanvas.height = innerHeight; }
+
+function spawnParticles(x,y,color,count=40,speed=8){
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const v = Math.random()*speed+1;
+    particles.push({
+      x,y,
+      vx:Math.cos(a)*v,
+      vy:Math.sin(a)*v-2,
+      life:1,
+      decay:0.012+Math.random()*0.015,
+      size:2+Math.random()*4,
+      color,gravity:0.15
+    });
+  }
+}
+function spawnConfetti(){
+  const w = innerWidth;
+  const colors = ['#ff3366','#ffd700','#00ddff','#9c27b0','#ff9800','#4caf50'];
+  for(let i=0;i<120;i++){
+    particles.push({
+      x:Math.random()*w, y:-20,
+      vx:(Math.random()-0.5)*6,
+      vy:Math.random()*3+2,
+      life:1, decay:0.005,
+      size:3+Math.random()*4,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      gravity:0.12, rect:true,
+      rot:Math.random()*Math.PI*2,
+      rotSpeed:(Math.random()-0.5)*0.3
+    });
+  }
+}
+function drawParticles(){
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vy += p.gravity; p.vx *= 0.99;
+    p.life -= p.decay;
+    if(p.rot !== undefined) p.rot += p.rotSpeed;
+    if(p.life <= 0){ particles.splice(i,1); continue; }
+    pCtx.globalAlpha = Math.max(0,p.life);
+    pCtx.strokeStyle = p.color;
+    pCtx.fillStyle = p.color;
+    if(p.rect){
+      pCtx.save();
+      pCtx.translate(p.x,p.y);
+      pCtx.rotate(p.rot);
+      pCtx.strokeRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+      pCtx.restore();
+    } else {
+      pCtx.beginPath();
+      pCtx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      pCtx.stroke();
+      pCtx.globalAlpha *= 0.3;
+      pCtx.fill();
+    }
+  }
+  pCtx.globalAlpha = 1;
+  requestAnimationFrame(drawParticles);
+}
+
+/* ---------- ГЕНЕРАЦИЯ ---------- */
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+const rndDigit = () => Math.floor(Math.random()*10);
+const pad3 = n => String(n).padStart(3,'0');
+
+function pickRarity(){
+  const total = Object.values(RARITY).reduce((s,r)=>s+r.weight,0);
+  let r = Math.random()*total;
+  for(const key of RARITY_ORDER){
+    r -= RARITY[key].weight;
+    if(r <= 0) return key;
+  }
+  return 'common';
+}
+
+function generateNumber(tier){
+  if(tier === 'mythic'){
+    return Math.random() < 0.5
+      ? { l1:'А',l2:'А',l3:'А',digits:'001',region:'01' }
+      : { l1:'Х',l2:'Х',l3:'Х',digits:'999',region:'99' };
+  }
+  if(tier === 'legendary'){
+    const l = rnd(LETTERS);
+    return { l1:l,l2:l,l3:l,digits:rnd(['001','007','777','999','100','500','666','888','900']),region:rnd(REGIONS) };
+  }
+  if(tier === 'epic'){
+    const l = rnd(LETTERS);
+    return { l1:l,l2:l,l3:l,digits:pad3(Math.floor(Math.random()*1000)),region:rnd(REGIONS) };
+  }
+  if(tier === 'rare'){
+    const a = rndDigit(), b = rndDigit();
+    return { l1:rnd(LETTERS),l2:rnd(LETTERS),l3:rnd(LETTERS),digits:`${a}${b}${a}`,region:rnd(REGIONS) };
+  }
+  if(tier === 'uncommon'){
+    const s = Math.floor(Math.random()*10);
+    return { l1:rnd(LETTERS),l2:rnd(LETTERS),l3:rnd(LETTERS),digits:`${s}${(s+1)%10}${(s+2)%10}`,region:rnd(REGIONS) };
+  }
+  return {
+    l1:rnd(LETTERS),l2:rnd(LETTERS),l3:rnd(LETTERS),
+    digits:pad3(Math.floor(Math.random()*1000)),region:rnd(REGIONS)
+  };
+}
+
+function detectRarity(n){
+  const {l1,l2,l3,digits,region} = n;
+  if(l1==='А'&&l2==='А'&&l3==='А'&&digits==='001'&&region==='01') return 'mythic';
+  if(l1==='Х'&&l2==='Х'&&l3==='Х'&&digits==='999'&&region==='99') return 'mythic';
+  if(l1===l2 && l2===l3 && ['001','007','777','999','100','500','666','888','900'].includes(digits)) return 'legendary';
+  if(l1===l2 && l2===l3) return 'epic';
+  if(digits[0] === digits[2]) return 'rare';
+  const d0=+digits[0], d1=+digits[1], d2=+digits[2];
+  if((d1 === (d0+1)%10) && (d2 === (d1+1)%10)) return 'uncommon';
+  return 'common';
+}
+
+const formatNumber = n => `${n.l1}${n.digits}${n.l2}${n.l3} ${n.region}`;
+
+/* ---------- UI ---------- */
+const plateSvg = document.getElementById('plate-svg');
+const rarityLabel = document.getElementById('rarity-label');
+const btnDrop = document.getElementById('btn-drop');
+
+const slotEls = {
+  l1: plateSvg.querySelector('[data-slot="l1"]'),
+  d1: plateSvg.querySelector('[data-slot="d1"]'),
+  d2: plateSvg.querySelector('[data-slot="d2"]'),
+  d3: plateSvg.querySelector('[data-slot="d3"]'),
+  l2: plateSvg.querySelector('[data-slot="l2"]'),
+  l3: plateSvg.querySelector('[data-slot="l3"]'),
+  region: plateSvg.querySelector('[data-slot="region"]')
+};
+
+function updateStats(){
+  document.getElementById('stat-drops').textContent = state.totalDrops;
+  document.getElementById('stat-unique').textContent = state.collection.length;
+  document.getElementById('stat-legend').textContent = state.stats.legendary + state.stats.mythic;
+}
+
+/* ---------- СПИН ---------- */
+function spinChar(el, chars, finalChar, duration){
+  return new Promise(resolve => {
+    const start = performance.now();
+    el.classList.add('spinning');
+    function tick(){
+      const elapsed = performance.now() - start;
+      const progress = Math.min(elapsed/duration, 1);
+      if(progress >= 1){
+        el.textContent = finalChar;
+        el.classList.remove('spinning');
+        resolve();
+        return;
+      }
+      el.textContent = chars[Math.floor(Math.random()*chars.length)];
+      const delay = 30 + Math.pow(progress,2.5) * 260;
+      setTimeout(tick, delay);
+    }
+    tick();
+  });
+}
+
+async function doDrop(){
+  if(state.isSpinning) return;
+  state.isSpinning = true;
+  btnDrop.disabled = true;
+  initAudio();
+
+  plateSvg.setAttribute('data-rarity','common');
+  rarityLabel.textContent = '...';
+  rarityLabel.style.color = '#6666aa';
+
+  const tier = pickRarity();
+  const num = generateNumber(tier);
+  const realTier = detectRarity(num);
+
+  const durs = { l1:900, d1:1200, d2:1500, d3:1800, l2:2100, l3:2300, region:2600 };
+
+  const tickInterval = setInterval(sfxTick, 90);
+  setTimeout(() => clearInterval(tickInterval), 2600);
+
+  await Promise.all([
+    spinChar(slotEls.l1, LETTERS, num.l1, durs.l1),
+    spinChar(slotEls.d1, '0123456789'.split(''), num.digits[0], durs.d1),
+    spinChar(slotEls.d2, '0123456789'.split(''), num.digits[1], durs.d2),
+    spinChar(slotEls.d3, '0123456789'.split(''), num.digits[2], durs.d3),
+    spinChar(slotEls.l2, LETTERS, num.l2, durs.l2),
+    spinChar(slotEls.l3, LETTERS, num.l3, durs.l3),
+    spinChar(slotEls.region, REGIONS, num.region, durs.region)
+  ]);
+
+  sfxStop();
+  revealResult(num, realTier);
+
+  state.totalDrops++;
+  state.stats[realTier] = (state.stats[realTier]||0) + 1;
+  state.coins += RARITY[realTier].coins;
+
+  const numStr = formatNumber(num);
+  const isNew = !state.collection.includes(numStr);
+  if(isNew) state.collection.push(numStr);
+
+  updateStats();
+  checkAchievements();
+  save();
+
+  if(isNew && realTier !== 'legendary' && realTier !== 'mythic'){
+    showToast('✨ Новый номер', numStr, realTier);
+  }
+
+  state.isSpinning = false;
+  btnDrop.disabled = false;
+}
+
+function revealResult(num, tier){
+  const info = RARITY[tier];
+  plateSvg.setAttribute('data-rarity', tier);
+  rarityLabel.textContent = info.name;
+  rarityLabel.style.color = info.color;
+
+  const rect = plateSvg.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+
+  switch(tier){
+    case 'common':
+      sfxByRarity('common');
+      spawnParticles(cx, cy, info.color, 15, 4); break;
+    case 'uncommon':
+      sfxByRarity('uncommon');
+      spawnParticles(cx, cy, info.color, 25, 6);
+      shakeScreen(2); break;
+    case 'rare':
+      sfxByRarity('rare');
+      spawnParticles(cx, cy, info.color, 40, 8);
+      shakeScreen(4); break;
+    case 'epic':
+      sfxByRarity('epic');
+      spawnParticles(cx, cy, info.color, 60, 10);
+      shakeScreen(7); break;
+    case 'legendary':
+      sfxByRarity('legendary');
+      spawnParticles(cx, cy, info.color, 100, 12);
+      spawnConfetti();
+      shakeScreen(10);
+      flash();
+      showToast('🎉 ЛЕГЕНДАРНЫЙ НОМЕР!', formatNumber(num), 'legendary');
+      break;
+    case 'mythic':
+      sfxByRarity('mythic');
+      spawnParticles(cx, cy, info.color, 200, 16);
+      spawnParticles(cx, cy, '#ffd700', 150, 14);
+      spawnConfetti();
+      spawnConfetti();
+      shakeScreen(18);
+      flash();
+      setTimeout(flash, 200);
+      showToast('🌈 МИФИЧЕСКИЙ НОМЕР!!!', formatNumber(num), 'mythic');
+      break;
+  }
+}
+
+function shakeScreen(intensity){
+  const app = document.querySelector('.app');
+  const duration = 200 + intensity*20;
+  const start = performance.now();
+  function anim(){
+    const t = (performance.now() - start) / duration;
+    if(t >= 1){ app.style.transform = ''; return; }
+    const dx = (Math.random()-0.5) * intensity * (1-t);
+    const dy = (Math.random()-0.5) * intensity * (1-t);
+    app.style.transform = `translate(${dx}px,${dy}px)`;
+    requestAnimationFrame(anim);
+  }
+  anim();
+}
+
+function flash(){
+  const f = document.getElementById('flash');
+  f.classList.remove('active');
+  void f.offsetWidth;
+  f.classList.add('active');
+}
+
+/* ---------- ТОСТЫ ---------- */
+function showToast(title, body, cls=''){
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.innerHTML = `
+    <svg class="toast-frame" viewBox="0 0 300 70" preserveAspectRatio="none">
+      <rect x="1" y="1" width="298" height="68" rx="12"/>
+    </svg>
+    <div class="title">${title}</div>
+    <div class="body">${body}</div>
+  `;
+  container.appendChild(el);
+  setTimeout(()=>{
+    el.classList.add('removing');
+    setTimeout(()=>el.remove(), 300);
+  }, 3500);
+}
+
+/* ---------- ДОСТИЖЕНИЯ ---------- */
+function checkAchievements(){
+  for(const a of ACHIEVEMENTS){
+    if(state.unlockedAchievements.includes(a.id)) continue;
+    if(a.check(state)){
+      state.unlockedAchievements.push(a.id);
+      showToast('🏆 Достижение!', `${a.name}`);
+      playTone(784, 0.15, 'triangle', 0.08);
+      playTone(1047, 0.3, 'triangle', 0.08, 0.1);
+    }
+  }
+}
+
+function renderAchievements(){
+  const list = document.getElementById('ach-list');
+  list.innerHTML = '';
+  for(const a of ACHIEVEMENTS){
+    const unlocked = state.unlockedAchievements.includes(a.id);
+    const el = document.createElement('div');
+    el.className = 'ach-item' + (unlocked ? ' unlocked' : '');
+    el.innerHTML = `
+      <svg class="ach-frame" viewBox="0 0 600 70" preserveAspectRatio="none">
+        <rect x="1" y="1" width="598" height="68" rx="12"/>
+      </svg>
+      <div class="icon">${ACH_ICONS[a.icon] || ''}</div>
+      <div class="info">
+        <div class="name">${a.name}</div>
+        <div class="desc">${a.desc}</div>
+      </div>
+      <div class="status">${unlocked ? '✓ OK' : '🔒 LOCK'}</div>
+    `;
+    list.appendChild(el);
+  }
+}
+
+/* ---------- МИНИ-НОМЕР (SVG) ---------- */
+function miniPlateSVG(numStr){
+  const [plate, region] = numStr.split(' ');
+  const l1 = plate[0], d1 = plate[1], d2 = plate[2], d3 = plate[3],
+        l2 = plate[4], l3 = plate[5];
+  const regionFontSize = region.length >= 3 ? 15 : 18;
+  return `
+    <svg class="mini-plate" viewBox="0 0 200 62" xmlns="http://www.w3.org/2000/svg">
+      <rect class="mp-frame" x="1" y="1" width="198" height="60" rx="5"/>
+      <line class="mp-div" x1="152" y1="4" x2="152" y2="58"/>
+      <line class="mp-div" x1="153" y1="20" x2="197" y2="20"/>
+      <text class="mp-rus" x="175" y="15">RUS</text>
+
+      <text class="mp-char" x="16"  y="42" text-anchor="middle">${l1}</text>
+      <text class="mp-char" x="38"  y="42" text-anchor="middle">${d1}</text>
+      <text class="mp-char" x="57"  y="42" text-anchor="middle">${d2}</text>
+      <text class="mp-char" x="76"  y="42" text-anchor="middle">${d3}</text>
+      <text class="mp-char" x="102" y="42" text-anchor="middle">${l2}</text>
+      <text class="mp-char" x="121" y="42" text-anchor="middle">${l3}</text>
+      <text class="mp-region" x="175" y="52" font-size="${regionFontSize}">${region}</text>
+    </svg>
+  `;
+}
+
+/* ---------- КОЛЛЕКЦИЯ ---------- */
+let currentFilter = 'all';
+
+function rarityOf(numStr){
+  const [plate, region] = numStr.split(' ');
+  const digits = plate.slice(1,4);
+  const l1 = plate[0], l2 = plate[4], l3 = plate[5];
+  if(l1==='А'&&l2==='А'&&l3==='А'&&digits==='001'&&region==='01') return 'mythic';
+  if(l1==='Х'&&l2==='Х'&&l3==='Х'&&digits==='999'&&region==='99') return 'mythic';
+  if(l1===l2 && l2===l3 && ['001','007','777','999','100','500','666','888','900'].includes(digits)) return 'legendary';
+  if(l1===l2 && l2===l3) return 'epic';
+  if(digits[0] === digits[2]) return 'rare';
+  const d0=+digits[0],d1=+digits[1],d2=+digits[2];
+  if((d1 === (d0+1)%10) && (d2 === (d1+1)%10)) return 'uncommon';
+  return 'common';
+}
+
+function renderCollection(){
+  const grid = document.getElementById('collection-grid');
+  document.getElementById('coll-total').textContent = state.collection.length;
+  document.getElementById('coll-unique').textContent = state.collection.length;
+
+  let items = [...state.collection].reverse();
+  if(currentFilter === 'legendary'){
+    items = items.filter(n => {
+      const r = rarityOf(n);
+      return r === 'legendary' || r === 'mythic';
+    });
+  } else if(currentFilter.startsWith('reg:')){
+    const reg = currentFilter.slice(4);
+    items = items.filter(n => n.endsWith(' ' + reg));
+  }
+
+  grid.innerHTML = '';
+  if(items.length === 0){
+    grid.innerHTML = '<div class="coll-empty">Пока пусто. Крути слот!</div>';
+    return;
+  }
+
+  const MAX = 200;
+  const showItems = items.slice(0, MAX);
+  const frag = document.createDocumentFragment();
+
+  for(let i=0;i<showItems.length;i++){
+    const numStr = showItems[i];
+    const r = rarityOf(numStr);
+    const div = document.createElement('div');
+    div.className = 'coll-item';
+    div.setAttribute('data-rarity', r);
+    div.innerHTML = miniPlateSVG(numStr);
+    div.style.animationDelay = Math.min(i*8, 600) + 'ms';
+    frag.appendChild(div);
+  }
+  grid.appendChild(frag);
+
+  if(items.length > MAX){
+    const more = document.createElement('div');
+    more.className = 'coll-empty';
+    more.textContent = `...и ещё ${items.length - MAX}`;
+    grid.appendChild(more);
+  }
+}
+
+function renderFilters(){
+  const bar = document.getElementById('filter-bar');
+  bar.innerHTML = '';
+  const chips = [
+    { id:'all', label:'ВСЕ' },
+    { id:'legendary', label:'★ ТОП' }
+  ];
+  const regionsInColl = new Set(state.collection.map(n => n.split(' ')[1]));
+  const sorted = [...regionsInColl].sort();
+  for(const r of sorted.slice(0, 18)) chips.push({ id:'reg:'+r, label:r });
+
+  for(const c of chips){
+    const el = document.createElement('button');
+    el.className = 'filter-chip' + (currentFilter === c.id ? ' active' : '');
+    el.innerHTML = `
+      <svg viewBox="0 0 100 30" preserveAspectRatio="none">
+        <rect x="1" y="1" width="98" height="28" rx="14"/>
+      </svg>
+      <span style="position:relative;z-index:1;">${c.label}</span>
+    `;
+    el.onclick = () => {
+      currentFilter = c.id;
+      renderFilters();
+      renderCollection();
+    };
+    bar.appendChild(el);
+  }
+}
+
+/* ---------- МОДАЛКИ ---------- */
+const openModal = id => document.getElementById(id).classList.add('active');
+const closeModal = id => document.getElementById(id).classList.remove('active');
+
+document.querySelectorAll('[data-close]').forEach(el=>{
+  el.onclick = () => closeModal(el.getAttribute('data-close'));
+});
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.onclick = e => { if(e.target === m) m.classList.remove('active'); };
+});
+
+/* ---------- СОБЫТИЯ ---------- */
+btnDrop.onclick = doDrop;
+
+document.getElementById('btn-collection').onclick = () => {
+  renderFilters(); renderCollection(); openModal('modal-collection');
+};
+document.getElementById('btn-achievements').onclick = () => {
+  renderAchievements(); openModal('modal-achievements');
+};
+document.getElementById('btn-reset').onclick = () => {
+  if(confirm('Сбросить весь прогресс?')){
+    localStorage.removeItem(STORAGE_KEY);
+    state = {
+      totalDrops:0, coins:0, collection:[],
+      stats:{common:0,uncommon:0,rare:0,epic:0,legendary:0,mythic:0},
+      unlockedAchievements:[], isSpinning:false
+    };
+    updateStats();
+    rarityLabel.textContent = 'Сброшено. Крути!';
+    rarityLabel.style.color = '#6666aa';
+    plateSvg.setAttribute('data-rarity','common');
+    showToast('Прогресс сброшен', 'Начни заново!');
+  }
+};
+
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space' || e.code === 'Enter'){
+    if(!document.querySelector('.modal-overlay.active')){
+      e.preventDefault();
+      doDrop();
+    }
+  }
+  if(e.code === 'Escape'){
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+  }
+});
+
+/* ---------- ИНИЦИАЛИЗАЦИЯ ---------- */
+function init(){
+  load();
+  initBg();
+  resizeParticles();
+  animateBg();
+  drawParticles();
+  updateStats();
+  window.addEventListener('resize', () => { initBg(); resizeParticles(); });
+  document.addEventListener('pointerdown', initAudio, { once:true });
+
+  const total = LETTERS.length ** 3 * 1000 * REGIONS.length;
+  console.log('%c🚗 Русские Номера: SVG Контур','color:#00ddff;font-size:16px;font-weight:bold');
+  console.log('Регионов:', REGIONS.length, '| Букв:', LETTERS.length);
+  console.log('Возможных комбинаций:', total.toLocaleString('ru-RU'));
+}
+
+init();
+</script>
 </body>
 </html>
