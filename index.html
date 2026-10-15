@@ -2,1242 +2,1404 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Русские Номера</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FORENSIC 3D — HEAD RECONSTRUCTION</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
-  background:#0a0a0c;color:#eaeaea;
-  overflow-x:hidden;overscroll-behavior:none;
-  display:flex;flex-direction:column;align-items:center;
+:root {
+  --bg: #0a0c0e;
+  --panel: #12161a;
+  --panel-2: #1a1f24;
+  --border: #2a333c;
+  --text: #c8d2dc;
+  --text-dim: #6b7a88;
+  --accent: #00d4aa;
+  --accent-dim: #0a3a33;
+  --warn: #ff3b30;
+  --ok: #30d158;
+  --mono: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
-.app{
-  width:100%;max-width:480px;min-height:100vh;
-  padding:16px 16px 32px;display:flex;flex-direction:column;gap:14px;
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+  width:100%; height:100%; overflow:hidden;
+  background: var(--bg); color: var(--text);
+  font-family: var(--mono); font-size: 11px; line-height: 1.4;
+  -webkit-user-select: none; user-select: none;
+  overscroll-behavior: none;
 }
-
-/* ═══ Шапка ═══ */
-.header{
-  display:grid;grid-template-columns:44px 1fr auto auto;
-  gap:8px;align-items:center;padding:4px 0;
-}
-.icon-btn{
-  width:44px;height:44px;border-radius:12px;
-  background:#15151a;border:1px solid #1f1f26;
-  display:flex;align-items:center;justify-content:center;
-  color:#eaeaea;font-size:18px;cursor:pointer;
-  transition:background .15s,border-color .15s;
-}
-.icon-btn:hover{background:#1a1a20;border-color:#2a2a32;}
-.icon-btn:active{transform:scale(.95);}
-.header-title{
-  font-size:13px;font-weight:700;letter-spacing:2px;
-  color:#6a6a72;text-transform:uppercase;text-align:center;
-}
-.balance{
-  display:flex;align-items:center;gap:8px;
-  background:#15151a;border:1px solid #1f1f26;
-  padding:8px 12px 8px 14px;border-radius:12px;
-  font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;
-}
-.balance .currency{color:#6a6a72;font-weight:600;font-size:13px;}
-.balance .plus{
-  width:22px;height:22px;border-radius:50%;
-  background:#2ecc71;color:#000;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:900;cursor:pointer;
-  transition:transform .15s;
-}
-.balance .plus:active{transform:scale(.9);}
-
-/* ═══ Плашка номера ═══ */
-.plate-zone{
-  display:flex;flex-direction:column;align-items:center;
-  gap:10px;padding:20px 0 4px;
-}
-.plate-wrap{
-  width:100%;max-width:400px;
-  transition:filter .35s ease;
-}
-.plate-svg{width:100%;height:auto;display:block;}
-.plate-caption{font-size:12px;color:#4a4a52;font-weight:500;letter-spacing:.3px;}
-
-/* Свечение по редкости */
-.plate-wrap[data-rarity="uncommon"] {filter:drop-shadow(0 0 14px rgba(46,204,113,.35));}
-.plate-wrap[data-rarity="rare"]     {filter:drop-shadow(0 0 18px rgba(52,152,219,.45));}
-.plate-wrap[data-rarity="epic"]     {filter:drop-shadow(0 0 22px rgba(155,89,182,.55));}
-.plate-wrap[data-rarity="legendary"]{filter:drop-shadow(0 0 26px rgba(243,156,18,.7));}
-.plate-wrap[data-rarity="mythic"]   {filter:drop-shadow(0 0 32px rgba(231,76,60,.8));}
-
-/* Анимация вращения */
-.plate-svg .char{transition:opacity .05s;}
-.plate-wrap.spinning .char{opacity:.85;}
-
-/* ═══ Гарантия ═══ */
-.guarantee{
-  text-align:center;font-size:13px;color:#5a5a62;
-  padding:2px 0;letter-spacing:.2px;
-}
-.guarantee b{color:#eaeaea;font-weight:700;}
-
-/* ═══ Селекторы ═══ */
-.selectors{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;}
-.selector{
-  background:#15151a;border:1px solid #1f1f26;
-  border-radius:12px;padding:11px 13px;cursor:pointer;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:6px;transition:border-color .15s,background .15s;
-  min-width:0;
-}
-.selector:hover{background:#191920;border-color:#2a2a32;}
-.selector:active{transform:scale(.98);}
-.selector-left{
-  display:flex;align-items:center;gap:8px;
-  min-width:0;flex:1;
-}
-.selector .icon{font-size:16px;flex-shrink:0;}
-.selector .text{
-  font-size:13px;font-weight:600;color:#eaeaea;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.selector .sub{
-  font-size:11px;color:#5a5a62;font-weight:500;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.selector .chevron{
-  color:#4a4a52;font-size:10px;flex-shrink:0;
-  transition:transform .2s;
-}
-.selector-mult{
-  background:#15151a;border:1px solid #1f1f26;
-  border-radius:12px;padding:11px 16px;cursor:pointer;
-  font-size:13px;font-weight:700;color:#eaeaea;
-  display:flex;align-items:center;justify-content:center;
-  min-width:56px;transition:background .15s,border-color .15s;
-}
-.selector-mult:hover{background:#191920;border-color:#2a2a32;}
-.selector-mult:active{transform:scale(.98);}
-
-/* ═══ Кнопка Крутить ═══ */
-.btn-spin{
-  width:100%;padding:17px 20px;border:none;border-radius:14px;
-  background:#2ecc71;color:#05140a;
-  font-family:inherit;font-size:16px;font-weight:800;
-  letter-spacing:.3px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:14px;
-  transition:transform .12s,filter .2s,opacity .2s;
-  filter:drop-shadow(0 0 22px rgba(46,204,113,.22));
-}
-.btn-spin:hover:not(:disabled){filter:drop-shadow(0 0 28px rgba(46,204,113,.4));}
-.btn-spin:active:not(:disabled){transform:scale(.97);}
-.btn-spin:disabled{opacity:.4;cursor:not-allowed;filter:none;}
-.btn-spin .price-pill{
-  background:rgba(0,0,0,.14);padding:6px 14px;
-  border-radius:20px;font-size:14px;font-weight:800;
-  font-variant-numeric:tabular-nums;
+#app {
+  display: flex; flex-direction: column;
+  width:100%; height:100%;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
-/* ═══ Модалки ═══ */
-.overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.7);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  z-index:100;display:none;align-items:flex-end;justify-content:center;
-  opacity:0;transition:opacity .25s;
+/* TOP BAR */
+#topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; min-height: 40px;
 }
-.overlay.active{display:flex;opacity:1;}
-.modal{
-  background:#131318;width:100%;max-width:480px;
-  border-radius:20px 20px 0 0;
-  max-height:82vh;overflow-y:auto;
-  padding:20px 16px 28px;
-  animation:slideUp .3s cubic-bezier(.2,.9,.3,1);
-  border-top:1px solid #1f1f26;
-}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-header{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:16px;padding:0 4px;
-}
-.modal-header h2{
-  font-size:16px;font-weight:800;letter-spacing:1px;
-  text-transform:uppercase;color:#eaeaea;
-}
-.modal-close{
-  width:34px;height:34px;border-radius:50%;
-  background:#1a1a20;border:none;color:#6a6a72;
-  font-size:14px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:color .15s,background .15s;
-}
-.modal-close:hover{color:#eaeaea;background:#23232a;}
+#topbar .brand { font-weight: 700; font-size: 13px; color: #fff; letter-spacing: 0.5px; white-space: nowrap; }
+#topbar .module { color: var(--accent); font-size: 9px; letter-spacing: 1px; }
+#topbar .spacer { flex: 1; }
+#topbar .stat { text-align: right; font-size: 9px; color: var(--text-dim); line-height: 1.2; }
+#topbar .stat b { color: var(--text); font-weight: 500; }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+.dot.ok { background: var(--ok); }
+.dot.warn { background: var(--warn); }
+.dot.off { background: var(--text-dim); }
 
-/* ═══ Список редкости ═══ */
-.rarity-item{
-  display:flex;justify-content:space-between;align-items:center;
-  gap:12px;padding:14px 16px;
-  background:#0f0f14;border:1px solid #1c1c22;
-  border-radius:12px;margin-bottom:8px;cursor:pointer;
-  transition:border-color .15s,background .15s;
+/* TABS */
+#tabs {
+  display: flex; gap: 0; background: var(--panel-2);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
-.rarity-item:hover{background:#141420;border-color:#2a2a32;}
-.rarity-item.active{border-color:#2ecc71;background:#0f1a14;}
-.rarity-item-left{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
-.rarity-item-name{font-size:14px;font-weight:700;}
-.rarity-item-desc{font-size:11px;color:#5a5a62;}
-.rarity-item-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.rarity-item-price{
-  font-size:14px;font-weight:800;
-  font-variant-numeric:tabular-nums;
+#tabs button {
+  flex: 0 0 auto; padding: 8px 12px; background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  color: var(--text-dim); font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.5px; cursor: pointer; white-space: nowrap;
 }
-.rarity-item-check{
-  width:22px;height:22px;border-radius:50%;
-  background:#2ecc71;color:#05140a;
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:900;
-}
+#tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+#tabs button:active { background: var(--accent-dim); }
 
-/* ═══ Гараж ═══ */
-.garage-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;
-}
-.garage-item{
-  background:#0f0f14;border:1px solid #1c1c22;
-  border-radius:12px;padding:10px;
-  display:flex;flex-direction:column;gap:8px;
-}
-.garage-item .mini-svg{width:100%;height:auto;display:block;}
-.garage-actions{display:flex;gap:6px;}
-.garage-btn{
-  flex:1;padding:8px 6px;border-radius:8px;border:none;
-  font-family:inherit;font-size:11px;font-weight:700;
-  cursor:pointer;transition:opacity .15s;
-  font-variant-numeric:tabular-nums;
-}
-.garage-btn:active{opacity:.7;}
-.garage-btn.sell{background:#2ecc71;color:#05140a;}
-.garage-btn.remove{background:#1a1a20;color:#6a6a72;max-width:34px;}
-.garage-empty{
-  text-align:center;color:#4a4a52;
-  padding:50px 20px;font-size:13px;grid-column:1/-1;
-}
+/* MAIN WORKSPACE */
+#workspace { flex: 1; position: relative; overflow: hidden; }
+.pane { position: absolute; inset: 0; display: none; flex-direction: column; }
+.pane.active { display: flex; }
 
-/* ═══ Достижения ═══ */
-.ach-item{
-  display:flex;gap:12px;align-items:center;
-  padding:13px 14px;background:#0f0f14;
-  border:1px solid #1c1c22;border-radius:12px;
-  margin-bottom:8px;transition:opacity .2s;
+/* CAMERA PANE */
+#camera-pane { background: #000; }
+#video-wrap { flex: 1; position: relative; overflow: hidden; }
+#video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#overlay-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#guide-frame {
+  position: absolute; inset: 10% 15%;
+  border: 1px dashed rgba(0,212,170,0.4);
+  border-radius: 4px; pointer-events: none;
 }
-.ach-item:not(.unlocked){opacity:.4;}
-.ach-item.unlocked{border-color:#3a2e10;background:#13100a;}
-.ach-icon{
-  width:32px;height:32px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;
+#guide-label {
+  position: absolute; top: -16px; left: 0;
+  font-size: 8px; color: var(--accent); letter-spacing: 1px;
 }
-.ach-item.unlocked .ach-icon{filter:drop-shadow(0 0 6px rgba(243,156,18,.7));}
-.ach-info{flex:1;min-width:0;}
-.ach-name{font-size:13px;font-weight:700;}
-.ach-desc{font-size:11px;color:#5a5a62;margin-top:2px;}
+#camera-controls {
+  display: flex; gap: 6px; padding: 8px 10px;
+  background: var(--panel); border-top: 1px solid var(--border);
+  flex-shrink: 0; flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 12px; background: var(--panel-2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--mono); font-size: 10px;
+  border-radius: 3px; cursor: pointer; white-space: nowrap;
+  min-height: 36px; display: inline-flex; align-items: center; justify-content: center;
+}
+.btn:active { background: var(--accent-dim); border-color: var(--accent); }
+.btn.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.btn.danger { border-color: var(--warn); color: var(--warn); }
+.btn:disabled { opacity: 0.4; pointer-events: none; }
 
-/* ═══ Результат ═══ */
-.result-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  z-index:150;display:none;align-items:center;justify-content:center;
-  padding:20px;opacity:0;transition:opacity .3s;
+/* CAPTURE GRID */
+#capture-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
+  padding: 6px 10px; background: var(--panel);
+  border-top: 1px solid var(--border); flex-shrink: 0;
 }
-.result-overlay.active{display:flex;opacity:1;}
-.result-card{
-  background:#131318;border-radius:20px;
-  padding:24px 20px;width:100%;max-width:380px;
-  text-align:center;border:1px solid #1f1f26;
-  animation:resultIn .35s cubic-bezier(.2,1.1,.3,1);
+.cap-slot {
+  aspect-ratio: 1; background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 2px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 7px; color: var(--text-dim); text-align: center; padding: 2px;
+  position: relative; overflow: hidden;
 }
-@keyframes resultIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-.result-card[data-rarity="legendary"]{border-color:#5a3f00;box-shadow:0 0 60px rgba(243,156,18,.15);}
-.result-card[data-rarity="mythic"]{border-color:#5a1a14;box-shadow:0 0 80px rgba(231,76,60,.2);}
-.result-card .result-plate{
-  width:100%;max-width:300px;margin:0 auto 14px;
-  display:block;
+.cap-slot.filled { border-color: var(--accent); }
+.cap-slot.filled::after {
+  content: ''; position: absolute; inset: 2px;
+  background-size: cover; background-position: center; opacity: 0.5;
 }
-.result-rarity{
-  font-size:11px;font-weight:800;letter-spacing:3px;
-  text-transform:uppercase;margin-bottom:6px;
-  color:#5a5a62;
-}
-.result-title{
-  font-size:17px;font-weight:800;margin-bottom:16px;
-  letter-spacing:.3px;
-}
-.result-actions{display:flex;gap:8px;}
-.result-actions .garage-btn{padding:13px;font-size:12px;flex:1;}
+.cap-slot .slot-label { z-index: 1; font-weight: 600; }
+.cap-slot .slot-status { z-index: 1; font-size: 6px; margin-top: 2px; }
 
-/* ═══ Тост ═══ */
-.toast-container{
-  position:fixed;top:16px;left:50%;transform:translateX(-50%);
-  z-index:300;display:flex;flex-direction:column;gap:6px;
-  width:calc(100% - 32px);max-width:400px;
-  pointer-events:none;
+/* 3D PANE */
+#view-pane { background: #0a0c0e; }
+#three-container { flex: 1; position: relative; }
+#three-container canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+#view-controls {
+  display: flex; gap: 4px; padding: 6px 10px;
+  background: var(--panel); border-top: 1px solid var(--border);
+  flex-shrink: 0; overflow-x: auto;
 }
-.toast{
-  background:#1a1a20;border:1px solid #23232a;
-  border-radius:12px;padding:12px 16px;
-  font-size:13px;font-weight:600;text-align:center;
-  animation:toastIn .3s cubic-bezier(.2,1.1,.3,1);
-  box-shadow:0 10px 40px rgba(0,0,0,.5);
+#view-controls .btn { padding: 5px 8px; font-size: 8px; min-height: 28px; }
+#view-info {
+  position: absolute; top: 8px; left: 8px; z-index: 5;
+  background: rgba(10,12,14,0.85); border: 1px solid var(--border);
+  padding: 6px 8px; font-size: 8px; line-height: 1.5;
+  max-width: 180px; pointer-events: none;
 }
-@keyframes toastIn{from{transform:translateY(-40px);opacity:0}to{transform:translateY(0);opacity:1}}
-.toast.warn{border-color:#3a2e10;color:#f39c12;}
-.toast.good{border-color:#0f3a1f;color:#2ecc71;}
-.toast.bad{border-color:#3a1410;color:#e74c3c;}
+#view-info b { color: var(--accent); }
 
-/* ═══ Ачивка ═══ */
-.ach-toast{
-  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
-  background:#13100a;border:1px solid #3a2e10;border-radius:14px;
-  padding:12px 18px;z-index:250;
-  display:flex;align-items:center;gap:12px;
-  max-width:340px;
-  animation:achIn .4s cubic-bezier(.2,1.1,.3,1);
-  box-shadow:0 0 30px rgba(243,156,18,.2);
+/* TECH PANEL (overlay on view) */
+#tech-panel {
+  position: absolute; top: 8px; right: 8px; z-index: 5;
+  background: rgba(10,12,14,0.9); border: 1px solid var(--border);
+  padding: 6px 8px; font-size: 8px; line-height: 1.6; max-width: 160px;
 }
-.ach-toast .ach-icon{font-size:22px;}
-.ach-toast .ach-name{font-size:12px;font-weight:700;color:#f39c12;}
-.ach-toast .ach-desc{font-size:11px;color:#8a7a5a;margin-top:2px;}
-@keyframes achIn{from{transform:translate(-50%,30px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+#tech-panel .row { display: flex; justify-content: space-between; gap: 8px; }
+#tech-panel .row span:last-child { color: var(--accent); font-weight: 600; }
 
-/* Скрытые вспомогательные */
-.hidden{display:none !important;}
+/* LOG */
+#log-pane { background: var(--bg); padding: 0; }
+#log-list {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 8px 10px; font-size: 9px; line-height: 1.5;
+}
+#log-list .entry { display: flex; gap: 6px; padding: 2px 0; border-bottom: 1px solid rgba(42,51,60,0.3); }
+#log-list .ts { color: var(--text-dim); flex-shrink: 0; width: 60px; }
+#log-list .msg { flex: 1; word-break: break-word; }
+#log-list .msg.err { color: var(--warn); }
+#log-list .msg.ok { color: var(--ok); }
+#log-list .msg.warn { color: #ffcc00; }
+
+/* EXPORT PANE */
+#export-pane { background: var(--bg); padding: 12px; overflow-y: auto; }
+.export-section { margin-bottom: 16px; border: 1px solid var(--border); padding: 10px; }
+.export-section h3 {
+  font-size: 9px; letter-spacing: 1px; color: var(--accent);
+  margin-bottom: 8px; font-weight: 600;
+}
+.export-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.export-row .btn { flex: 1; min-width: 80px; }
+.file-info { font-size: 8px; color: var(--text-dim); margin-top: 4px; }
+#export-status { font-size: 9px; margin-top: 8px; padding: 6px; background: var(--panel); border: 1px solid var(--border); }
+
+/* PROCESS PANE */
+#process-pane { background: var(--bg); padding: 12px; overflow-y: auto; }
+.proc-step { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 9px; border-bottom: 1px solid rgba(42,51,60,0.3); }
+.proc-step .idx { width: 16px; color: var(--text-dim); }
+.proc-step .name { flex: 1; }
+.proc-step .state { font-size: 8px; }
+.proc-step .state.done { color: var(--ok); }
+.proc-step .state.active { color: var(--accent); }
+.proc-step .state.pending { color: var(--text-dim); }
+.proc-step .state.fail { color: var(--warn); }
+#progress-bar { height: 2px; background: var(--border); margin: 8px 0; position: relative; }
+#progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+/* SCROLLBARS */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* UTIL */
+.hidden { display: none !important; }
 </style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+  }
+}
+</script>
 </head>
 <body>
+<div id="app">
 
-<div class="app">
-  <div class="header">
-    <button class="icon-btn" id="btn-garage" title="Гараж">🚗</button>
-    <div class="header-title">Русские Номера</div>
-    <div class="balance">
-      <span id="balance-value">0</span>
-      <span class="currency">₽</span>
-      <span class="plus" id="btn-bonus" title="Бонус">+</span>
-    </div>
-    <button class="icon-btn" id="btn-achievements" title="Достижения">🏆</button>
-  </div>
-
-  <div class="plate-zone">
-    <div class="plate-wrap" id="plate-wrap" data-rarity="common">
-      <svg class="plate-svg" id="plate-svg" viewBox="0 0 520 112" xmlns="http://www.w3.org/2000/svg">
-        <!-- Фон -->
-        <rect x="1.5" y="1.5" width="517" height="109" rx="9"
-              fill="#ffffff" stroke="#0a0a0c" stroke-width="3"/>
-        <!-- Вертикальный разделитель -->
-        <line x1="410" y1="4" x2="410" y2="108"
-              stroke="#0a0a0c" stroke-width="2"/>
-
-        <!-- RUS -->
-        <text x="463" y="24"
-              font-family="Arial, 'Helvetica Neue', sans-serif"
-              font-weight="900" font-size="14" text-anchor="middle"
-              fill="#0a0a0c" letter-spacing="0.8">RUS</text>
-
-        <!-- Флаг РФ -->
-        <g>
-          <rect x="447" y="30" width="32" height="3" fill="#ffffff"/>
-          <rect x="447" y="33" width="32" height="3" fill="#0039a6"/>
-          <rect x="447" y="36" width="32" height="3" fill="#d52b1e"/>
-          <rect x="447" y="30" width="32" height="9"
-                fill="none" stroke="#0a0a0c" stroke-width="0.6"/>
-        </g>
-
-        <!-- Основные символы -->
-        <text class="char" data-slot="l1" x="55"  y="86" font-size="72" text-anchor="middle">А</text>
-        <text class="char" data-slot="d1" x="120" y="86" font-size="72" text-anchor="middle">0</text>
-        <text class="char" data-slot="d2" x="182" y="86" font-size="72" text-anchor="middle">0</text>
-        <text class="char" data-slot="d3" x="244" y="86" font-size="72" text-anchor="middle">1</text>
-        <text class="char" data-slot="l2" x="318" y="86" font-size="72" text-anchor="middle">А</text>
-        <text class="char" data-slot="l3" x="378" y="86" font-size="72" text-anchor="middle">А</text>
-
-        <!-- Регион -->
-        <text class="char" data-slot="region" x="463" y="92" font-size="44" text-anchor="middle">01</text>
-      </svg>
-    </div>
-    <div class="plate-caption">Пример номера</div>
-  </div>
-
-  <div class="guarantee" id="guarantee">Гарантия: <b>любой номер</b></div>
-
-  <div class="selectors">
-    <div class="selector" id="select-region">
-      <div class="selector-left">
-        <span class="icon">🇷🇺</span>
-        <div style="min-width:0;">
-          <div class="text">Россия</div>
-          <div class="sub">Все регионы</div>
-        </div>
-      </div>
-      <span class="chevron">▼</span>
-    </div>
-
-    <div class="selector" id="select-rarity">
-      <div class="selector-left">
-        <span class="icon">💎</span>
-        <div style="min-width:0;">
-          <div class="text" id="rarity-label">Обычный</div>
-          <div class="sub" id="rarity-sub">любой номер</div>
-        </div>
-      </div>
-      <span class="chevron">▼</span>
-    </div>
-
-    <div class="selector-mult" id="select-mult">1×</div>
-  </div>
-
-  <button class="btn-spin" id="btn-spin">
-    <span>Крутить</span>
-    <span class="price-pill" id="price-label">1 000 ₽</span>
-  </button>
-</div>
-
-<!-- Модалка редкости -->
-<div class="overlay" id="modal-rarity">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>Уровень редкости</h2>
-      <button class="modal-close" data-close="modal-rarity">✕</button>
-    </div>
-    <div id="rarity-list"></div>
-  </div>
-</div>
-
-<!-- Модалка гаража -->
-<div class="overlay" id="modal-garage">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>Гараж</h2>
-      <button class="modal-close" data-close="modal-garage">✕</button>
-    </div>
-    <div class="garage-grid" id="garage-grid"></div>
-  </div>
-</div>
-
-<!-- Модалка достижений -->
-<div class="overlay" id="modal-achievements">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>Достижения</h2>
-      <button class="modal-close" data-close="modal-achievements">✕</button>
-    </div>
-    <div id="ach-list"></div>
-  </div>
-</div>
-
-<!-- Результат -->
-<div class="result-overlay" id="result-overlay">
-  <div class="result-card" id="result-card">
-    <div class="result-rarity" id="result-rarity"></div>
-    <div class="result-title" id="result-title"></div>
-    <div id="result-plate"></div>
-    <div class="result-actions">
-      <button class="garage-btn sell" id="result-sell">Продать</button>
-      <button class="garage-btn remove" id="result-keep" style="max-width:none;flex:1;background:#1a1a20;color:#eaeaea;">В гараж</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-container" id="toast-container"></div>
-
-<script>
-/* ============================================================
-   РУССКИЕ НОМЕРА — v3
-   Серьёзная версия с корректным SVG и экономикой
-   ============================================================ */
-
-const LETTERS = ['А','В','Е','К','М','Н','О','Р','С','Т','У','Х'];
-
-const REGIONS = [
-  '01','02','03','04','05','06','07','08','09','10','11','12','13','14','15',
-  '16','17','18','19','20','21','22','23','24','25','26','27','28','29','30',
-  '31','32','33','34','35','36','37','38','39','40','41','42','43','44','45',
-  '46','47','48','49','50','51','52','53','54','55','56','57','58','59','60',
-  '61','62','63','64','65','66','67','68','69','70','71','72','73','74','75',
-  '76','77','78','79','80','81','82','83','84','85','86','87','88','89','90',
-  '91','92','93','94','95','96','97','98','99',
-  '102','103','116','123','125','126','127','128','129','134','136','138',
-  '142','150','152','154','156','158','159','161','163','164','166','168',
-  '170','172','173','174','175','176','177','178','179','180','181','182',
-  '183','184','185','186','187','188','189','190','191','192','193','194',
-  '195','196','197','198','199','250','550','750','777','799','977','999'
-];
-
-/* Уровни редкости — цена и множитель */
-const RARITY_TIERS = [
-  { id:'common',    name:'Обычный',              desc:'любой номер',          mult:1,    price:1000,     color:'#8a8a92' },
-  { id:'uncommon',  name:'Необычный и выше',     desc:'гарантия редкости',    mult:8,    price:8000,     color:'#2ecc71' },
-  { id:'rare',      name:'Редкий и выше',        desc:'гарантия редкости',    mult:35,   price:35000,    color:'#3498db' },
-  { id:'epic',      name:'Эпический и выше',     desc:'гарантия редкости',    mult:110,  price:110000,   color:'#9b59b6' },
-  { id:'legendary', name:'Легендарный и выше',   desc:'гарантия редкости',    mult:500,  price:500000,   color:'#f39c12' },
-  { id:'mythic',    name:'Мифический',           desc:'только спецсерии',     mult:2000, price:5000000,  color:'#e74c3c' }
-];
-const TIER_ORDER = ['common','uncommon','rare','epic','legendary','mythic'];
-const tierRank = t => TIER_ORDER.indexOf(t);
-
-/* Реальные спецсерии и их рыночная стоимость */
-const SPECIAL_SERIES = {
-  'АМР': { tier:'mythic',    desc:'Правительство, ФСБ, МВД, СК РФ', sellMin:35000000, sellMax:50000000, region:'97'  },
-  'ЕКХ': { tier:'mythic',    desc:'ФСО, ФСБ (Еду Как Хочу)',        sellMin:5000000,  sellMax:15000000, region:'77'  },
-  'СКР': { tier:'legendary', desc:'Следственный комитет',           sellMin:800000,   sellMax:2500000,  region:'197' },
-  'АММ': { tier:'legendary', desc:'Полиция, Следком',               sellMin:500000,   sellMax:2000000,  region:'77'  },
-  'ОСА': { tier:'legendary', desc:'ГИБДД СПб, руководство Газпрома',sellMin:600000,   sellMax:3000000,  region:'98'  },
-  'ВОО': { tier:'legendary', desc:'Управление делами Президента',   sellMin:400000,   sellMax:2000000,  region:null  },
-  'ААА': { tier:'rare',      desc:'Администрация Президента',       sellMin:200000,   sellMax:3500000,  region:'77'  },
-  'ЕРЕ': { tier:'rare',      desc:'Единая Россия',                  sellMin:100000,   sellMax:500000,   region:null  },
-  'МММ': { tier:'rare',      desc:'МВД, силовые структуры',         sellMin:100000,   sellMax:800000,   region:null  },
-  'ХКХ': { tier:'uncommon',  desc:'ГИБДД (старая серия)',           sellMin:50000,    sellMax:200000,   region:null  }
-};
-
-const NICE_NUMBERS = ['001','007','100','111','222','333','444','555','666','777','888','999','123','321'];
-
-const ACHIEVEMENTS = [
-  { id:'first',    icon:'🎯', name:'Первый дроп',  desc:'Выбить любой номер',          check:s=>s.totalDrops>=1 },
-  { id:'ten',      icon:'🔟', name:'Разогрев',     desc:'Выбить 10 номеров',           check:s=>s.totalDrops>=10 },
-  { id:'hundred',  icon:'💯', name:'Коллекционер', desc:'Собрать 100 номеров',         check:s=>s.collection.length>=100 },
-  { id:'garage10', icon:'🚗', name:'Автолюбитель', desc:'10 номеров в гараже',         check:s=>s.garage.length>=10 },
-  { id:'epic1',    icon:'🟣', name:'Эпик',         desc:'Выбить эпический номер',      check:s=>s.stats.epic>=1 },
-  { id:'legend1',  icon:'🟠', name:'Легенда',      desc:'Выбить легендарный номер',    check:s=>s.stats.legendary>=1 },
-  { id:'mythic1',  icon:'🌈', name:'Миф',          desc:'Выбить мифический номер',     check:s=>s.stats.mythic>=1 },
-  { id:'coins1m',  icon:'💰', name:'Миллионер',    desc:'Накопить 1 000 000 ₽',        check:s=>s.balance>=1000000 },
-  { id:'amr',      icon:'🏛️', name:'АМР 97',       desc:'Выбить номер серии АМР',      check:s=>s.collection.some(n=>n.includes('АМР')) },
-  { id:'ekh',      icon:'🛡️', name:'ЕКХ',          desc:'Выбить номер серии ЕКХ',      check:s=>s.collection.some(n=>n.includes('ЕКХ')) }
-];
-
-const STORAGE_KEY = 'russian_plates_v3';
-
-const DEFAULT_STATE = () => ({
-  balance: 100000,
-  totalDrops: 0,
-  collection: [],
-  garage: [],
-  stats: { common:0, uncommon:0, rare:0, epic:0, legendary:0, mythic:0 },
-  unlockedAchievements: [],
-  selectedTier: 'common',
-  quantity: 1,
-  isSpinning: false
-});
-
-let state = DEFAULT_STATE();
-
-/* ---- Сохранение / загрузка с валидацией ---- */
-function save(){
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
-}
-function load(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
-    const parsed = JSON.parse(raw);
-    const fresh = DEFAULT_STATE();
-
-    // Валидация каждого поля
-    state.balance = Number.isFinite(parsed.balance) && parsed.balance >= 0 ? parsed.balance : fresh.balance;
-    state.totalDrops = Number.isFinite(parsed.totalDrops) ? parsed.totalDrops : 0;
-    state.collection = Array.isArray(parsed.collection) ? parsed.collection.filter(s => typeof s === 'string') : [];
-    state.garage = Array.isArray(parsed.garage) ? parsed.garage.filter(s => typeof s === 'string') : [];
-    state.unlockedAchievements = Array.isArray(parsed.unlockedAchievements) ? parsed.unlockedAchievements : [];
-    state.stats = { ...fresh.stats, ...(parsed.stats || {}) };
-    for(const k of Object.keys(state.stats)){
-      if(!Number.isFinite(state.stats[k])) state.stats[k] = 0;
-    }
-    state.selectedTier = RARITY_TIERS.some(t => t.id === parsed.selectedTier) ? parsed.selectedTier : 'common';
-    state.quantity = [1,5,10,50].includes(parsed.quantity) ? parsed.quantity : 1;
-    state.isSpinning = false;
-  } catch(e){
-    state = DEFAULT_STATE();
-  }
-}
-
-/* ---- Утилиты ---- */
-const rnd      = a => a[Math.floor(Math.random()*a.length)];
-const rndDigit = () => Math.floor(Math.random()*10);
-const pad3     = n => String(n).padStart(3,'0');
-const fmt      = n => Math.round(n).toLocaleString('ru-RU');
-const fmtMoney = n => fmt(n) + ' ₽';
-
-/* ============================================================
-   ГЕНЕРАЦИЯ НОМЕРОВ
-   ============================================================ */
-function generateNumber(tier){
-  // Мифический — только спецсерии mythic
-  if(tier === 'mythic'){
-    const keys = Object.keys(SPECIAL_SERIES).filter(k => SPECIAL_SERIES[k].tier === 'mythic');
-    const key = rnd(keys);
-    const s = SPECIAL_SERIES[key];
-    return {
-      l1:key[0], l2:key[1], l3:key[2],
-      digits: rnd(['001','007','777','999','100','500']),
-      region: s.region || rnd(REGIONS),
-      seriesKey: key
-    };
-  }
-  // Легендарный — спецсерии legendary или красивые тройки
-  if(tier === 'legendary'){
-    if(Math.random() < 0.55){
-      const keys = Object.keys(SPECIAL_SERIES).filter(k => SPECIAL_SERIES[k].tier === 'legendary');
-      const key = rnd(keys);
-      const s = SPECIAL_SERIES[key];
-      return {
-        l1:key[0], l2:key[1], l3:key[2],
-        digits: rnd(NICE_NUMBERS),
-        region: s.region || rnd(REGIONS),
-        seriesKey: key
-      };
-    }
-    const l = rnd(LETTERS);
-    return { l1:l, l2:l, l3:l, digits:rnd(['001','007','777','999']), region:rnd(REGIONS) };
-  }
-  // Эпический — три одинаковые буквы
-  if(tier === 'epic'){
-    const l = rnd(LETTERS);
-    return { l1:l, l2:l, l3:l, digits:pad3(Math.floor(Math.random()*1000)), region:rnd(REGIONS) };
-  }
-  // Редкий — зеркальные цифры
-  if(tier === 'rare'){
-    const a = rndDigit(), b = rndDigit();
-    return { l1:rnd(LETTERS), l2:rnd(LETTERS), l3:rnd(LETTERS),
-             digits:`${a}${b}${a}`, region:rnd(REGIONS) };
-  }
-  // Необычный — последовательные цифры
-  if(tier === 'uncommon'){
-    const s = Math.floor(Math.random()*10);
-    return { l1:rnd(LETTERS), l2:rnd(LETTERS), l3:rnd(LETTERS),
-             digits:`${s}${(s+1)%10}${(s+2)%10}`, region:rnd(REGIONS) };
-  }
-  // Обычный
-  return {
-    l1:rnd(LETTERS), l2:rnd(LETTERS), l3:rnd(LETTERS),
-    digits:pad3(Math.floor(Math.random()*1000)), region:rnd(REGIONS)
-  };
-}
-
-/* ---- Определение редкости ---- */
-function detectRarity(n){
-  if(n.seriesKey && SPECIAL_SERIES[n.seriesKey]) return SPECIAL_SERIES[n.seriesKey].tier;
-  const {l1,l2,l3,digits,region} = n;
-  if(l1==='А'&&l2==='А'&&l3==='А'&&digits==='001'&&region==='01') return 'mythic';
-  if(l1==='Х'&&l2==='Х'&&l3==='Х'&&digits==='999'&&region==='99') return 'mythic';
-  if(l1===l2 && l2===l3 && NICE_NUMBERS.includes(digits)) return 'legendary';
-  if(l1===l2 && l2===l3) return 'epic';
-  if(digits[0] === digits[2]) return 'rare';
-  const d0=+digits[0], d1=+digits[1], d2=+digits[2];
-  if((d1 === (d0+1)%10) && (d2 === (d1+1)%10)) return 'uncommon';
-  return 'common';
-}
-
-const formatNumber = n => `${n.l1}${n.digits}${n.l2}${n.l3} ${n.region}`;
-
-function parsePlate(numStr){
-  const parts = numStr.split(' ');
-  const plate = parts[0] || '';
-  const region = parts[1] || '01';
-  return {
-    l1:plate[0]||'А', digits:plate.slice(1,4)||'000',
-    l2:plate[4]||'А', l3:plate[5]||'А', region
-  };
-}
-
-/* ---- Гарантия: pickTierByGuarantee ---- */
-const BASE_WEIGHTS = { common:65, uncommon:20, rare:8, epic:5, legendary:1.8, mythic:0.2 };
-const BASE_TOTAL = Object.values(BASE_WEIGHTS).reduce((s,w)=>s+w,0);
-
-function pickTierByGuarantee(minTier){
-  const minRank = tierRank(minTier);
-  let r = Math.random() * BASE_TOTAL;
-  let picked = 'common';
-  for(const key of TIER_ORDER){
-    r -= BASE_WEIGHTS[key];
-    if(r <= 0){ picked = key; break; }
-  }
-  // Если выпало ниже минимума — повышаем до минимума
-  return tierRank(picked) < minRank ? minTier : picked;
-}
-
-/* ============================================================
-   ЦЕНА ПРОДАЖИ
-   ============================================================ */
-function computeSellPrice(numOrString){
-  const numStr = typeof numOrString === 'string' ? numOrString : formatNumber(numOrString);
-  const parsed = typeof numOrString === 'string' ? parsePlate(numStr) : numOrString;
-
-  // Спецсерия — реальная рыночная цена
-  const platePart = numStr.split(' ')[0];
-  for(const [key, s] of Object.entries(SPECIAL_SERIES)){
-    if(platePart.startsWith(key)){
-      return Math.floor(s.sellMin + Math.random() * (s.sellMax - s.sellMin));
-    }
-  }
-
-  const tier = detectRarity(parsed);
-  const ranges = {
-    common:    [1000,   5000],
-    uncommon:  [5000,   25000],
-    rare:      [25000,  125000],
-    epic:      [100000, 500000],
-    legendary: [500000, 3500000],
-    mythic:    [5000000, 40000000]
-  };
-  const [lo, hi] = ranges[tier] || ranges.common;
-  return Math.floor(lo + Math.random() * (hi - lo));
-}
-
-/* ============================================================
-   SVG: ПОЛНЫЙ НОМЕР
-   ============================================================ */
-function plateSVG(num, opts = {}){
-  const {l1='А', l2='А', l3='А', digits='001', region='01'} = num;
-  const d1 = digits[0]||'0', d2 = digits[1]||'0', d3 = digits[2]||'0';
-  const regionFontSize = region.length >= 3 ? 34 : 44;
-  const cls = opts.className || 'plate-svg';
-  const id  = opts.id || '';
-
-  return `
-<svg class="${cls}" ${id?`id="${id}"`:''} viewBox="0 0 520 112" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1.5" y="1.5" width="517" height="109" rx="9"
-        fill="#ffffff" stroke="#0a0a0c" stroke-width="3"/>
-  <line x1="410" y1="4" x2="410" y2="108" stroke="#0a0a0c" stroke-width="2"/>
-
-  <text x="463" y="24" font-family="Arial, 'Helvetica Neue', sans-serif"
-        font-weight="900" font-size="14" text-anchor="middle"
-        fill="#0a0a0c" letter-spacing="0.8">RUS</text>
-
-  <g>
-    <rect x="447" y="30" width="32" height="3" fill="#ffffff"/>
-    <rect x="447" y="33" width="32" height="3" fill="#0039a6"/>
-    <rect x="447" y="36" width="32" height="3" fill="#d52b1e"/>
-    <rect x="447" y="30" width="32" height="9" fill="none" stroke="#0a0a0c" stroke-width="0.6"/>
-  </g>
-
-  <text class="char" data-slot="l1" x="55"  y="86" font-size="72" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${l1}</text>
-  <text class="char" data-slot="d1" x="120" y="86" font-size="72" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${d1}</text>
-  <text class="char" data-slot="d2" x="182" y="86" font-size="72" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${d2}</text>
-  <text class="char" data-slot="d3" x="244" y="86" font-size="72" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${d3}</text>
-  <text class="char" data-slot="l2" x="318" y="86" font-size="72" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${l2}</text>
-  <text class="char" data-slot="l3" x="378" y="86" font-size="72" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${l3}</text>
-
-  <text class="char" data-slot="region" x="463" y="92" font-size="${regionFontSize}" text-anchor="middle"
-        font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#0a0a0c">${region}</text>
-</svg>`;
-}
-
-/* ============================================================
-   SVG: МИНИ-НОМЕР (для гаража)
-   ============================================================ */
-function miniPlateSVG(numStr){
-  const {l1, digits, l2, l3, region} = parsePlate(numStr);
-  const d1 = digits[0], d2 = digits[1], d3 = digits[2];
-  const rf = region.length >= 3 ? 11 : 13;
-  return `
-<svg class="mini-svg" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="1" width="198" height="58" rx="5"
-        fill="#ffffff" stroke="#0a0a0c" stroke-width="1.8"/>
-  <line x1="152" y1="3" x2="152" y2="57" stroke="#0a0a0c" stroke-width="1.2"/>
-
-  <text x="176" y="16" font-family="Arial, sans-serif" font-weight="900"
-        font-size="7" text-anchor="middle" fill="#0a0a0c">RUS</text>
-
-  <g>
-    <rect x="168" y="19" width="16" height="1.6" fill="#ffffff"/>
-    <rect x="168" y="20.6" width="16" height="1.6" fill="#0039a6"/>
-    <rect x="168" y="22.2" width="16" height="1.6" fill="#d52b1e"/>
-    <rect x="168" y="19" width="16" height="4.8" fill="none" stroke="#0a0a0c" stroke-width="0.4"/>
-  </g>
-
-  <text x="16"  y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="24" text-anchor="middle" fill="#0a0a0c">${l1}</text>
-  <text x="42"  y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="24" text-anchor="middle" fill="#0a0a0c">${d1}</text>
-  <text x="62"  y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="24" text-anchor="middle" fill="#0a0a0c">${d2}</text>
-  <text x="82"  y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="24" text-anchor="middle" fill="#0a0a0c">${d3}</text>
-  <text x="110" y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="24" text-anchor="middle" fill="#0a0a0c">${l2}</text>
-  <text x="132" y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="24" text-anchor="middle" fill="#0a0a0c">${l3}</text>
-
-  <text x="176" y="52" font-family="Arial Black, Arial, sans-serif" font-weight="900"
-        font-size="${rf}" text-anchor="middle" fill="#0a0a0c">${region}</text>
-</svg>`;
-}
-
-/* ============================================================
-   DOM
-   ============================================================ */
-const plateSvgEl   = document.getElementById('plate-svg');
-const plateWrap    = document.getElementById('plate-wrap');
-const btnSpin      = document.getElementById('btn-spin');
-const priceLabel   = document.getElementById('price-label');
-const rarityLabel  = document.getElementById('rarity-label');
-const raritySub    = document.getElementById('rarity-sub');
-const guaranteeEl  = document.getElementById('guarantee');
-const balanceValue = document.getElementById('balance-value');
-
-const slotEls = {
-  l1:     plateSvgEl.querySelector('[data-slot="l1"]'),
-  d1:     plateSvgEl.querySelector('[data-slot="d1"]'),
-  d2:     plateSvgEl.querySelector('[data-slot="d2"]'),
-  d3:     plateSvgEl.querySelector('[data-slot="d3"]'),
-  l2:     plateSvgEl.querySelector('[data-slot="l2"]'),
-  l3:     plateSvgEl.querySelector('[data-slot="l3"]'),
-  region: plateSvgEl.querySelector('[data-slot="region"]')
-};
-
-/* ============================================================
-   UI ОБНОВЛЕНИЕ
-   ============================================================ */
-function updateUI(){
-  balanceValue.textContent = fmt(state.balance);
-
-  const tier = RARITY_TIERS.find(t => t.id === state.selectedTier) || RARITY_TIERS[0];
-  const totalPrice = tier.price * state.quantity;
-
-  priceLabel.textContent = fmtMoney(totalPrice);
-  rarityLabel.textContent = tier.name;
-  raritySub.textContent = tier.desc;
-  rarityLabel.style.color = tier.color;
-
-  guaranteeEl.innerHTML = `Гарантия: <b>${tier.desc}</b>`;
-
-  btnSpin.style.background = tier.color === '#8a8a92' ? '#2ecc71' : tier.color;
-  btnSpin.style.color = '#05140a';
-
-  plateWrap.setAttribute('data-rarity', state.selectedTier);
-
-  // Множитель
-  document.getElementById('select-mult').textContent = state.quantity + '×';
-}
-
-/* ============================================================
-   СПИН
-   ============================================================ */
-function spinText(el, chars, finalChar, duration){
-  return new Promise(resolve => {
-    const start = performance.now();
-    function tick(){
-      const elapsed = performance.now() - start;
-      const p = Math.min(elapsed / duration, 1);
-      if(p >= 1){ el.textContent = finalChar; resolve(); return; }
-      el.textContent = chars[Math.floor(Math.random()*chars.length)];
-      const delay = 30 + Math.pow(p, 2.5) * 220;
-      setTimeout(tick, delay);
-    }
-    tick();
-  });
-}
-
-async function doSpin(){
-  if(state.isSpinning) return;
-
-  const tier = RARITY_TIERS.find(t => t.id === state.selectedTier) || RARITY_TIERS[0];
-  const totalPrice = tier.price * state.quantity;
-
-  if(state.balance < totalPrice){
-    showToast('Недостаточно средств', 'bad');
-    return;
-  }
-
-  state.balance -= totalPrice;
-  state.isSpinning = true;
-  btnSpin.disabled = true;
-  updateUI();
-
-  // Генерируем результаты (quantity штук)
-  const results = [];
-  for(let i = 0; i < state.quantity; i++){
-    const pickedTier = pickTierByGuarantee(state.selectedTier);
-    const num = generateNumber(pickedTier);
-    results.push({ num, tier: detectRarity(num) });
-  }
-
-  // Показываем лучший
-  const best = results.reduce((a,b) => tierRank(a.tier) >= tierRank(b.tier) ? a : b);
-  const { num } = best;
-
-  plateWrap.classList.add('spinning');
-
-  const dur = { l1:600, d1:800, d2:1000, d3:1200, l2:1400, l3:1600, region:1800 };
-
-  await Promise.all([
-    spinText(slotEls.l1, LETTERS, num.l1, dur.l1),
-    spinText(slotEls.d1, '0123456789'.split(''), num.digits[0], dur.d1),
-    spinText(slotEls.d2, '0123456789'.split(''), num.digits[1], dur.d2),
-    spinText(slotEls.d3, '0123456789'.split(''), num.digits[2], dur.d3),
-    spinText(slotEls.l2, LETTERS, num.l2, dur.l2),
-    spinText(slotEls.l3, LETTERS, num.l3, dur.l3),
-    spinText(slotEls.region, REGIONS, num.region, dur.region)
-  ]);
-
-  plateWrap.classList.remove('spinning');
-
-  // Сохраняем все результаты
-  let newCount = 0;
-  for(const r of results){
-    state.totalDrops++;
-    state.stats[r.tier] = (state.stats[r.tier] || 0) + 1;
-    const numStr = formatNumber(r.num);
-    if(!state.collection.includes(numStr)){
-      state.collection.push(numStr);
-      newCount++;
-    }
-  }
-
-  checkAchievements();
-  save();
-
-  showResult(best.num, best.tier, newCount, results.length);
-
-  state.isSpinning = false;
-  btnSpin.disabled = false;
-  updateUI();
-}
-
-/* ============================================================
-   РЕЗУЛЬТАТ
-   ============================================================ */
-function showResult(num, tier, newCount, total){
-  const card = document.getElementById('result-card');
-  const rarityEl = document.getElementById('result-rarity');
-  const titleEl = document.getElementById('result-title');
-  const plateContainer = document.getElementById('result-plate');
-
-  card.setAttribute('data-rarity', tier);
-  plateContainer.innerHTML = plateSVG(num, { className: 'result-plate' });
-
-  const tierInfo = RARITY_TIERS.find(t => t.id === tier) || { name:tier, color:'#8a8a92' };
-  rarityEl.textContent = tierInfo.name;
-  rarityEl.style.color = tierInfo.color;
-
-  if(total > 1){
-    titleEl.textContent = `${total} номеров, ${newCount} новых`;
-  } else if(newCount > 0){
-    titleEl.textContent = 'Новый номер';
-  } else {
-    titleEl.textContent = 'Дубликат';
-  }
-
-  // Кэшируем цену продажи
-  const sellPrice = computeSellPrice(num);
-  const sellBtn = document.getElementById('result-sell');
-  sellBtn.textContent = `Продать · ${fmtMoney(sellPrice)}`;
-  sellBtn.dataset.price = sellPrice;
-  sellBtn.dataset.numStr = formatNumber(num);
-  sellBtn.dataset.numJson = JSON.stringify(num);
-
-  if(tier === 'legendary' || tier === 'mythic'){
-    spawnConfetti(tier);
-  }
-
-  document.getElementById('result-overlay').classList.add('active');
-}
-
-function closeResult(){
-  document.getElementById('result-overlay').classList.remove('active');
-}
-
-/* ============================================================
-   ГАРАЖ
-   ============================================================ */
-document.getElementById('result-keep').onclick = () => {
-  const btn = document.getElementById('result-sell');
-  const numStr = btn.dataset.numStr;
-  if(numStr && !state.garage.includes(numStr)){
-    state.garage.push(numStr);
-    showToast('Номер в гараже', 'good');
-  } else if(numStr){
-    showToast('Уже в гараже', 'warn');
-  }
-  save();
-  closeResult();
-};
-
-document.getElementById('result-sell').onclick = () => {
-  const btn = document.getElementById('result-sell');
-  const price = parseInt(btn.dataset.price, 10);
-  if(!Number.isFinite(price)) return;
-  state.balance += price;
-  showToast(`Продано за ${fmtMoney(price)}`, 'good');
-  save();
-  closeResult();
-  updateUI();
-  checkAchievements();
-};
-
-function renderGarage(){
-  const grid = document.getElementById('garage-grid');
-  if(state.garage.length === 0){
-    grid.innerHTML = '<div class="garage-empty">Гараж пуст. Крути слот, чтобы получить номера.</div>';
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  for(const numStr of [...state.garage].reverse()){
-    const price = computeSellPrice(numStr);
-    const div = document.createElement('div');
-    div.className = 'garage-item';
-    div.innerHTML = `
-      ${miniPlateSVG(numStr)}
-      <div class="garage-actions">
-        <button class="garage-btn sell" data-sell="${numStr}" data-price="${price}">${fmtMoney(price)}</button>
-        <button class="garage-btn remove" data-remove="${numStr}">✕</button>
-      </div>
-    `;
-    frag.appendChild(div);
-  }
-  grid.innerHTML = '';
-  grid.appendChild(frag);
-}
-
-document.getElementById('garage-grid').addEventListener('click', e => {
-  const sellBtn = e.target.closest('[data-sell]');
-  const removeBtn = e.target.closest('[data-remove]');
-  if(sellBtn){
-    const numStr = sellBtn.getAttribute('data-sell');
-    const price = parseInt(sellBtn.getAttribute('data-price'), 10) || 0;
-    state.balance += price;
-    state.garage = state.garage.filter(n => n !== numStr);
-    showToast(`Продано за ${fmtMoney(price)}`, 'good');
-    save();
-    renderGarage();
-    updateUI();
-    checkAchievements();
-  }
-  if(removeBtn){
-    const numStr = removeBtn.getAttribute('data-remove');
-    state.garage = state.garage.filter(n => n !== numStr);
-    save();
-    renderGarage();
-  }
-});
-
-/* ============================================================
-   РЕДКОСТИ
-   ============================================================ */
-function renderRarityList(){
-  const list = document.getElementById('rarity-list');
-  const frag = document.createDocumentFragment();
-  for(const t of RARITY_TIERS){
-    const active = state.selectedTier === t.id;
-    const el = document.createElement('div');
-    el.className = 'rarity-item' + (active ? ' active' : '');
-    el.innerHTML = `
-      <div class="rarity-item-left">
-        <div class="rarity-item-name" style="color:${t.color}">${t.name}</div>
-        <div class="rarity-item-desc">${t.desc} · ×${t.mult} к цене</div>
-      </div>
-      <div class="rarity-item-right">
-        <div class="rarity-item-price">${fmtMoney(t.price * state.quantity)}</div>
-        ${active ? '<div class="rarity-item-check">✓</div>' : ''}
-      </div>
-    `;
-    el.onclick = () => {
-      state.selectedTier = t.id;
-      save();
-      renderRarityList();
-      updateUI();
-    };
-    frag.appendChild(el);
-  }
-  list.innerHTML = '';
-  list.appendChild(frag);
-}
-
-/* ============================================================
-   ДОСТИЖЕНИЯ
-   ============================================================ */
-function checkAchievements(){
-  let unlockedAny = false;
-  for(const a of ACHIEVEMENTS){
-    if(state.unlockedAchievements.includes(a.id)) continue;
-    let ok = false;
-    try { ok = !!a.check(state); } catch(e){ ok = false; }
-    if(ok){
-      state.unlockedAchievements.push(a.id);
-      showAchToast(a);
-      unlockedAny = true;
-    }
-  }
-  return unlockedAny;
-}
-
-function showAchToast(a){
-  const el = document.createElement('div');
-  el.className = 'ach-toast';
-  el.innerHTML = `
-    <div class="ach-icon">${a.icon}</div>
+  <!-- TOP BAR -->
+  <div id="topbar">
     <div>
-      <div class="ach-name">${a.name}</div>
-      <div class="ach-desc">${a.desc}</div>
+      <div class="brand">FORENSIC 3D</div>
+      <div class="module">HEAD RECONSTRUCTION</div>
     </div>
-  `;
-  document.body.appendChild(el);
-  setTimeout(() => {
-    el.style.transition = 'opacity .3s, transform .3s';
-    el.style.opacity = '0';
-    el.style.transform = 'translate(-50%, 20px)';
-    setTimeout(() => el.remove(), 350);
-  }, 2800);
-}
+    <div class="spacer"></div>
+    <div class="stat" id="status-block">
+      <div><span class="dot off" id="dot-sys"></span><b id="sys-status">IDLE</b></div>
+      <div><span class="dot off" id="dot-cam"></span><b id="cam-status">CAM OFF</b></div>
+      <div>PRJ <b id="proj-id">------</b></div>
+    </div>
+  </div>
 
-function renderAchievements(){
-  const list = document.getElementById('ach-list');
-  const frag = document.createDocumentFragment();
-  for(const a of ACHIEVEMENTS){
-    const unlocked = state.unlockedAchievements.includes(a.id);
-    const el = document.createElement('div');
-    el.className = 'ach-item' + (unlocked ? ' unlocked' : '');
-    el.innerHTML = `
-      <div class="ach-icon">${unlocked ? a.icon : '🔒'}</div>
-      <div class="ach-info">
-        <div class="ach-name">${a.name}</div>
-        <div class="ach-desc">${a.desc}</div>
+  <!-- TABS -->
+  <div id="tabs">
+    <button data-pane="camera" class="active">CAMERA</button>
+    <button data-pane="process">PROCESS</button>
+    <button data-pane="view">3D VIEW</button>
+    <button data-pane="export">EXPORT</button>
+    <button data-pane="log">SESSION LOG</button>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div id="workspace">
+
+    <!-- CAMERA PANE -->
+    <div class="pane active" id="camera-pane">
+      <div id="video-wrap">
+        <video id="video" playsinline autoplay muted></video>
+        <canvas id="overlay-canvas"></canvas>
+        <div id="guide-frame"><span id="guide-label">FRONT VIEW</span></div>
       </div>
-    `;
-    frag.appendChild(el);
-  }
-  list.innerHTML = '';
-  list.appendChild(frag);
+      <div id="camera-controls">
+        <button class="btn primary" id="btn-toggle-cam">START CAM</button>
+        <button class="btn" id="btn-switch-cam" disabled>SWITCH</button>
+        <button class="btn" id="btn-capture" disabled>CAPTURE</button>
+        <select id="cam-select" style="display:none"></select>
+      </div>
+      <div id="capture-grid">
+        <div class="cap-slot" data-view="FRONT"><span class="slot-label">FRONT</span><span class="slot-status">—</span></div>
+        <div class="cap-slot" data-view="LEFT"><span class="slot-label">L.PROF</span><span class="slot-status">—</span></div>
+        <div class="cap-slot" data-view="RIGHT"><span class="slot-label">R.PROF</span><span class="slot-status">—</span></div>
+        <div class="cap-slot" data-view="REAR"><span class="slot-label">REAR</span><span class="slot-status">—</span></div>
+        <div class="cap-slot" data-view="UPPER"><span class="slot-label">UPPER</span><span class="slot-status">—</span></div>
+        <div class="cap-slot" data-view="LOWER"><span class="slot-label">LOWER</span><span class="slot-status">—</span></div>
+      </div>
+    </div>
+
+    <!-- PROCESS PANE -->
+    <div class="pane" id="process-pane">
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+      <div id="proc-steps"></div>
+      <div style="margin-top:12px; display:flex; gap:6px;">
+        <button class="btn primary" id="btn-run-process" disabled>RUN RECONSTRUCTION</button>
+        <button class="btn danger" id="btn-cancel-process" disabled>CANCEL</button>
+      </div>
+      <div style="margin-top:8px; font-size:8px; color:var(--text-dim);" id="proc-note">
+        Requires ≥2 captured views. Sparse SfM only — no dense mesh or texture.
+      </div>
+    </div>
+
+    <!-- VIEW PANE -->
+    <div class="pane" id="view-pane">
+      <div id="three-container"></div>
+      <div id="view-info" class="hidden">
+        <b>PROJECTION</b> <span id="info-proj">PERSP</span><br>
+        <b>RENDER</b> <span id="info-render">POINTS</span><br>
+        <b>POINTS</b> <span id="info-pts">0</span><br>
+        <b>SCALE</b> <span id="info-scale">N/A</span>
+      </div>
+      <div id="tech-panel" class="hidden">
+        <div class="row"><span>FRAMES</span><span id="t-frames">0</span></div>
+        <div class="row"><span>KEYPTS</span><span id="t-keypts">0</span></div>
+        <div class="row"><span>MATCHES</span><span id="t-matches">0</span></div>
+        <div class="row"><span>VERTS</span><span id="t-verts">0</span></div>
+        <div class="row"><span>POLYS</span><span id="t-polys">0</span></div>
+        <div class="row"><span>TEXTURE</span><span id="t-texture">N/A</span></div>
+      </div>
+      <div id="view-controls">
+        <button class="btn" data-view="front">FRONT</button>
+        <button class="btn" data-view="left">LEFT</button>
+        <button class="btn" data-view="right">RIGHT</button>
+        <button class="btn" data-view="rear">REAR</button>
+        <button class="btn" data-view="top">TOP</button>
+        <button class="btn" id="btn-proj">ORTHO</button>
+        <button class="btn" id="btn-render">WIRE</button>
+        <button class="btn" id="btn-axis">AXIS</button>
+        <button class="btn" id="btn-light">LIGHT</button>
+        <button class="btn" id="btn-reset">RESET</button>
+      </div>
+    </div>
+
+    <!-- EXPORT PANE -->
+    <div class="pane" id="export-pane">
+      <div class="export-section">
+        <h3>POINT CLOUD</h3>
+        <div class="export-row">
+          <button class="btn primary" id="btn-export-ply">EXPORT PLY</button>
+          <button class="btn" id="btn-export-obj">EXPORT OBJ</button>
+        </div>
+        <div class="file-info" id="export-ply-info">Point cloud (vertices + colors) — available after reconstruction.</div>
+      </div>
+      <div class="export-section">
+        <h3>MESH</h3>
+        <div class="export-row">
+          <button class="btn" id="btn-export-glb" disabled>EXPORT GLB</button>
+        </div>
+        <div class="file-info">Mesh export unavailable — sparse reconstruction produces points only. No dense surface generated.</div>
+      </div>
+      <div class="export-section">
+        <h3>RAW FRAMES</h3>
+        <div class="export-row">
+          <button class="btn" id="btn-export-frames">EXPORT FRAMES (ZIP)</button>
+        </div>
+        <div class="file-info" id="export-frames-info">No frames captured.</div>
+      </div>
+      <div class="export-section">
+        <h3>REPORT</h3>
+        <div class="export-row">
+          <button class="btn" id="btn-export-report">EXPORT JSON REPORT</button>
+        </div>
+      </div>
+      <div id="export-status">Ready.</div>
+    </div>
+
+    <!-- LOG PANE -->
+    <div class="pane" id="log-pane">
+      <div id="log-list"></div>
+      <div style="padding:8px 10px; border-top:1px solid var(--border); display:flex; gap:6px;">
+        <button class="btn danger" id="btn-clear-session">CLEAR SESSION DATA</button>
+        <button class="btn" id="btn-clear-log">CLEAR LOG</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
+import { PLYExporter } from 'three/addons/exporters/PLYExporter.js';
+
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+const STATE = {
+  sessionId: generateId(),
+  startTime: Date.now(),
+  camera: { stream: null, devices: [], currentDeviceId: null, active: false },
+  frames: [],            // { view, bitmap, dataUrl, timestamp }
+  currentViewIndex: 0,
+  views: ['FRONT','LEFT','RIGHT','REAR','UPPER','LOWER'],
+  processing: { running: false, cancelled: false, progress: 0, stage: '' },
+  reconstruction: {
+    keypoints: 0,
+    matches: 0,
+    vertices: 0,
+    polygons: 0,
+    textureAvailable: false,
+    pointCloud: null,      // THREE.Points object
+    valid: false
+  },
+  scene: { renderer: null, scene: null, camera: null, controls: null, points: null, axes: null, lights: [] },
+  ui: { projection: 'perspective', renderMode: 'points', showAxes: true, lightsOn: true }
+};
+
+/* ============================================================
+   DOM REFS
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const video = $('video');
+const overlayCanvas = $('overlay-canvas');
+const overlayCtx = overlayCanvas.getContext('2d');
+
+/* ============================================================
+   LOGGING
+   ============================================================ */
+function log(msg, type = 'info') {
+  const list = $('log-list');
+  const ts = new Date().toISOString().substr(11, 8);
+  const div = document.createElement('div');
+  div.className = 'entry';
+  div.innerHTML = `<span class="ts">${ts}</span><span class="msg ${type}">${msg}</span>`;
+  list.appendChild(div);
+  list.scrollTop = list.scrollHeight;
+  console.log(`[FORENSIC3D ${type}] ${msg}`);
 }
 
 /* ============================================================
-   ЭФФЕКТЫ
+   ID GENERATOR
    ============================================================ */
-function spawnConfetti(tier){
-  const colors = tier === 'mythic'
-    ? ['#e74c3c','#f39c12','#ffd700','#ffffff']
-    : ['#f39c12','#ffd700','#ffffff'];
-  for(let i = 0; i < 50; i++){
-    const el = document.createElement('div');
-    const size = 4 + Math.random() * 5;
-    el.style.cssText = `
-      position:fixed;width:${size}px;height:${size * 1.5}px;
-      background:${colors[i % colors.length]};
-      left:${Math.random()*100}vw;top:-20px;
-      z-index:400;pointer-events:none;border-radius:1px;
-      transform:rotate(${Math.random()*360}deg);
-      animation:confettiFall ${2 + Math.random()*1.5}s linear forwards;
-    `;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
-  }
-}
-if(!document.getElementById('confetti-style')){
-  const s = document.createElement('style');
-  s.id = 'confetti-style';
-  s.textContent = `@keyframes confettiFall{
-    to{transform:translateY(110vh) rotate(720deg);opacity:0;}
-  }`;
-  document.head.appendChild(s);
-}
-
-function showToast(text, kind = ''){
-  const container = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = 'toast ' + kind;
-  el.textContent = text;
-  container.appendChild(el);
-  setTimeout(() => {
-    el.style.transition = 'opacity .3s, transform .3s';
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(-20px)';
-    setTimeout(() => el.remove(), 300);
-  }, 2200);
+function generateId() {
+  return 'F3D-' + Date.now().toString(36).toUpperCase() + '-' +
+         Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
 /* ============================================================
-   СОБЫТИЯ
+   OPENCV.JS LOADER
    ============================================================ */
-btnSpin.addEventListener('click', doSpin);
+let cvReady = false;
+let cvLoading = false;
 
-document.getElementById('select-rarity').addEventListener('click', () => {
-  renderRarityList();
-  document.getElementById('modal-rarity').classList.add('active');
-});
-
-document.getElementById('select-mult').addEventListener('click', () => {
-  const opts = [1, 5, 10, 50];
-  const idx = opts.indexOf(state.quantity);
-  state.quantity = opts[(idx + 1) % opts.length];
-  save();
-  updateUI();
-});
-
-document.getElementById('btn-bonus').addEventListener('click', () => {
-  state.balance += 50000;
-  showToast('Бонус +50 000 ₽', 'good');
-  save();
-  updateUI();
-});
-
-document.getElementById('btn-garage').addEventListener('click', () => {
-  renderGarage();
-  document.getElementById('modal-garage').classList.add('active');
-});
-
-document.getElementById('btn-achievements').addEventListener('click', () => {
-  renderAchievements();
-  document.getElementById('modal-achievements').classList.add('active');
-});
-
-document.querySelectorAll('[data-close]').forEach(el => {
-  el.addEventListener('click', () => {
-    document.getElementById(el.getAttribute('data-close')).classList.remove('active');
+function loadOpenCV() {
+  return new Promise((resolve, reject) => {
+    if (cvReady) return resolve();
+    if (cvLoading) { setTimeout(() => loadOpenCV().then(resolve, reject), 200); return; }
+    cvLoading = true;
+    const script = document.createElement('script');
+    script.src = 'https://docs.opencv.org/4.x/opencv.js';
+    script.async = true;
+    script.onload = () => {
+      // OpenCV.js initializes asynchronously via Module
+      const check = () => {
+        if (typeof cv !== 'undefined' && cv.Mat) {
+          cvReady = true;
+          log('OpenCV.js loaded (WASM initialized)', 'ok');
+          resolve();
+        } else {
+          setTimeout(check, 200);
+        }
+      };
+      check();
+    };
+    script.onerror = () => {
+      cvLoading = false;
+      log('Failed to load OpenCV.js from CDN', 'err');
+      reject(new Error('OpenCV.js load failed'));
+    };
+    document.head.appendChild(script);
   });
-});
+}
 
-document.querySelectorAll('.overlay').forEach(m => {
-  m.addEventListener('click', e => {
-    if(e.target === m) m.classList.remove('active');
-  });
-});
+/* ============================================================
+   CAMERA MANAGEMENT
+   ============================================================ */
+async function initCamera() {
+  try {
+    // Request initial permission with default camera
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    STATE.camera.stream = stream;
+    video.srcObject = stream;
+    await video.play();
 
-document.getElementById('result-overlay').addEventListener('click', e => {
-  if(e.target.id === 'result-overlay') closeResult();
-});
+    // Enumerate devices after permission
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    STATE.camera.devices = devices.filter(d => d.kind === 'videoinput');
 
-// Клавиатура
-document.addEventListener('keydown', e => {
-  if(e.code === 'Space' || e.code === 'Enter'){
-    if(!document.querySelector('.overlay.active') && !document.getElementById('result-overlay').classList.contains('active')){
-      e.preventDefault();
-      doSpin();
+    // Build camera selector
+    const sel = $('cam-select');
+    sel.innerHTML = '';
+    STATE.camera.devices.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.textContent = d.label || `Camera ${i + 1}`;
+      sel.appendChild(opt);
+    });
+    // Try to find back/wide camera
+    const backCam = STATE.camera.devices.find(d =>
+      d.label.toLowerCase().includes('back') ||
+      d.label.toLowerCase().includes('rear') ||
+      d.label.toLowerCase().includes('environment')
+    );
+    if (backCam) {
+      STATE.camera.currentDeviceId = backCam.deviceId;
+      sel.value = backCam.deviceId;
+      await switchCamera(backCam.deviceId);
+    } else if (STATE.camera.devices.length > 0) {
+      STATE.camera.currentDeviceId = STATE.camera.devices[0].deviceId;
+    }
+
+    STATE.camera.active = true;
+    updateCameraUI(true);
+    log(`Camera active: ${video.videoWidth}×${video.videoHeight}`, 'ok');
+    startOverlayLoop();
+  } catch (err) {
+    log(`Camera error: ${err.name} — ${err.message}`, 'err');
+    updateCameraUI(false);
+    if (err.name === 'NotAllowedError') {
+      log('Permission denied. Enable camera access in Safari settings.', 'warn');
+    } else if (err.name === 'NotFoundError') {
+      log('No camera device found.', 'err');
     }
   }
-  if(e.code === 'Escape'){
-    document.querySelectorAll('.overlay.active').forEach(m => m.classList.remove('active'));
-    closeResult();
+}
+
+async function switchCamera(deviceId) {
+  try {
+    if (STATE.camera.stream) {
+      STATE.camera.stream.getTracks().forEach(t => t.stop());
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    STATE.camera.stream = stream;
+    video.srcObject = stream;
+    await video.play();
+    STATE.camera.currentDeviceId = deviceId;
+    log(`Switched camera: ${deviceId.substr(0, 8)}...`, 'info');
+  } catch (err) {
+    log(`Switch camera failed: ${err.message}`, 'err');
   }
-});
+}
+
+function stopCamera() {
+  if (STATE.camera.stream) {
+    STATE.camera.stream.getTracks().forEach(t => t.stop());
+    STATE.camera.stream = null;
+  }
+  video.srcObject = null;
+  STATE.camera.active = false;
+  updateCameraUI(false);
+  log('Camera stopped.', 'info');
+  stopOverlayLoop();
+}
+
+function updateCameraUI(active) {
+  $('btn-toggle-cam').textContent = active ? 'STOP CAM' : 'START CAM';
+  $('btn-capture').disabled = !active;
+  $('btn-switch-cam').disabled = !active || STATE.camera.devices.length < 2;
+  $('dot-cam').className = 'dot ' + (active ? 'ok' : 'off');
+  $('cam-status').textContent = active ? 'CAM ON' : 'CAM OFF';
+}
 
 /* ============================================================
-   ИНИЦИАЛИЗАЦИЯ
+   OVERLAY LOOP — face guide + frame counter
    ============================================================ */
-function init(){
-  load();
-  updateUI();
+let overlayRAF = null;
+function startOverlayLoop() {
+  const draw = () => {
+    if (!STATE.camera.active) return;
+    overlayCanvas.width = video.videoWidth || 640;
+    overlayCanvas.height = video.videoHeight || 480;
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-  const total = Math.pow(LETTERS.length, 3) * 1000 * REGIONS.length;
-  console.log('%cРусские Номера v3', 'color:#2ecc71;font-size:14px;font-weight:bold');
-  console.log('Регионов:', REGIONS.length, '| Букв:', LETTERS.length);
-  console.log('Комбинаций:', total.toLocaleString('ru-RU'));
+    // Grid overlay (technical reference)
+    overlayCtx.strokeStyle = 'rgba(0,212,170,0.08)';
+    overlayCtx.lineWidth = 1;
+    const step = overlayCanvas.width / 6;
+    for (let x = step; x < overlayCanvas.width; x += step) {
+      overlayCtx.beginPath(); overlayCtx.moveTo(x, 0); overlayCtx.lineTo(x, overlayCanvas.height); overlayCtx.stroke();
+    }
+    for (let y = step; y < overlayCanvas.height; y += step) {
+      overlayCtx.beginPath(); overlayCtx.moveTo(0, y); overlayCtx.lineTo(overlayCanvas.width, y); overlayCtx.stroke();
+    }
+
+    // Crosshair at center
+    const cx = overlayCanvas.width / 2, cy = overlayCanvas.height / 2;
+    overlayCtx.strokeStyle = 'rgba(0,212,170,0.25)';
+    overlayCtx.beginPath(); overlayCtx.moveTo(cx - 10, cy); overlayCtx.lineTo(cx + 10, cy); overlayCtx.stroke();
+    overlayCtx.beginPath(); overlayCtx.moveTo(cx, cy - 10); overlayCtx.lineTo(cx, cy + 10); overlayCtx.stroke();
+
+    overlayRAF = requestAnimationFrame(draw);
+  };
+  draw();
+}
+function stopOverlayLoop() {
+  if (overlayRAF) { cancelAnimationFrame(overlayRAF); overlayRAF = null; }
+}
+
+/* ============================================================
+   FRAME CAPTURE
+   ============================================================ */
+function captureFrame() {
+  if (!STATE.camera.active) { log('Camera not active.', 'warn'); return; }
+  if (STATE.frames.length >= 6) { log('All 6 views captured. Delete a slot to re-capture.', 'warn'); return; }
+
+  const view = STATE.views[STATE.currentViewIndex];
+  const w = video.videoWidth, h = video.videoHeight;
+  if (!w || !h) { log('Video dimensions not ready.', 'err'); return; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, w, h);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  createImageBitmap(canvas).then(bitmap => {
+    STATE.frames.push({ view, bitmap, dataUrl, timestamp: Date.now() });
+    updateCaptureGrid();
+    log(`Captured ${view} (${w}×${h})`, 'ok');
+
+    // Advance view index
+    STATE.currentViewIndex = Math.min(STATE.currentViewIndex + 1, STATE.views.length - 1);
+    updateGuideLabel();
+    updateProcessButton();
+
+    // Auto-advance and re-capture if all views filled
+    if (STATE.frames.length === STATE.views.length) {
+      log('All 6 views captured. Ready for reconstruction.', 'ok');
+    }
+  }).catch(err => {
+    log(`Frame capture failed: ${err.message}`, 'err');
+  });
+}
+
+function updateCaptureGrid() {
+  document.querySelectorAll('.cap-slot').forEach(slot => {
+    const view = slot.dataset.view;
+    const frame = STATE.frames.find(f => f.view === view);
+    if (frame) {
+      slot.classList.add('filled');
+      slot.querySelector('.slot-status').textContent = 'OK';
+      slot.style.backgroundImage = `url(${frame.dataUrl})`;
+      slot.style.backgroundSize = 'cover';
+      slot.style.backgroundPosition = 'center';
+    } else {
+      slot.classList.remove('filled');
+      slot.querySelector('.slot-status').textContent = '—';
+      slot.style.backgroundImage = '';
+    }
+  });
+}
+
+function updateGuideLabel() {
+  if (STATE.currentViewIndex < STATE.views.length) {
+    $('guide-label').textContent = STATE.views[STATE.currentViewIndex] + ' VIEW';
+  } else {
+    $('guide-label').textContent = 'ALL CAPTURED';
+  }
+}
+
+function updateProcessButton() {
+  $('btn-run-process').disabled = STATE.frames.length < 2;
+}
+
+/* ============================================================
+   RECONSTRUCTION PIPELINE (Sparse SfM via OpenCV.js)
+   ============================================================ */
+async function runReconstruction() {
+  if (STATE.frames.length < 2) {
+    log('Need at least 2 frames for reconstruction.', 'warn');
+    return;
+  }
+  if (!cvReady) {
+    log('OpenCV.js not loaded. Loading now...', 'info');
+    try { await loadOpenCV(); } catch (e) { log('Cannot run: OpenCV.js unavailable.', 'err'); return; }
+  }
+
+  STATE.processing.running = true;
+  STATE.processing.cancelled = false;
+  $('btn-run-process').disabled = true;
+  $('btn-cancel-process').disabled = false;
+  setSysStatus('PROCESSING');
+  log('Starting sparse reconstruction pipeline...', 'info');
+
+  const steps = [
+    'Preprocessing frames',
+    'ORB feature detection',
+    'Descriptor matching',
+    'Fundamental matrix estimation',
+    'Triangulation',
+    'Point cloud assembly'
+  ];
+  renderProcSteps(steps, 0);
+
+  try {
+    // STEP 1: Preprocess — convert ImageBitmaps to cv.Mat grayscale
+    log('[1/6] Preprocessing frames...', 'info');
+    updateProgress(5, 1);
+    const mats = [];
+    for (const frame of STATE.frames) {
+      if (STATE.processing.cancelled) throw new Error('Cancelled');
+      const canvas = new OffscreenCanvas(frame.bitmap.width, frame.bitmap.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(frame.bitmap, 0, 0);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const mat = cv.matFromImageData(imgData);
+      const gray = new cv.Mat();
+      cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
+      mats.push({ view: frame.view, gray, color: mat, bitmap: frame.bitmap });
+      await sleep(0);
+    }
+    log(`[1/6] ${mats.length} frames preprocessed`, 'ok');
+
+    // STEP 2: ORB feature detection
+    log('[2/6] Detecting ORB features...', 'info');
+    updateProgress(20, 2);
+    const orb = new cv.ORB(1500, 1.2, 8, 31, 0, 2, cv.ORB_HARRIS_SCORE, 31, 20);
+    const keypoints = [];
+    const descriptors = [];
+
+    for (let i = 0; i < mats.length; i++) {
+      if (STATE.processing.cancelled) throw new Error('Cancelled');
+      const kp = new cv.KeyPointVector();
+      const desc = new cv.Mat();
+      orb.detectAndCompute(mats[i].gray, new cv.Mat(), kp, desc);
+      keypoints.push(kp);
+      descriptors.push(desc);
+      STATE.reconstruction.keypoints += kp.size();
+      log(`  ${mats[i].view}: ${kp.size()} keypoints`, 'info');
+      await sleep(0);
+    }
+    log(`[2/6] Total keypoints: ${STATE.reconstruction.keypoints}`, 'ok');
+
+    // STEP 3: Match features between consecutive pairs
+    log('[3/6] Matching features...', 'info');
+    updateProgress(40, 3);
+    const bf = new cv.BFMatcher(cv.NORM_HAMMING, false);
+    const matchesPerPair = [];
+    let totalMatches = 0;
+
+    for (let i = 0; i < mats.length - 1; i++) {
+      if (STATE.processing.cancelled) throw new Error('Cancelled');
+      const matchVec = new cv.DMatchVectorVector();
+      bf.knnMatch(descriptors[i], descriptors[i + 1], matchVec, 2);
+
+      const good = [];
+      for (let j = 0; j < matchVec.size(); j++) {
+        const pair = matchVec.get(j);
+        if (pair.size() >= 2) {
+          const m = pair.get(0), n = pair.get(1);
+          if (m.distance < 0.75 * n.distance) good.push(m);
+        }
+      }
+      matchesPerPair.push(good);
+      totalMatches += good.length;
+      log(`  ${mats[i].view} ↔ ${mats[i + 1].view}: ${good.length} good matches`, 'info');
+      matchVec.delete();
+      await sleep(0);
+    }
+    STATE.reconstruction.matches = totalMatches;
+    log(`[3/6] Total matches: ${totalMatches}`, 'ok');
+
+    // STEP 4: Fundamental matrix + triangulation for each pair
+    log('[4/6] Estimating geometry...', 'info');
+    updateProgress(60, 4);
+    const allPoints = [];
+    const allColors = [];
+
+    for (let i = 0; i < matchesPerPair.length; i++) {
+      if (STATE.processing.cancelled) throw new Error('Cancelled');
+      const good = matchesPerPair[i];
+      if (good.length < 8) { log(`  Pair ${i}: insufficient matches (${good.length})`, 'warn'); continue; }
+
+      // Build point arrays
+      const pts1 = [], pts2 = [];
+      for (const m of good) {
+        const kp1 = keypoints[i].get(m.queryIdx);
+        const kp2 = keypoints[i + 1].get(m.trainIdx);
+        pts1.push(kp1.pt.x, kp1.pt.y);
+        pts2.push(kp2.pt.x, kp2.pt.y);
+      }
+
+      const p1 = cv.matFromArray(good.length, 1, cv.CV_32FC2, pts1);
+      const p2 = cv.matFromArray(good.length, 1, cv.CV_32FC2, pts2);
+
+      // Find fundamental matrix
+      const F = new cv.Mat();
+      const mask = new cv.Mat();
+      const status = cv.findFundamentalMat(p1, p2, F, cv.FM_RANSAC, 3.0, 0.99, mask);
+      if (status !== 1) { log(`  Pair ${i}: F-matrix failed`, 'warn'); p1.delete(); p2.delete(); F.delete(); mask.delete(); continue; }
+
+      // Build projection matrices (approximate intrinsics)
+      const w = mats[i].gray.cols, h = mats[i].gray.rows;
+      const f = Math.max(w, h); // rough focal length
+      const K = cv.matFromArray(3, 3, cv.CV_64F, [
+        f, 0, w / 2,
+        0, f, h / 2,
+        0, 0, 1
+      ]);
+      const P1 = new cv.Mat();
+      const P2 = new cv.Mat();
+      // P1 = K * [I | 0]
+      const I = cv.Mat.eye(3, 3, cv.CV_64F);
+      const zero = cv.Mat.zeros(3, 1, cv.CV_64F);
+      cv.hconcat([I, zero], P1);
+      cv.gemm(K, P1, 1, new cv.Mat(), 0, P1);
+      // P2 = K * [R | t] — approximate identity rotation + unit translation
+      const R = cv.Mat.eye(3, 3, cv.CV_64F);
+      const t = cv.matFromArray(3, 1, cv.CV_64F, [1, 0, 0]); // baseline along X
+      cv.hconcat([R, t], P2);
+      cv.gemm(K, P2, 1, new cv.Mat(), 0, P2);
+
+      // Triangulate
+      const pts4D = new cv.Mat();
+      cv.triangulatePoints(P1, P2, p1.reshape(2, 1).t(), p2.reshape(2, 1).t(), pts4D);
+      const numPts = pts4D.cols;
+      for (let k = 0; k < numPts; k++) {
+        const x = pts4D.at(0, k) / pts4D.at(3, k);
+        const y = pts4D.at(1, k) / pts4D.at(3, k);
+        const z = pts4D.at(2, k) / pts4D.at(3, k);
+        if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
+        if (Math.abs(x) > 100 || Math.abs(y) > 100 || Math.abs(z) > 100) continue;
+
+        // Get color from first image at matched keypoint
+        const kp = keypoints[i].get(good[k].queryIdx);
+        const px = Math.round(kp.pt.x), py = Math.round(kp.pt.y);
+        const c = getPixelColor(mats[i].color, px, py);
+        allPoints.push(x, y, z);
+        allColors.push(c.r / 255, c.g / 255, c.b / 255);
+      }
+      log(`  Pair ${i}: triangulated ${numPts} points`, 'info');
+
+      // Cleanup
+      p1.delete(); p2.delete(); F.delete(); mask.delete();
+      K.delete(); P1.delete(); P2.delete(); I.delete(); zero.delete();
+      R.delete(); t.delete(); pts4D.delete();
+      await sleep(0);
+    }
+
+    // Cleanup OpenCV mats
+    mats.forEach(m => { m.gray.delete(); m.color.delete(); });
+    keypoints.forEach(kp => kp.delete());
+    descriptors.forEach(d => d.delete());
+    orb.delete();
+
+    if (allPoints.length < 30) {
+      throw new Error(`Insufficient triangulated points (${allPoints.length / 3}). Try more views or better lighting.`);
+    }
+
+    // STEP 5: Build point cloud
+    log(`[5/6] Assembling point cloud (${allPoints.length / 3} points)...`, 'info');
+    updateProgress(80, 5);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(allPoints, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(allColors, 3));
+    geometry.computeBoundingSphere();
+
+    // Center the cloud at origin
+    const center = geometry.boundingSphere.center;
+    const positions = geometry.attributes.position.array;
+    for (let i = 0; i < positions.length; i += 3) {
+      positions[i] -= center.x;
+      positions[i + 1] -= center.y;
+      positions[i + 2] -= center.z;
+    }
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeBoundingSphere();
+
+    const material = new THREE.PointsMaterial({
+      size: 0.015,
+      vertexColors: true,
+      sizeAttenuation: true,
+      depthWrite: false,
+      transparent: true,
+      opacity: 0.9
+    });
+
+    const points = new THREE.Points(geometry, material);
+    STATE.reconstruction.pointCloud = points;
+    STATE.reconstruction.vertices = allPoints.length / 3;
+    STATE.reconstruction.polygons = 0;
+    STATE.reconstruction.valid = true;
+
+    // STEP 6: Display in 3D view
+    log('[6/6] Point cloud ready.', 'ok');
+    updateProgress(100, 6);
+    displayPointCloud(points);
+    updateTechPanel();
+    setSysStatus('READY');
+    log('Reconstruction complete. Switch to 3D VIEW tab.', 'ok');
+
+  } catch (err) {
+    if (err.message === 'Cancelled') {
+      log('Reconstruction cancelled by user.', 'warn');
+      setSysStatus('IDLE');
+    } else {
+      log(`Reconstruction failed: ${err.message}`, 'err');
+      setSysStatus('ERROR');
+    }
+  } finally {
+    STATE.processing.running = false;
+    $('btn-run-process').disabled = STATE.frames.length < 2;
+    $('btn-cancel-process').disabled = true;
+  }
+}
+
+function getPixelColor(mat, x, y) {
+  // mat is RGBA
+  try {
+    const idx = (y * mat.cols + x) * 4;
+    const data = mat.data;
+    return { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+  } catch (e) {
+    return { r: 128, g: 128, b: 128 };
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ============================================================
+   PROGRESS / STEPS UI
+   ============================================================ */
+function renderProcSteps(steps, activeIndex) {
+  const container = $('proc-steps');
+  container.innerHTML = '';
+  steps.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'proc-step';
+    let stateClass = 'pending';
+    let stateText = 'PENDING';
+    if (i < activeIndex) { stateClass = 'done'; stateText = 'DONE'; }
+    else if (i === activeIndex) { stateClass = 'active'; stateText = 'ACTIVE'; }
+    div.innerHTML = `<span class="idx">${i + 1}.</span><span class="name">${s}</span><span class="state ${stateClass}">${stateText}</span>`;
+    container.appendChild(div);
+  });
+}
+
+function updateProgress(pct, stepIndex) {
+  $('progress-fill').style.width = pct + '%';
+  if (stepIndex !== undefined) {
+    const steps = ['Preprocessing frames','ORB feature detection','Descriptor matching','Fundamental matrix estimation','Triangulation','Point cloud assembly'];
+    renderProcSteps(steps, stepIndex - 1);
+  }
+}
+
+/* ============================================================
+   THREE.JS SCENE
+   ============================================================ */
+function initThree() {
+  const container = $('three-container');
+  const w = container.clientWidth, h = container.clientHeight;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x0a0c0e, 1);
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0a0c0e, 0.02);
+
+  const camera = new THREE.PerspectiveCamera(50, w / h, 0.01, 1000);
+  camera.position.set(0, 0, 2);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.rotateSpeed = 0.8;
+  controls.zoomSpeed = 1.2;
+  controls.panSpeed = 0.8;
+  controls.target.set(0, 0, 0);
+
+  // Lighting
+  const ambient = new THREE.AmbientLight(0x404050, 1.5);
+  scene.add(ambient);
+  const dir1 = new THREE.DirectionalLight(0xffffff, 2);
+  dir1.position.set(1, 1, 1);
+  scene.add(dir1);
+  const dir2 = new THREE.DirectionalLight(0x00d4aa, 0.5);
+  dir2.position.set(-1, -0.5, -1);
+  scene.add(dir2);
+
+  // Axes
+  const axes = new THREE.AxesHelper(0.5);
+  axes.material.transparent = true;
+  axes.material.opacity = 0.6;
+  scene.add(axes);
+
+  STATE.scene = { renderer, scene, camera, controls, axes, lights: [ambient, dir1, dir2] };
+
+  // Resize handler
+  const onResize = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    if (w === 0 || h === 0) return;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  };
+  window.addEventListener('resize', onResize);
+  // Observe container for layout changes (tab switch)
+  new ResizeObserver(onResize).observe(container);
+
+  // Render loop
+  renderer.setAnimationLoop(() => {
+    controls.update();
+    renderer.render(scene, camera);
+  });
+}
+
+function displayPointCloud(points) {
+  const { scene } = STATE.scene;
+  // Remove old points
+  if (STATE.scene.points) scene.remove(STATE.scene.points);
+  STATE.scene.points = points;
+  scene.add(points);
+
+  // Center camera on cloud
+  const sphere = points.geometry.boundingSphere;
+  const dist = sphere.radius * 3;
+  STATE.scene.camera.position.set(0, 0, dist);
+  STATE.scene.controls.target.set(0, 0, 0);
+  STATE.scene.controls.update();
+
+  // Show info panels
+  $('view-info').classList.remove('hidden');
+  $('tech-panel').classList.remove('hidden');
+  $('info-pts').textContent = STATE.reconstruction.vertices;
+  $('info-scale').textContent = 'REL. UNITS';
+}
+
+/* ============================================================
+   VIEW CONTROLS
+   ============================================================ */
+function setView(view) {
+  const { camera, controls, points } = STATE.scene;
+  if (!points) return;
+  const r = points.geometry.boundingSphere.radius * 2.5;
+  switch (view) {
+    case 'front': camera.position.set(0, 0, r); break;
+    case 'left': camera.position.set(-r, 0, 0); break;
+    case 'right': camera.position.set(r, 0, 0); break;
+    case 'rear': camera.position.set(0, 0, -r); break;
+    case 'top': camera.position.set(0, r, 0); break;
+  }
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+function toggleProjection() {
+  const { camera, renderer } = STATE.scene;
+  const container = $('three-container');
+  const w = container.clientWidth, h = container.clientHeight;
+  const oldPos = camera.position.clone();
+
+  if (STATE.ui.projection === 'perspective') {
+    STATE.ui.projection = 'orthographic';
+    const aspect = w / h;
+    const frustum = 2;
+    const newCam = new THREE.OrthographicCamera(
+      -frustum * aspect / 2, frustum * aspect / 2,
+      frustum / 2, -frustum / 2,
+      0.01, 1000
+    );
+    newCam.position.copy(oldPos);
+    STATE.scene.camera = newCam;
+    STATE.scene.controls.object = newCam;
+    $('info-proj').textContent = 'ORTHO';
+    log('Projection: ORTHOGRAPHIC', 'info');
+  } else {
+    STATE.ui.projection = 'perspective';
+    const newCam = new THREE.PerspectiveCamera(50, w / h, 0.01, 1000);
+    newCam.position.copy(oldPos);
+    STATE.scene.camera = newCam;
+    STATE.scene.controls.object = newCam;
+    $('info-proj').textContent = 'PERSP';
+    log('Projection: PERSPECTIVE', 'info');
+  }
+  STATE.scene.controls.update();
+}
+
+function toggleRenderMode() {
+  if (!STATE.scene.points) return;
+  const mat = STATE.scene.points.material;
+  if (STATE.ui.renderMode === 'points') {
+    STATE.ui.renderMode = 'wireframe';
+    mat.size = 0.03;
+    mat.wireframe = true; // PointsMaterial doesn't support wireframe meaningfully; switch to larger points
+    mat.size = 0.025;
+    $('info-render').textContent = 'DENSE';
+    log('Render: DENSE POINTS', 'info');
+  } else {
+    STATE.ui.renderMode = 'points';
+    mat.size = 0.015;
+    $('info-render').textContent = 'POINTS';
+    log('Render: POINTS', 'info');
+  }
+  mat.needsUpdate = true;
+}
+
+function toggleAxes() {
+  STATE.ui.showAxes = !STATE.ui.showAxes;
+  STATE.scene.axes.visible = STATE.ui.showAxes;
+}
+
+function toggleLights() {
+  STATE.ui.lightsOn = !STATE.ui.lightsOn;
+  STATE.scene.lights.forEach(l => l.visible = STATE.ui.lightsOn);
+  log(`Lighting: ${STATE.ui.lightsOn ? 'ON' : 'OFF'}`, 'info');
+}
+
+function resetCamera() {
+  setView('front');
+  log('Camera reset to FRONT view.', 'info');
+}
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  log(`Download started: ${filename}`, 'ok');
+}
+
+function exportPLY() {
+  if (!STATE.reconstruction.valid || !STATE.scene.points) {
+    log('No point cloud to export. Run reconstruction first.', 'warn');
+    $('export-status').textContent = 'ERROR: No point cloud available.';
+    return;
+  }
+  try {
+    const exporter = new PLYExporter();
+    exporter.parse(STATE.scene.points, (result) => {
+      const blob = new Blob([result], { type: 'application/octet-stream' });
+      downloadBlob(blob, `FORENSIC3D_${STATE.sessionId}_cloud.ply`);
+      $('export-status').textContent = `PLY exported: ${(blob.size / 1024).toFixed(1)} KB`;
+    }, { binary: true });
+  } catch (err) {
+    log(`PLY export failed: ${err.message}`, 'err');
+    $('export-status').textContent = 'ERROR: ' + err.message;
+  }
+}
+
+function exportOBJ() {
+  if (!STATE.reconstruction.valid || !STATE.scene.points) {
+    log('No geometry to export.', 'warn');
+    $('export-status').textContent = 'ERROR: No geometry available.';
+    return;
+  }
+  try {
+    const exporter = new OBJExporter();
+    const result = exporter.parse(STATE.scene.points);
+    const blob = new Blob([result], { type: 'text/plain' });
+    downloadBlob(blob, `FORENSIC3D_${STATE.sessionId}_cloud.obj`);
+    $('export-status').textContent = `OBJ exported: ${(blob.size / 1024).toFixed(1)} KB`;
+  } catch (err) {
+    log(`OBJ export failed: ${err.message}`, 'err');
+    $('export-status').textContent = 'ERROR: ' + err.message;
+  }
+}
+
+function exportGLB() {
+  if (!STATE.reconstruction.valid || !STATE.scene.points) {
+    log('No mesh available for GLB export. Sparse reconstruction produces points only.', 'warn');
+    $('export-status').textContent = 'ERROR: No mesh. GLB requires dense surface — not available.';
+    return;
+  }
+  // GLB export of a Points object is valid but uncommon; try it
+  try {
+    const exporter = new GLTFExporter();
+    exporter.parse(STATE.scene.points, (result) => {
+      const blob = new Blob([result], { type: 'model/gltf-binary' });
+      downloadBlob(blob, `FORENSIC3D_${STATE.sessionId}_cloud.glb`);
+      $('export-status').textContent = `GLB exported: ${(blob.size / 1024).toFixed(1)} KB`;
+    }, (err) => { throw err; }, { binary: true });
+  } catch (err) {
+    log(`GLB export failed: ${err.message}`, 'err');
+    $('export-status').textContent = 'ERROR: ' + err.message;
+  }
+}
+
+async function exportFramesZip() {
+  if (STATE.frames.length === 0) {
+    log('No frames to export.', 'warn');
+    return;
+  }
+  try {
+    // Simple ZIP without library: create a .tar-like concatenation is not ZIP.
+    // Use JSZip CDN dynamically
+    if (typeof JSZip === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    const zip = new JSZip();
+    for (const frame of STATE.frames) {
+      const base64 = frame.dataUrl.split(',')[1];
+      zip.file(`${frame.view}_${frame.timestamp}.jpg`, base64, { base64: true });
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(blob, `FORENSIC3D_${STATE.sessionId}_frames.zip`);
+    $('export-frames-info').textContent = `${STATE.frames.length} frames, ${(blob.size / 1024).toFixed(1)} KB`;
+  } catch (err) {
+    log(`Frame export failed: ${err.message}`, 'err');
+  }
+}
+
+function exportReport() {
+  const report = {
+    sessionId: STATE.sessionId,
+    timestamp: new Date().toISOString(),
+    duration_sec: Math.round((Date.now() - STATE.startTime) / 1000),
+    frames_captured: STATE.frames.length,
+    views: STATE.frames.map(f => f.view),
+    reconstruction: {
+      keypoints: STATE.reconstruction.keypoints,
+      matches: STATE.reconstruction.matches,
+      vertices: STATE.reconstruction.vertices,
+      polygons: STATE.reconstruction.polygons,
+      texture: STATE.reconstruction.textureAvailable,
+      valid: STATE.reconstruction.valid
+    },
+    camera: {
+      deviceId: STATE.camera.currentDeviceId ? STATE.camera.currentDeviceId.substr(0, 8) + '...' : 'N/A',
+      resolution: video.videoWidth ? `${video.videoWidth}×${video.videoHeight}` : 'N/A'
+    },
+    limitations: [
+      'Sparse SfM only — no dense mesh or texture reconstruction',
+      'No metric scale calibration — units are relative',
+      'Approximate camera intrinsics (f = max(w,h))',
+      'No IMU or depth sensor data used'
+    ]
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, `FORENSIC3D_${STATE.sessionId}_report.json`);
+  $('export-status').textContent = 'Report exported.';
+}
+
+/* ============================================================
+   TECH PANEL UPDATE
+   ============================================================ */
+function updateTechPanel() {
+  $('t-frames').textContent = STATE.frames.length;
+  $('t-keypts').textContent = STATE.reconstruction.keypoints;
+  $('t-matches').textContent = STATE.reconstruction.matches;
+  $('t-verts').textContent = STATE.reconstruction.vertices;
+  $('t-polys').textContent = STATE.reconstruction.polygons;
+  $('t-texture').textContent = STATE.reconstruction.textureAvailable ? 'YES' : 'N/A';
+}
+
+/* ============================================================
+   SYSTEM STATUS
+   ============================================================ */
+function setSysStatus(s) {
+  $('sys-status').textContent = s;
+  const dot = $('dot-sys');
+  if (s === 'READY') dot.className = 'dot ok';
+  else if (s === 'PROCESSING') dot.className = 'dot warn';
+  else if (s === 'ERROR') dot.className = 'dot warn';
+  else dot.className = 'dot off';
+}
+
+/* ============================================================
+   CLEAR SESSION
+   ============================================================ */
+function clearSession() {
+  if (!confirm('Delete all captured frames and reconstruction data?')) return;
+  STATE.frames = [];
+  STATE.currentViewIndex = 0;
+  STATE.reconstruction = {
+    keypoints: 0, matches: 0, vertices: 0, polygons: 0,
+    textureAvailable: false, pointCloud: null, valid: false
+  };
+  if (STATE.scene.scene && STATE.scene.points) {
+    STATE.scene.scene.remove(STATE.scene.points);
+    STATE.scene.points.geometry.dispose();
+    STATE.scene.points.material.dispose();
+    STATE.scene.points = null;
+  }
+  updateCaptureGrid();
+  updateGuideLabel();
+  updateProcessButton();
+  updateTechPanel();
+  $('view-info').classList.add('hidden');
+  $('tech-panel').classList.add('hidden');
+  log('Session data cleared.', 'warn');
+}
+
+/* ============================================================
+   EVENT BINDINGS
+   ============================================================ */
+function bindEvents() {
+  // Tabs
+  document.querySelectorAll('#tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+      const pane = $(`${btn.dataset.pane}-pane`);
+      if (pane) pane.classList.add('active');
+      // Resize 3D on tab switch
+      if (btn.dataset.pane === 'view' && STATE.scene.renderer) {
+        setTimeout(() => {
+          const c = $('three-container');
+          STATE.scene.renderer.setSize(c.clientWidth, c.clientHeight);
+          STATE.scene.camera.aspect = c.clientWidth / c.clientHeight;
+          STATE.scene.camera.updateProjectionMatrix();
+        }, 50);
+      }
+    });
+  });
+
+  // Camera
+  $('btn-toggle-cam').addEventListener('click', () => {
+    if (STATE.camera.active) stopCamera(); else initCamera();
+  });
+  $('btn-switch-cam').addEventListener('click', () => {
+    const sel = $('cam-select');
+    sel.style.display = sel.style.display === 'none' ? 'block' : 'none';
+  });
+  $('cam-select').addEventListener('change', (e) => {
+    switchCamera(e.target.value);
+    e.target.style.display = 'none';
+  });
+  $('btn-capture').addEventListener('click', captureFrame);
+
+  // Process
+  $('btn-run-process').addEventListener('click', runReconstruction);
+  $('btn-cancel-process').addEventListener('click', () => {
+    STATE.processing.cancelled = true;
+    log('Cancellation requested...', 'warn');
+  });
+
+  // View controls
+  document.querySelectorAll('#view-controls [data-view]').forEach(btn => {
+    btn.addEventListener('click', () => setView(btn.dataset.view));
+  });
+  $('btn-proj').addEventListener('click', toggleProjection);
+  $('btn-render').addEventListener('click', toggleRenderMode);
+  $('btn-axis').addEventListener('click', toggleAxes);
+  $('btn-light').addEventListener('click', toggleLights);
+  $('btn-reset').addEventListener('click', resetCamera);
+
+  // Export
+  $('btn-export-ply').addEventListener('click', exportPLY);
+  $('btn-export-obj').addEventListener('click', exportOBJ);
+  $('btn-export-glb').addEventListener('click', exportGLB);
+  $('btn-export-frames').addEventListener('click', exportFramesZip);
+  $('btn-export-report').addEventListener('click', exportReport);
+
+  // Log
+  $('btn-clear-session').addEventListener('click', clearSession);
+  $('btn-clear-log').addEventListener('click', () => { $('log-list').innerHTML = ''; });
+
+  // Session timer
+  setInterval(() => {
+    const s = Math.floor((Date.now() - STATE.startTime) / 1000);
+    const m = String(Math.floor(s / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    $('proj-id').textContent = STATE.sessionId.substr(4, 6);
+    // Update title with elapsed time
+    document.title = `FORENSIC 3D [${m}:${sec}]`;
+  }, 1000);
+
+  // Prevent pull-to-refresh / overscroll on iOS
+  document.addEventListener('touchmove', (e) => {
+    if (e.target.closest('#three-container canvas') ||
+        e.target.closest('#log-list') ||
+        e.target.closest('#export-pane') ||
+        e.target.closest('#process-pane')) return;
+    e.preventDefault();
+  }, { passive: false });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+async function init() {
+  log('FORENSIC 3D v1.0 — SESSION ' + STATE.sessionId, 'ok');
+  log('Local processing only. No data transmitted.', 'info');
+  log('Sparse SfM prototype — not a dense surface scanner.', 'warn');
+
+  bindEvents();
+  initThree();
+  updateGuideLabel();
+  updateProcessButton();
+  updateTechPanel();
+  setSysStatus('IDLE');
+
+  // Preload OpenCV.js in background
+  loadOpenCV().then(() => {
+    log('Computer vision backend ready.', 'ok');
+  }).catch(() => {
+    log('OpenCV.js unavailable — reconstruction disabled.', 'err');
+  });
+
+  // Initial status
+  $('proj-id').textContent = STATE.sessionId.substr(4, 6);
 }
 
 init();
+
+/* ============================================================
+   CLEANUP ON UNLOAD
+   ============================================================ */
+window.addEventListener('beforeunload', () => {
+  if (STATE.camera.stream) {
+    STATE.camera.stream.getTracks().forEach(t => t.stop());
+  }
+});
 </script>
 </body>
 </html>
