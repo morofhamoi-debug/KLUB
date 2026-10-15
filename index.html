@@ -1,1718 +1,414 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>FORENSIC 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>3D-скан головы</title>
 <style>
-:root{
-  --bg:#0a0c0e; --panel:#14171a; --panel2:#0f1214; --line:#232830; --line2:#2f353e;
-  --tx:#e6e8ea; --dim:#7a8290; --dim2:#4a5260;
-  --acc:#4dd0e1; --ok:#66bb6a; --warn:#ffb74d; --err:#ef5350;
-  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--tx);
-  font-family:var(--sans);font-size:13px;line-height:1.35;
-  overflow-x:hidden;height:100%;overscroll-behavior:none}
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh;
-  padding-top:env(safe-area-inset-top);
-  padding-bottom:env(safe-area-inset-bottom)}
-button{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
-  background:var(--panel2);color:var(--tx);border:1px solid var(--line2);
-  padding:8px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase}
-button:active{background:#1c2126}
-button:disabled{opacity:.35;cursor:default}
-button.btn-primary{background:#10262b;border-color:#1d4a52;color:#8fe6f2}
-button.btn-danger{background:#2a1416;border-color:#5a2025;color:#f5a5a8}
-.topbar{display:flex;align-items:center;gap:10px;padding:8px 12px;
-  border-bottom:1px solid var(--line);background:var(--panel2);
-  position:sticky;top:0;z-index:50;min-height:44px}
-.brand{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--tx);
-  font-weight:600}
-.section-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
-  color:var(--dim);border-left:1px solid var(--line2);padding-left:10px;margin-left:2px}
-.topbar .spacer{flex:1}
-.topbar button{padding:6px 9px;font-size:10px}
-.topbar button.active{border-color:var(--acc);color:var(--acc)}
-.screen{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden}
-.screen.active{display:flex}
-/* SCANS */
-.scans-scroll{flex:1;min-height:0;overflow-y:auto;padding:12px;
-  -webkit-overflow-scrolling:touch}
-.status-row{display:flex;gap:14px;flex-wrap:wrap;
-  font-family:var(--mono);font-size:10px;color:var(--dim);
-  padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel2)}
-.status-row b{color:var(--tx);font-weight:500}
-.scans-list{display:flex;flex-direction:column;gap:8px}
-.scan-card{background:var(--panel);border:1px solid var(--line);border-radius:3px;
-  padding:10px 11px;display:flex;flex-direction:column;gap:8px}
-.scan-head{display:flex;align-items:baseline;gap:8px;justify-content:space-between}
-.scan-name{font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;max-width:60%}
-.scan-id{font-family:var(--mono);font-size:10px;color:var(--dim2)}
-.scan-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 14px;
-  font-family:var(--mono);font-size:10px;color:var(--dim)}
-.scan-meta div{display:flex;justify-content:space-between;gap:6px;
-  border-bottom:1px dashed #1b1f24;padding-bottom:2px}
-.scan-meta b{color:var(--tx);font-weight:500}
-.scan-actions{display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;
-  border-top:1px solid var(--line)}
-.scan-actions button{flex:1 1 0;min-width:60px;padding:6px 4px;font-size:10px}
-.badge{font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:2px;
-  border:1px solid var(--line2);color:var(--dim)}
-.badge.ok{color:var(--ok);border-color:#2c4a2e;background:#0d1a0e}
-.badge.err{color:var(--err);border-color:#4a2023;background:#1a0d0e}
-.badge.warn{color:var(--warn);border-color:#4a3a20;background:#1a1408}
-.empty-state{display:flex;flex-direction:column;align-items:center;
-  justify-content:center;text-align:center;padding:60px 20px;gap:10px}
-.empty-title{font-family:var(--mono);font-size:13px;letter-spacing:.18em;color:var(--dim)}
-.empty-sub{font-family:var(--mono);font-size:10px;color:var(--dim2)}
-/* SCANNER */
-.scanner-header{display:flex;justify-content:space-between;align-items:center;
-  padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel2);
-  font-family:var(--mono);font-size:10px}
-.proj-name{font-size:12px;font-weight:600;color:var(--tx);letter-spacing:.04em}
-.proj-id{font-size:9px;color:var(--dim2);margin-top:2px}
-.cam-status{display:flex;flex-direction:column;gap:2px;align-items:flex-end;color:var(--dim)}
-.cam-status .ok{color:var(--ok)}
-.cam-status .err{color:var(--err)}
-.viewport{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
-.viewport video,.viewport canvas,.viewport .three-view{position:absolute;inset:0;
-  width:100%;height:100%;object-fit:cover}
-.viewport canvas.overlay{pointer-events:none;mix-blend-mode:screen;opacity:.85}
-.viewport .three-view{display:none;touch-action:none}
-.viewport.mode-3d video,.viewport.mode-3d canvas.overlay{display:none}
-.viewport.mode-3d .three-view{display:block}
-.grid-overlay{position:absolute;inset:0;pointer-events:none;
-  background-image:
-   linear-gradient(rgba(77,208,225,.06) 1px,transparent 1px),
-   linear-gradient(90deg,rgba(77,208,225,.06) 1px,transparent 1px);
-  background-size:32px 32px}
-.grid-overlay::before,.grid-overlay::after{content:"";position:absolute;
-  background:rgba(77,208,225,.15)}
-.grid-overlay::before{left:50%;top:0;bottom:0;width:1px}
-.grid-overlay::after{top:50%;left:0;right:0;height:1px}
-.viewport-tabs{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:5}
-.viewport-tabs button{padding:5px 8px;font-size:9px;background:rgba(15,18,20,.85);
-  border-color:#2f353e}
-.viewport-tabs button.active{border-color:var(--acc);color:var(--acc)}
-.scan-hint{position:absolute;bottom:8px;left:8px;right:8px;
-  background:rgba(15,18,20,.85);border:1px solid var(--line2);border-radius:2px;
-  padding:6px 9px;font-family:var(--mono);font-size:10px;color:var(--dim);
-  pointer-events:none;z-index:5}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
-  background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.stat{background:var(--panel2);padding:6px 8px;font-family:var(--mono);font-size:9px;
-  color:var(--dim);display:flex;flex-direction:column;gap:2px}
-.stat b{color:var(--tx);font-size:12px;font-weight:600}
-.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
-  border-bottom:1px solid var(--line);max-height:96px;overflow-y:auto}
-.stage{background:var(--panel2);padding:5px 8px;font-family:var(--mono);font-size:9px;
-  color:var(--dim);display:flex;justify-content:space-between;gap:6px}
-.stage .st{color:var(--dim2)}
-.stage .st.running{color:var(--warn)}
-.stage .st.complete{color:var(--ok)}
-.stage .st.failed{color:var(--err)}
-.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;
-  background:var(--panel2);border-bottom:1px solid var(--line)}
-.controls button{padding:9px 6px;font-size:10px}
-.viewer-controls{display:flex;flex-wrap:wrap;gap:5px;padding:8px;
-  background:var(--panel2);border-bottom:1px solid var(--line)}
-.viewer-controls button{padding:5px 7px;font-size:9px}
-.viewer-controls input[type=range]{flex:1 1 100px;accent-color:var(--acc)}
-.viewer-controls select{font-family:var(--mono);font-size:10px;background:var(--panel2);
-  color:var(--tx);border:1px solid var(--line2);padding:4px 6px;border-radius:2px}
-/* Modal */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;
-  align-items:center;justify-content:center;z-index:200;padding:20px}
-.modal.open{display:flex}
-.modal-box{background:var(--panel);border:1px solid var(--line2);border-radius:3px;
-  padding:16px;max-width:340px;width:100%;font-size:13px}
-.modal-box h3{margin:0 0 10px;font-family:var(--mono);font-size:11px;
-  letter-spacing:.14em;color:var(--dim);font-weight:600}
-.modal-box input{width:100%;background:var(--panel2);border:1px solid var(--line2);
-  color:var(--tx);font-family:var(--mono);font-size:12px;padding:8px;border-radius:2px;
-  margin-bottom:10px}
-.modal-actions{display:flex;gap:6px;justify-content:flex-end}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));
-  transform:translateX(-50%) translateY(20px);background:var(--panel);
-  border:1px solid var(--line2);border-radius:2px;padding:8px 12px;
-  font-family:var(--mono);font-size:10px;color:var(--tx);
-  opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:300;
-  max-width:90vw}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.err{border-color:#5a2025;color:#f5a5a8}
-.toast.ok{border-color:#2c4a2e;color:#a5d6a7}
-.mono{font-family:var(--mono)}
-.hidden{display:none!important}
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #000;
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    color: #dff6ff;
+  }
+  #stage { position: fixed; inset: 0; }
+
+  #video, #scan {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1);   /* зеркалим, как в селфи */
+  }
+  #scan { pointer-events: none; }
+
+  #viewer { position: absolute; inset: 0; display: none; background: #000; }
+  #viewer canvas { display: block; }
+
+  #ui {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 22px 22px calc(22px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    z-index: 10; pointer-events: none;
+  }
+  #status {
+    font-size: 13px; letter-spacing: .04em; text-transform: uppercase;
+    opacity: .75; text-shadow: 0 0 12px #000;
+  }
+  button {
+    pointer-events: auto;
+    padding: 14px 34px; border-radius: 999px; border: 1px solid rgba(0,229,255,.55);
+    background: rgba(0, 40, 60, .55); backdrop-filter: blur(10px);
+    color: #bff4ff; font-size: 15px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; cursor: pointer;
+    transition: background .2s, box-shadow .2s, opacity .2s;
+  }
+  button:hover:not(:disabled) { background: rgba(0,120,170,.55); box-shadow: 0 0 24px rgba(0,229,255,.35); }
+  button:disabled { opacity: .3; cursor: default; }
+
+  #loader {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; letter-spacing: .1em; text-transform: uppercase; opacity: .7;
+  }
 </style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 </head>
+
 <body>
-<div id="app">
+<div id="stage">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="scan"></canvas>
+  <div id="viewer"></div>
 
-  <header class="topbar">
-    <div class="brand">FORENSIC 3D</div>
-    <div class="section-title" id="topbar-section">SCANS</div>
-    <div class="spacer"></div>
-    <button id="btn-nav-scans" class="active">SCANS</button>
-    <button id="btn-nav-scanner">SCANNER</button>
-  </header>
+  <div id="loader">Загрузка модели…</div>
 
-  <!-- ============ SCANS ============ -->
-  <main id="screen-scans" class="screen active">
-    <div class="status-row">
-      <span>PROJECTS: <b id="scans-count">0</b></span>
-      <span>STORAGE: <b id="storage-status">--</b></span>
-      <span>USED: <b id="storage-used">0 B</b></span>
-      <span style="margin-left:auto"><button id="btn-delete-all" style="padding:3px 7px;font-size:9px">DELETE ALL</button></span>
-    </div>
-    <div class="scans-scroll">
-      <div id="scans-list" class="scans-list"></div>
-      <div id="scans-empty" class="empty-state">
-        <div class="empty-title">EMPTY SCANS</div>
-        <div class="empty-sub">NO LOCAL PROJECTS STORED</div>
-        <button id="btn-new-scan" class="btn-primary" style="margin-top:10px;padding:10px 20px">NEW SCAN</button>
-      </div>
-    </div>
-  </main>
-
-  <!-- ============ SCANNER ============ -->
-  <main id="screen-scanner" class="screen">
-    <div class="scanner-header">
-      <div>
-        <div class="proj-name" id="proj-name">UNNAMED PROJECT</div>
-        <div class="proj-id" id="proj-id">ID: --</div>
-      </div>
-      <div class="cam-status">
-        <span id="cam-status">CAM: OFF</span>
-        <span id="proc-status">PROC: IDLE</span>
-      </div>
-    </div>
-
-    <div class="viewport" id="viewport">
-      <video id="video" playsinline muted autoplay></video>
-      <canvas id="overlay" class="overlay"></canvas>
-      <div id="three-view" class="three-view"></div>
-      <div class="grid-overlay"></div>
-      <div class="viewport-tabs">
-        <button data-view="cam" class="active">CAMERA</button>
-        <button data-view="3d">RESULT</button>
-      </div>
-      <div class="scan-hint" id="scan-hint">PRESS START SCAN</div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat"><span>FRAMES</span><b id="stat-frames">0</b></div>
-      <div class="stat"><span>FEATURES</span><b id="stat-features">0</b></div>
-      <div class="stat"><span>MATCHES</span><b id="stat-matches">0</b></div>
-      <div class="stat"><span>POINTS</span><b id="stat-points">0</b></div>
-    </div>
-
-    <div class="stages" id="stages"></div>
-
-    <div class="controls">
-      <button id="btn-start" class="btn-primary">START SCAN</button>
-      <button id="btn-pause" disabled>PAUSE</button>
-      <button id="btn-finish" disabled>FINISH SCAN</button>
-      <button id="btn-cancel" class="btn-danger" disabled>CANCEL</button>
-      <button id="btn-process" class="btn-primary" disabled>PROCESS</button>
-      <button id="btn-save" class="btn-primary" disabled>SAVE SCAN</button>
-    </div>
-
-    <div class="viewer-controls" id="viewer-controls" style="display:none">
-      <button data-cam="front">FRONT</button>
-      <button data-cam="side">SIDE</button>
-      <button data-cam="back">BACK</button>
-      <button id="btn-reset-cam">RESET</button>
-      <button id="btn-toggle-grid">GRID</button>
-      <button id="btn-toggle-axes">AXES</button>
-      <button id="btn-toggle-orbit" class="active">ORBIT</button>
-      <input type="range" id="point-size" min="1" max="8" value="3" step="1">
-      <select id="color-mode">
-        <option value="depth">DEPTH</option>
-        <option value="height">HEIGHT</option>
-        <option value="intensity">INTENSITY</option>
-      </select>
-    </div>
-  </main>
-
-  <div class="modal" id="modal">
-    <div class="modal-box" id="modal-box"></div>
+  <div id="ui">
+    <div id="status">Ищу лицо…</div>
+    <button id="saveBtn" disabled>Сохранить</button>
+    <button id="resetBtn" style="display:none">Сканировать заново</button>
   </div>
-  <div class="toast" id="toast"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script>
-/* =====================================================================
-   FORENSIC 3D — single-file app
-   Two sections: SCANS (IndexedDB) and SCANNER (camera + CV pipeline)
-   ===================================================================== */
-'use strict';
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FaceLandmarker, FilesetResolver } from
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
-/* ---------- utils ---------- */
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
-function fmtBytes(n){
-  if(!n && n!==0) return '--';
-  if(n<1024) return n+' B';
-  if(n<1048576) return (n/1024).toFixed(1)+' KB';
-  return (n/1048576).toFixed(2)+' MB';
-}
-function fmtDate(ts){
-  const d = new Date(ts);
-  const p = x => String(x).padStart(2,'0');
-  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+
-         p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
-}
-function fmtDur(ms){
-  const s = Math.round(ms/1000);
-  const p = x => String(x).padStart(2,'0');
-  return p(Math.floor(s/60))+':'+p(s%60);
-}
-function uid(){ return 'S-' + Date.now().toString(36).toUpperCase() +
-  '-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
-function toast(msg, cls){
-  const t = $('#toast'); t.textContent = msg;
-  t.className = 'toast' + (cls ? ' '+cls : '');
-  requestAnimationFrame(()=>t.classList.add('show'));
-  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove('show'), 2400);
-}
-function confirmModal(title, body, okLabel='CONFIRM'){
-  return new Promise(res=>{
-    const box = $('#modal-box');
-    box.innerHTML = `<h3>${title}</h3><div style="color:#c4c8cc;font-size:12px;margin-bottom:14px">${body}</div>
-      <div class="modal-actions">
-        <button id="_m_cancel">CANCEL</button>
-        <button id="_m_ok" class="btn-danger">${okLabel}</button>
-      </div>`;
-    $('#modal').classList.add('open');
-    const close = v => { $('#modal').classList.remove('open'); res(v); };
-    $('#_m_cancel').onclick = ()=>close(false);
-    $('#_m_ok').onclick = ()=>close(true);
-  });
-}
-function promptModal(title, defVal){
-  return new Promise(res=>{
-    const box = $('#modal-box');
-    box.innerHTML = `<h3>${title}</h3>
-      <input id="_m_in" type="text" value="${defVal.replace(/"/g,'&quot;')}">
-      <div class="modal-actions">
-        <button id="_m_cancel">CANCEL</button>
-        <button id="_m_ok" class="btn-primary">OK</button>
-      </div>`;
-    $('#modal').classList.add('open');
-    const inp = $('#_m_in'); inp.focus(); inp.select();
-    const close = v => { $('#modal').classList.remove('open'); res(v); };
-    $('#_m_cancel').onclick = ()=>close(null);
-    $('#_m_ok').onclick = ()=>close(inp.value.trim() || defVal);
-    inp.onkeydown = e => { if(e.key==='Enter') close(inp.value.trim() || defVal); };
-  });
-}
+/* ------------------------------------------------------------------ */
+/*  КОНСТАНТЫ                                                          */
+/* ------------------------------------------------------------------ */
+const WASM_PATH  = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const MODEL_PATH = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
-/* =====================================================================
-   IndexedDB
-   ===================================================================== */
-const DB_NAME = 'forensic3d';
-const DB_VER = 1;
-const STORE_PROJECTS = 'projects';
-let _db = null;
+// Каноническая топология лица: 468 вершин, 898 треугольников.
+// Скачай файл локально, если не хочешь зависеть от CDN.
+const OBJ_URL = 'https://cdn.jsdelivr.net/gh/google/mediapipe@master/mediapipe/modules/face_geometry/data/canonical_face_model.obj';
 
-function openDB(){
-  return new Promise((res, rej)=>{
-    if(_db) return res(_db);
-    const req = indexedDB.open(DB_NAME, DB_VER);
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if(!db.objectStoreNames.contains(STORE_PROJECTS)){
-        const st = db.createObjectStore(STORE_PROJECTS, {keyPath:'id'});
-        st.createIndex('createdAt', 'createdAt');
-      }
-    };
-    req.onsuccess = () => { _db = req.result; res(_db); };
-    req.onerror = () => rej(req.error);
-  });
-}
-async function dbPut(rec){
-  const db = await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE_PROJECTS, 'readwrite');
-    tx.objectStore(STORE_PROJECTS).put(rec);
-    tx.oncomplete = ()=>res();
-    tx.onerror = ()=>rej(tx.error);
-  });
-}
-async function dbGet(id){
-  const db = await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE_PROJECTS, 'readonly');
-    const r = tx.objectStore(STORE_PROJECTS).get(id);
-    r.onsuccess = ()=>res(r.result);
-    r.onerror = ()=>rej(r.error);
-  });
-}
-async function dbAll(){
-  const db = await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE_PROJECTS, 'readonly');
-    const r = tx.objectStore(STORE_PROJECTS).getAll();
-    r.onsuccess = ()=>{
-      const arr = r.result || [];
-      arr.sort((a,b)=>b.createdAt - a.createdAt);
-      res(arr);
-    };
-    r.onerror = ()=>rej(r.error);
-  });
-}
-async function dbDelete(id){
-  const db = await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE_PROJECTS, 'readwrite');
-    tx.objectStore(STORE_PROJECTS).delete(id);
-    tx.oncomplete = ()=>res();
-    tx.onerror = ()=>rej(tx.error);
-  });
-}
-async function dbClear(){
-  const db = await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE_PROJECTS, 'readwrite');
-    tx.objectStore(STORE_PROJECTS).clear();
-    tx.oncomplete = ()=>res();
-    tx.onerror = ()=>rej(tx.error);
-  });
-}
+/* ------------------------------------------------------------------ */
+/*  DOM                                                                */
+/* ------------------------------------------------------------------ */
+const videoEl  = document.getElementById('video');
+const scanEl   = document.getElementById('scan');
+const scanCtx  = scanEl.getContext('2d');
+const viewerEl = document.getElementById('viewer');
+const statusEl = document.getElementById('status');
+const saveBtn  = document.getElementById('saveBtn');
+const resetBtn = document.getElementById('resetBtn');
+const loaderEl = document.getElementById('loader');
 
-/* =====================================================================
-   CV PIPELINE
-   ===================================================================== */
+/* ------------------------------------------------------------------ */
+/*  СОСТОЯНИЕ                                                          */
+/* ------------------------------------------------------------------ */
+let faceLandmarker = null;
+let stream         = null;
+let triangles      = null;      // [[a,b,c], ...]
+let landmarks      = null;      // текущий кадр (468 точек)
+let scanning       = true;
+let lastVideoTime  = -1;
 
-/* --- FAST corner detection --- */
-const FAST_OFF = [
-  [0,-3],[1,-3],[2,-2],[3,-1],[3,0],[3,1],[2,2],[1,3],
-  [0,3],[-1,3],[-2,2],[-3,1],[-3,0],[-3,-1],[-2,-2],[-1,-3]
-];
-function toGray(imgData, w, h){
-  const g = new Uint8Array(w*h);
-  const d = imgData.data;
-  for(let i=0,j=0;j<g.length;i+=4,j++){
-    g[j] = (d[i]*77 + d[i+1]*150 + d[i+2]*29) >> 8;
-  }
-  return g;
-}
-function fastCorners(gray, w, h, thr, maxCorners){
-  const corners = [];
-  for(let y=4;y<h-4;y++){
-    const row = y*w;
-    for(let x=4;x<w-4;x++){
-      const p = gray[row+x];
-      let brighter = 0, darker = 0;
-      for(let k=0;k<16;k++){
-        const v = gray[(y+FAST_OFF[k][1])*w + (x+FAST_OFF[k][0])];
-        if(v >= p+thr) brighter++;
-        else if(v <= p-thr) darker++;
-      }
-      if(brighter >= 10 || darker >= 10){
-        let score = 0;
-        for(let k=0;k<16;k++){
-          const v = gray[(y+FAST_OFF[k][1])*w + (x+FAST_OFF[k][0])];
-          const d = v - p; score += d<0 ? -d : d;
-        }
-        corners.push({x, y, s:score});
-      }
+/* ------------------------------------------------------------------ */
+/*  1. ТОПОЛОГИЯ ЛИЦА                                                  */
+/* ------------------------------------------------------------------ */
+async function loadTopology() {
+  const res  = await fetch(OBJ_URL);
+  const text = await res.text();
+  const tris = [];
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (line[0] !== 'f' || line[1] !== ' ') continue;
+    // "f 12/12/12 13/13/13 14/14/14"
+    const idx = line.split(/\s+/).slice(1).map(s => parseInt(s, 10) - 1);
+    for (let i = 1; i < idx.length - 1; i++) {
+      tris.push([idx[0], idx[i], idx[i + 1]]);
     }
   }
-  corners.sort((a,b)=>b.s - a.s);
-  const picked = [];
-  const minD2 = 25; // 5 px radius
-  for(let i=0;i<corners.length && picked.length < maxCorners;i++){
-    const c = corners[i];
-    let ok = true;
-    for(let j=0;j<picked.length;j++){
-      const dx = c.x - picked[j].x, dy = c.y - picked[j].y;
-      if(dx*dx + dy*dy < minD2){ ok = false; break; }
-    }
-    if(ok) picked.push(c);
-  }
-  return picked;
+  return tris;
 }
 
-/* --- BRIEF descriptor --- */
-const BRIEF_N = 256;
-const BRIEF_R = 8;
-const BRIEF_PAT = (()=>{
-  let s = 0x9e3779b9;
-  const r = ()=>{ s = (s*1664525 + 1013904223) >>> 0; return s / 4294967296; };
-  const pat = [];
-  for(let i=0;i<BRIEF_N;i++){
-    const a = r()*Math.PI*2, ra = Math.sqrt(r())*BRIEF_R;
-    const b = r()*Math.PI*2, rb = Math.sqrt(r())*BRIEF_R;
-    pat.push([
-      Math.round(Math.cos(a)*ra), Math.round(Math.sin(a)*ra),
-      Math.round(Math.cos(b)*rb), Math.round(Math.sin(b)*rb)
-    ]);
-  }
-  return pat;
-})();
-function computeBrief(gray, w, h, kp){
-  const x = kp.x, y = kp.y;
-  if(x < BRIEF_R || y < BRIEF_R || x >= w-BRIEF_R || y >= h-BRIEF_R) return null;
-  const bytes = new Uint8Array(BRIEF_N >> 3);
-  for(let i=0;i<BRIEF_N;i++){
-    const p = BRIEF_PAT[i];
-    const va = gray[(y+p[1])*w + (x+p[0])];
-    const vb = gray[(y+p[3])*w + (x+p[2])];
-    if(va < vb) bytes[i >> 3] |= (1 << (i & 7));
-  }
-  return bytes;
-}
-function popcnt(x){
-  x = x - ((x >> 1) & 0x55555555);
-  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-  x = (x + (x >> 4)) & 0x0f0f0f0f;
-  return (x * 0x01010101) >> 24;
-}
-function hamming(a, b){
-  let d = 0;
-  for(let i=0;i<a.length;i++) d += popcnt(a[i] ^ b[i]);
-  return d;
-}
-function matchFeatures(dA, dB, ratio=0.8, maxD=64){
-  const out = [];
-  for(let i=0;i<dA.length;i++){
-    let bestD = 999, secondD = 999, bestJ = -1;
-    const a = dA[i];
-    for(let j=0;j<dB.length;j++){
-      const d = hamming(a, dB[j]);
-      if(d < bestD){ secondD = bestD; bestD = d; bestJ = j; }
-      else if(d < secondD){ secondD = d; }
-    }
-    if(bestJ >= 0 && bestD < secondD*ratio && bestD < maxD){
-      out.push({i, j:bestJ, d:bestD});
-    }
-  }
-  return out;
+/* ------------------------------------------------------------------ */
+/*  2. КАМЕРА + MEDIAPIPE                                              */
+/* ------------------------------------------------------------------ */
+async function startCamera() {
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+    audio: false
+  });
+  videoEl.srcObject = stream;
+  await videoEl.play();
+
+  scanEl.width  = videoEl.videoWidth;
+  scanEl.height = videoEl.videoHeight;
 }
 
-/* --- Extract a feature frame from a video/canvas --- */
-const PROC_W = 480, PROC_H = 360;
-function extractFrame(videoEl){
-  const tmp = document.createElement('canvas');
-  tmp.width = PROC_W; tmp.height = PROC_H;
-  const ctx = tmp.getContext('2d', {willReadFrequently:true});
-  // cover-fit
-  const vw = videoEl.videoWidth || 1, vh = videoEl.videoHeight || 1;
-  const s = Math.max(PROC_W/vw, PROC_H/vh);
-  const dw = vw*s, dh = vh*s;
-  ctx.drawImage(videoEl, (PROC_W-dw)/2, (PROC_H-dh)/2, dw, dh);
-  const img = ctx.getImageData(0, 0, PROC_W, PROC_H);
-  const gray = toGray(img, PROC_W, PROC_H);
-  const kps = fastCorners(gray, PROC_W, PROC_H, 22, 400);
-  const descs = [];
-  const validKps = [];
-  for(const kp of kps){
-    const d = computeBrief(gray, PROC_W, PROC_H, kp);
-    if(d){ descs.push(d); validKps.push(kp); }
-  }
-  // compute average intensity per keypoint
-  for(let i=0;i<validKps.length;i++){
-    const {x,y} = validKps[i];
-    validKps[i].i = gray[y*PROC_W + x];
-  }
-  return {kps: validKps, descs, w:PROC_W, h:PROC_H};
-}
+async function startLandmarker() {
+  const fileset = await FilesetResolver.forVisionTasks(WASM_PATH);
 
-/* --- Triangulate matched points between two views ---
-   Camera model: head center is world origin at radius R=1.
-   Camera k positioned at (sin θk, 0, cos θk), looking at origin.
-   Rotation world→cam: rows = (right, up, -forward).
-*/
-function camRot(theta){
-  const c = Math.cos(theta), s = Math.sin(theta);
-  // world→cam rotation matrix (row-major 3x3):
-  //  right  = ( cosθ, 0, -sinθ)
-  //  up     = ( 0,    1,  0   )
-  //  -fwd   = ( sinθ, 0,  cosθ)
-  return [ c,0,-s,  0,1,0,  s,0,c ];
-}
-function camPos(theta){ return [Math.sin(theta), 0, Math.cos(theta)]; }
-function applyR(R, v){
-  return [
-    R[0]*v[0] + R[1]*v[1] + R[2]*v[2],
-    R[3]*v[0] + R[4]*v[1] + R[5]*v[2],
-    R[6]*v[0] + R[7]*v[1] + R[8]*v[2]
-  ];
-}
-function applyRT(R, v){
-  // transpose times v
-  return [
-    R[0]*v[0] + R[3]*v[1] + R[6]*v[2],
-    R[1]*v[0] + R[4]*v[1] + R[7]*v[2],
-    R[2]*v[0] + R[5]*v[1] + R[8]*v[2]
-  ];
-}
-function dot3(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
-function sub3(a,b){ return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]; }
-function add3(a,b){ return [a[0]+b[0],a[1]+b[1],a[2]+b[2]]; }
-function scale3(a,s){ return [a[0]*s,a[1]*s,a[2]*s]; }
-
-function triangulateRays(C0, R0, C1, R1, p0, p1, f, cx, cy){
-  // ray direction in camera frame: (u/f, v/f, 1), convert to world by R^T
-  const d0cam = [(p0[0]-cx)/f, (p0[1]-cy)/f, 1];
-  const d1cam = [(p1[0]-cx)/f, (p1[1]-cy)/f, 1];
-  const d0 = applyRT(R0, d0cam);
-  const d1 = applyRT(R1, d1cam);
-  // closest points on rays C0 + t0*d0, C1 + t1*d1
-  const w0 = sub3(C0, C1);
-  const a = dot3(d0,d0), b = dot3(d0,d1), c = dot3(d1,d1);
-  const d = dot3(d0,w0), e = dot3(d1,w0);
-  const denom = a*c - b*b;
-  if(Math.abs(denom) < 1e-9) return null;
-  const t0 = (b*e - c*d) / denom;
-  const t1 = (a*e - b*d) / denom;
-  if(t0 <= 0 || t1 <= 0) return null;
-  const P0 = add3(C0, scale3(d0, t0));
-  const P1 = add3(C1, scale3(d1, t1));
-  // midpoint
-  return scale3(add3(P0, P1), 0.5);
-}
-
-/* --- Build point cloud from captured frames --- */
-function buildPointCloud(frames, onProgress){
-  // frames: array of {kps, descs, w, h, ts}
-  // Returns {points: Float32Array, colors: Uint8Array, count, stats}
-  if(frames.length < 2) return {points:new Float32Array(0), count:0,
-    stats:{matches:0, filtered:0, usedFrames:0}};
-
-  const f = frames[0].w * 0.9;    // focal estimate
-  const cx = frames[0].w / 2;
-  const cy = frames[0].h / 2;
-
-  // Estimate per-frame rotation angle: cumulative
-  // θ_0 = 0, θ_{k} = θ_{k-1} + mean_du / f
-  const thetas = [0];
-  const pairs = [];
-  for(let k=1;k<frames.length;k++){
-    const A = frames[k-1], B = frames[k];
-    const m = matchFeatures(A.descs, B.descs);
-    let duSum = 0, duN = 0;
-    for(const mm of m){
-      const dx = B.kps[mm.j].x - A.kps[mm.i].x;
-      const dy = B.kps[mm.j].y - A.kps[mm.i].y;
-      // weight by dx (horizontal motion dominant in orbit)
-      if(Math.abs(dx) < 30){ duSum += dx; duN++; }
-    }
-    const meanDu = duN > 0 ? duSum/duN : 0;
-    const dTheta = meanDu / f;
-    thetas.push(thetas[k-1] + dTheta);
-    pairs.push({A, B, matches:m, dTheta});
-    if(onProgress && (k & 3) === 0){
-      onProgress(k / frames.length, m.length);
-    }
-  }
-
-  const pts = [];
-  const ints = [];
-  let totalMatches = 0;
-  for(let k=0;k<pairs.length;k++){
-    const {A, B, matches, dTheta} = pairs[k];
-    if(Math.abs(dTheta) < 0.002) continue; // insufficient parallax
-    totalMatches += matches.length;
-    const th0 = thetas[k], th1 = thetas[k+1];
-    const R0 = camRot(th0), R1 = camRot(th1);
-    const C0 = camPos(th0), C1 = camPos(th1);
-    for(const mm of matches){
-      const pa = A.kps[mm.i], pb = B.kps[mm.j];
-      const P = triangulateRays(C0, R0, C1, R1,
-        [pa.x, pa.y], [pb.x, pb.y], f, cx, cy);
-      if(!P) continue;
-      // depth sanity: distance from head center should be in [0.3, 2.0] (unit R=1)
-      const r = Math.sqrt(P[0]*P[0] + P[1]*P[1] + P[2]*P[2]);
-      if(r < 0.2 || r > 2.5) continue;
-      pts.push(P[0], P[1], P[2]);
-      const iv = ((pa.i||0) + (pb.i||0)) >> 1;
-      ints.push(iv);
-    }
-  }
-
-  const count = pts.length / 3;
-  const points = new Float32Array(pts);
-  const colors = new Uint8Array(count);
-  for(let i=0;i<count;i++){
-    const v = ints[i];
-    colors[i] = v < 0 ? 0 : v > 255 ? 255 : v;
-  }
-  return {
-    points, colors, count,
-    stats:{
-      matches: totalMatches,
-      filtered: totalMatches - count,
-      usedFrames: frames.length
-    }
+  const opts = {
+    baseOptions: { modelAssetPath: MODEL_PATH, delegate: 'GPU' },
+    runningMode: 'VIDEO',
+    numFaces: 1,
+    minFaceDetectionConfidence: 0.4,
+    minFacePresenceConfidence: 0.4,
+    minTrackingConfidence: 0.4
   };
+
+  try {
+    faceLandmarker = await FaceLandmarker.createFromOptions(fileset, opts);
+  } catch (e) {
+    // некоторые устройства/браузеры не тянут GPU-делегат
+    opts.baseOptions.delegate = 'CPU';
+    faceLandmarker = await FaceLandmarker.createFromOptions(fileset, opts);
+  }
 }
 
-/* =====================================================================
-   THREE.JS VIEWER
-   ===================================================================== */
-const Viewer = (()=>{
-  let renderer, scene, camera, persp, ortho, usePersp = true;
-  let pointsMesh, axesHelper, gridHelper;
-  let currentPoints = null;
-  let dragging = false, lastX = 0, lastY = 0;
-  let spherical = {r:2.2, theta:0, phi:Math.PI/2};
-  let target = new THREE.Vector3(0,0,0);
-  let pointSize = 3;
-  let colorMode = 'depth';
-  let showGrid = true, showAxes = true;
+/* ------------------------------------------------------------------ */
+/*  3. ЦИКЛ СКАНИРОВАНИЯ                                               */
+/* ------------------------------------------------------------------ */
+function loop() {
+  if (!scanning) return;
+  requestAnimationFrame(loop);
 
-  function init(container){
-    if(renderer) return;
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x07090b);
+  if (videoEl.readyState < 2) return;
+  if (videoEl.currentTime === lastVideoTime) return;
+  lastVideoTime = videoEl.currentTime;
 
-    const w = container.clientWidth, h = container.clientHeight;
-    persp = new THREE.PerspectiveCamera(50, w/h, 0.01, 100);
-    ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 100);
-    camera = persp;
-    updateCameraFromSpherical();
+  const res = faceLandmarker.detectForVideo(videoEl, performance.now());
 
-    renderer = new THREE.WebGLRenderer({antialias:true, alpha:false});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(w, h);
-    container.appendChild(renderer.domElement);
+  if (res.faceLandmarks && res.faceLandmarks.length > 0) {
+    landmarks = res.faceLandmarks[0];
+    statusEl.textContent = 'Лицо захвачено — держи голову ровно';
+    saveBtn.disabled = false;
+  } else {
+    landmarks = null;
+    statusEl.textContent = 'Ищу лицо…';
+    saveBtn.disabled = true;
+  }
+  drawOverlay();
+}
 
-    gridHelper = new THREE.GridHelper(4, 20, 0x1e3a40, 0x122227);
-    gridHelper.material.transparent = true;
-    gridHelper.material.opacity = 0.75;
-    scene.add(gridHelper);
+function drawOverlay() {
+  const w = scanEl.width, h = scanEl.height;
+  scanCtx.clearRect(0, 0, w, h);
+  if (!landmarks) return;
 
-    axesHelper = new THREE.AxesHelper(0.6);
-    scene.add(axesHelper);
+  // Сетка
+  scanCtx.lineWidth = Math.max(1, w / 900);
+  scanCtx.strokeStyle = 'rgba(0, 235, 255, 0.22)';
+  scanCtx.beginPath();
+  for (const t of triangles) {
+    const p0 = landmarks[t[0]], p1 = landmarks[t[1]], p2 = landmarks[t[2]];
+    scanCtx.moveTo(p0.x * w, p0.y * h);
+    scanCtx.lineTo(p1.x * w, p1.y * h);
+    scanCtx.lineTo(p2.x * w, p2.y * h);
+    scanCtx.lineTo(p0.x * w, p0.y * h);
+  }
+  scanCtx.stroke();
 
-    attachTouch(container);
+  // Точки
+  scanCtx.fillStyle = 'rgba(150, 255, 245, 0.95)';
+  const r = Math.max(1.2, w / 1000);
+  for (const p of landmarks) {
+    scanCtx.beginPath();
+    scanCtx.arc(p.x * w, p.y * h, r, 0, Math.PI * 2);
+    scanCtx.fill();
+  }
 
-    const ro = new ResizeObserver(()=>resize(container));
-    ro.observe(container);
+  // Бегущая «сканирующая» линия
+  const t   = (performance.now() % 2600) / 2600;
+  const y   = t * h;
+  const grd = scanCtx.createLinearGradient(0, y - 40, 0, y + 40);
+  grd.addColorStop(0,   'rgba(0,255,220,0)');
+  grd.addColorStop(0.5, 'rgba(0,255,220,0.35)');
+  grd.addColorStop(1,   'rgba(0,255,220,0)');
+  scanCtx.fillStyle = grd;
+  scanCtx.fillRect(0, y - 40, w, 80);
+}
 
-    animate();
-  }
-  function resize(container){
-    const w = container.clientWidth, h = container.clientHeight;
-    if(!w || !h) return;
-    persp.aspect = w/h; persp.updateProjectionMatrix();
-    ortho.left = -1; ortho.right = 1; ortho.top = 1; ortho.bottom = -1;
-    const a = w/h;
-    if(a > 1){ ortho.left = -a; ortho.right = a; }
-    else { ortho.top = 1/a; ortho.bottom = -1/a; }
-    ortho.updateProjectionMatrix();
-    renderer.setSize(w, h);
-  }
-  function updateCameraFromSpherical(){
-    const {r, theta, phi} = spherical;
-    const x = target.x + r*Math.sin(phi)*Math.sin(theta);
-    const y = target.y + r*Math.cos(phi);
-    const z = target.z + r*Math.sin(phi)*Math.cos(theta);
-    camera.position.set(x,y,z);
-    camera.up.set(0,1,0);
-    camera.lookAt(target);
-  }
-  function attachTouch(container){
-    const el = container;
-    let pinch0 = 0, pinchR = spherical.r;
-    el.addEventListener('touchstart', e=>{
-      if(e.touches.length===1){
-        dragging = true;
-        lastX = e.touches[0].clientX;
-        lastY = e.touches[0].clientY;
-      } else if(e.touches.length===2){
-        dragging = false;
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        pinch0 = Math.hypot(dx, dy);
-        pinchR = spherical.r;
-      }
-      e.preventDefault();
-    }, {passive:false});
-    el.addEventListener('touchmove', e=>{
-      if(e.touches.length===1 && dragging){
-        const dx = e.touches[0].clientX - lastX;
-        const dy = e.touches[0].clientY - lastY;
-        lastX = e.touches[0].clientX;
-        lastY = e.touches[0].clientY;
-        spherical.theta -= dx * 0.008;
-        spherical.phi   -= dy * 0.008;
-        spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi));
-        updateCameraFromSpherical();
-      } else if(e.touches.length===2){
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const d = Math.hypot(dx, dy);
-        if(pinch0 > 0){
-          spherical.r = pinchR * (pinch0 / d);
-          spherical.r = Math.max(0.3, Math.min(15, spherical.r));
-          updateCameraFromSpherical();
-        }
-      }
-      e.preventDefault();
-    }, {passive:false});
-    el.addEventListener('touchend', ()=>{ dragging = false; pinch0 = 0; });
-    // desktop fallback
-    el.addEventListener('mousedown', e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; });
-    window.addEventListener('mousemove', e=>{
-      if(!dragging) return;
-      const dx = e.clientX - lastX, dy = e.clientY - lastY;
-      lastX = e.clientX; lastY = e.clientY;
-      spherical.theta -= dx * 0.008;
-      spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi - dy*0.008));
-      updateCameraFromSpherical();
-    });
-    window.addEventListener('mouseup', ()=>{ dragging=false; });
-  }
-  function setCamera(pos){
-    if(pos==='front'){ spherical.theta = 0; spherical.phi = Math.PI/2; }
-    else if(pos==='side'){ spherical.theta = Math.PI/2; spherical.phi = Math.PI/2; }
-    else if(pos==='back'){ spherical.theta = Math.PI; spherical.phi = Math.PI/2; }
-    updateCameraFromSpherical();
-  }
-  function reset(){
-    spherical = {r:2.2, theta:0, phi:Math.PI/2};
-    updateCameraFromSpherical();
-  }
-  function setProjection(perspOn){
-    usePersp = perspOn;
-    camera = perspOn ? persp : ortho;
-    if(!perspOn){
-      // size ortho to fit current point cloud
-      let maxR = 1.2;
-      if(currentPoints && currentPoints.count > 0){
-        const p = currentPoints.points;
-        for(let i=0;i<p.length;i+=3){
-          const r = Math.hypot(p[i], p[i+1], p[i+2]);
-          if(r > maxR) maxR = r;
-        }
-      }
-      const a = 1;
-      ortho.left = -maxR*a; ortho.right = maxR*a;
-      ortho.top = maxR; ortho.bottom = -maxR;
-      ortho.updateProjectionMatrix();
-    }
-    updateCameraFromSpherical();
-  }
-  function setPointCloud(pc){
-    currentPoints = pc;
-    if(pointsMesh){
-      scene.remove(pointsMesh);
-      pointsMesh.geometry.dispose();
-      pointsMesh.material.dispose();
-      pointsMesh = null;
-    }
-    if(!pc || pc.count === 0) return;
+/* ------------------------------------------------------------------ */
+/*  4. ПОСТРОЕНИЕ 3D-МОДЕЛИ                                            */
+/* ------------------------------------------------------------------ */
+function buildHeadMesh(frameLandmarks) {
+  const aspect = videoEl.videoWidth / videoEl.videoHeight;
+  const n = frameLandmarks.length;
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pc.points, 3));
+  const positions = new Float32Array(n * 3);
+  const uvs       = new Float32Array(n * 2);
 
-    // compute bbox for coloring
-    let zmin = Infinity, zmax = -Infinity;
-    let ymin = Infinity, ymax = -Infinity;
-    const p = pc.points;
-    for(let i=0;i<p.length;i+=3){
-      if(p[i+2] < zmin) zmin = p[i+2];
-      if(p[i+2] > zmax) zmax = p[i+2];
-      if(p[i+1] < ymin) ymin = p[i+1];
-      if(p[i+1] > ymax) ymax = p[i+1];
-    }
-    const colArr = new Float32Array(pc.count*3);
-    const imin = 0, imax = 255;
-    for(let i=0;i<pc.count;i++){
-      let r=0.7,g=0.7,b=0.7;
-      if(colorMode==='depth'){
-        const t = (p[i*3+2]-zmin)/(zmax-zmin || 1);
-        // blue->cyan->yellow
-        r = 0.15 + 0.75*t; g = 0.35 + 0.55*t; b = 0.9 - 0.7*t;
-      } else if(colorMode==='height'){
-        const t = (p[i*3+1]-ymin)/(ymax-ymin || 1);
-        r = 0.2 + 0.7*t; g = 0.8 - 0.3*t; b = 0.3 + 0.5*t;
-      } else {
-        const t = (pc.colors[i]-imin)/(imax-imin || 1);
-        r = t; g = t; b = t;
-      }
-      colArr[i*3] = r; colArr[i*3+1] = g; colArr[i*3+2] = b;
-    }
-    geo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+  for (let i = 0; i < n; i++) {
+    const lm = frameLandmarks[i];
 
-    const mat = new THREE.PointsMaterial({
-      size: pointSize/300,
-      vertexColors: true,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.95
-    });
-    pointsMesh = new THREE.Points(geo, mat);
-    scene.add(pointsMesh);
+    // x нормирован по ширине, y — по высоте, z — по ширине
+    positions[i * 3 + 0] =  (lm.x - 0.5);
+    positions[i * 3 + 1] = -(lm.y - 0.5) / aspect;
+    positions[i * 3 + 2] = -lm.z;
 
-    // fit camera
-    const span = Math.max(zmax-zmin, ymax-ymin, 0.5);
-    spherical.r = Math.max(0.8, span * 1.8);
-    updateCameraFromSpherical();
+    // экранные UV = «фотография» лица
+    uvs[i * 2 + 0] = lm.x;
+    uvs[i * 2 + 1] = 1 - lm.y;
   }
-  function setPointSize(s){
-    pointSize = s;
-    if(pointsMesh){
-      pointsMesh.material.size = s/300;
-      pointsMesh.material.needsUpdate = true;
-    }
+
+  const indices = new Uint16Array(triangles.length * 3);
+  for (let i = 0; i < triangles.length; i++) {
+    indices[i * 3 + 0] = triangles[i][0];
+    indices[i * 3 + 1] = triangles[i][1];
+    indices[i * 3 + 2] = triangles[i][2];
   }
-  function setColorMode(m){
-    colorMode = m;
-    if(currentPoints) setPointCloud(currentPoints);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2));
+  geom.setIndex(new THREE.BufferAttribute(indices, 1));
+
+  // Центрируем модель в начале координат
+  geom.computeBoundingBox();
+  const c = new THREE.Vector3();
+  geom.boundingBox.getCenter(c);
+  geom.translate(-c.x, -c.y, -c.z);
+
+  geom.computeVertexNormals();
+  geom.computeBoundingSphere();
+  return geom;
+}
+
+function grabFrameTexture() {
+  const fc = document.createElement('canvas');
+  fc.width  = videoEl.videoWidth;
+  fc.height = videoEl.videoHeight;
+  fc.getContext('2d').drawImage(videoEl, 0, 0);
+
+  const tex = new THREE.CanvasTexture(fc);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  tex.flipY = true;               // UV мы считаем как (x, 1-y) — совпадает
+  return tex;
+}
+
+/* ------------------------------------------------------------------ */
+/*  5. ПЕРЕХОД В 3D-ПРОСМОТР                                           */
+/* ------------------------------------------------------------------ */
+function show3D() {
+  scanning = false;
+  saveBtn.style.display  = 'none';
+  resetBtn.style.display = '';
+  statusEl.textContent   = 'Вращай мышью · колесо — зум';
+
+  videoEl.style.display = 'none';
+  scanEl.style.display  = 'none';
+  viewerEl.style.display = 'block';
+
+  const geom = buildHeadMesh(landmarks);
+  const tex  = grabFrameTexture();
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  viewerEl.appendChild(renderer.domElement);
+
+  const scene  = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  const camera = new THREE.PerspectiveCamera(32, window.innerWidth / window.innerHeight, 0.001, 100);
+  const r = geom.boundingSphere.radius;
+  const dist = r / Math.sin(THREE.MathUtils.degToRad(32 / 2)) * 1.5;
+  camera.position.set(0, 0, dist);
+  camera.near = dist / 200;
+  camera.far  = dist * 20;
+  camera.updateProjectionMatrix();
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = dist * 0.35;
+  controls.maxDistance = dist * 2.5;
+  controls.target.set(0, 0, 0);
+
+  // Свет: текстура уже содержит запечённое освещение, поэтому мягко
+  scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  key.position.set(0.6, 1.0, 1.8);
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x66aaff, 0.7);
+  rim.position.set(-1.2, 0.4, -1.0);
+  scene.add(rim);
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.9,
+    metalness: 0.0,
+    side: THREE.DoubleSide   // мы инвертировали Y → меняется обход вершин
+  });
+
+  const head = new THREE.Mesh(geom, mat);
+  scene.add(head);
+
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
   }
-  function toggleGrid(){
-    showGrid = !showGrid;
-    gridHelper.visible = showGrid;
-    return showGrid;
-  }
-  function toggleAxes(){
-    showAxes = !showAxes;
-    axesHelper.visible = showAxes;
-    return showAxes;
-  }
-  function animate(){
+  window.addEventListener('resize', onResize);
+
+  (function animate() {
     requestAnimationFrame(animate);
-    if(renderer && scene && camera){
-      renderer.render(scene, camera);
-    }
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+
+  // Легальный ре-скан
+  resetBtn.onclick = () => {
+    window.removeEventListener('resize', onResize);
+    renderer.dispose();
+    geom.dispose();
+    tex.dispose();
+    mat.dispose();
+    viewerEl.innerHTML = '';
+    viewerEl.style.display = 'none';
+    videoEl.style.display  = '';
+    scanEl.style.display   = '';
+    saveBtn.style.display  = '';
+    resetBtn.style.display = 'none';
+    scanning = true;
+    lastVideoTime = -1;
+    loop();
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  6. СТАРТ                                                           */
+/* ------------------------------------------------------------------ */
+(async function init() {
+  try {
+    // Топологию можно грузить параллельно с камерой
+    const [topo] = await Promise.all([ loadTopology(), startCamera() ]);
+    triangles = topo;
+
+    await startLandmarker();
+
+    loaderEl.style.display = 'none';
+    statusEl.textContent = 'Ищу лицо…';
+    loop();
+  } catch (err) {
+    console.error(err);
+    loaderEl.textContent = 'Ошибка: ' + err.message +
+      ' (нужен HTTPS или localhost и доступ к камере)';
   }
-  function getCameraState(){
-    return {
-      pos: [camera.position.x, camera.position.y, camera.position.z],
-      target: [target.x, target.y, target.z],
-      mode: usePersp ? 'PERSPECTIVE' : 'ORTHOGRAPHIC'
-    };
-  }
-  return {init, setPointCloud, setPointSize, setColorMode,
-    setCamera, reset, toggleGrid, toggleAxes, setProjection, getCameraState};
 })();
 
-/* =====================================================================
-   STAGES
-   ===================================================================== */
-const STAGES = [
-  'CAMERA INITIALIZATION',
-  'FRAME CAPTURE',
-  'IMAGE QUALITY CHECK',
-  'FEATURE DETECTION',
-  'FEATURE MATCHING',
-  'CAMERA POSE ESTIMATION',
-  'POINT CLOUD GENERATION',
-  'POINT CLOUD FILTERING',
-  'DENSIFICATION',
-  'RESULT VALIDATION',
-  'LOCAL SAVE'
-];
-function renderStages(){
-  const el = $('#stages');
-  el.innerHTML = STAGES.map((s,i)=>`
-    <div class="stage">
-      <span>${String(i+1).padStart(2,'0')} ${s}</span>
-      <span class="st" id="stage-${i}">WAITING</span>
-    </div>`).join('');
-}
-function setStage(i, status){
-  const el = document.getElementById('stage-'+i);
-  if(!el) return;
-  el.textContent = status;
-  el.className = 'st ' + status.toLowerCase();
-}
-function resetStages(){
-  STAGES.forEach((_,i)=>setStage(i, 'WAITING'));
-}
-
-/* =====================================================================
-   APP STATE
-   ===================================================================== */
-const state = {
-  currentProject: null,     // {id, name, createdAt, ...}
-  frames: [],               // captured frames (analysis data only)
-  frameImages: [],          // dataURLs (optional save)
-  capturing: false,
-  paused: false,
-  processing: false,
-  stream: null,
-  facingMode: 'environment',
-  captureInterval: null,
-  lastFrameTime: 0,
-  lastFrameFeatures: null,
-  stats: {
-    frames: 0, features: 0, matches: 0, points: 0,
-    filtered: 0, t0: 0, t1: 0
-  },
-  pointCloud: null,
-  surfaceBuilt: false,
-  cameraReady: false
-};
-
-/* =====================================================================
-   NAVIGATION
-   ===================================================================== */
-function showSection(name){
-  $$('.screen').forEach(s=>s.classList.remove('active'));
-  $('#screen-'+name).classList.add('active');
-  $('#topbar-section').textContent = name === 'scans' ? 'SCANS' : 'SCANNER';
-  $('#btn-nav-scans').classList.toggle('active', name==='scans');
-  $('#btn-nav-scanner').classList.toggle('active', name==='scanner');
-  if(name === 'scanner'){
-    // init viewer if hidden
-    const vp = $('#three-view');
-    if(vp.offsetWidth > 0){
-      Viewer.init(vp);
-    }
-    setTimeout(()=>Viewer.init($('#three-view')), 60);
-  }
-}
-$('#btn-nav-scans').onclick = ()=>showSection('scans');
-$('#btn-nav-scanner').onclick = ()=>showSection('scanner');
-
-/* =====================================================================
-   SCANS SCREEN
-   ===================================================================== */
-async function refreshScans(){
-  const all = await dbAll();
-  $('#scans-count').textContent = all.length;
-  const totalBytes = all.reduce((a,p)=>a+(p.size||0),0);
-  $('#storage-used').textContent = fmtBytes(totalBytes);
-
-  // storage estimate
-  if(navigator.storage && navigator.storage.estimate){
-    try{
-      const est = await navigator.storage.estimate();
-      $('#storage-status').textContent = fmtBytes(est.usage) + ' / ' + fmtBytes(est.quota);
-    }catch(e){ $('#storage-status').textContent = 'N/A'; }
-  } else {
-    $('#storage-status').textContent = 'N/A';
-  }
-
-  const list = $('#scans-list');
-  const empty = $('#scans-empty');
-  if(all.length === 0){
-    list.innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-  list.innerHTML = all.map(p=>{
-    const hasSurface = !!(p.vertices > 0 && p.polygons > 0);
-    const status = p.status || 'UNKNOWN';
-    let statusCls = 'badge';
-    if(status === 'COMPLETE') statusCls += ' ok';
-    else if(status === 'FAILED') statusCls += ' err';
-    else statusCls += ' warn';
-    return `
-      <div class="scan-card" data-id="${p.id}">
-        <div class="scan-head">
-          <span class="scan-name">${escapeHtml(p.name)}</span>
-          <span class="scan-id">${p.id}</span>
-        </div>
-        <div class="scan-meta">
-          <div><span>DATE</span><b>${fmtDate(p.createdAt)}</b></div>
-          <div><span>DURATION</span><b>${p.duration?fmtDur(p.duration):'N/A'}</b></div>
-          <div><span>FRAMES</span><b>${p.frames ?? 'N/A'}</b></div>
-          <div><span>POINTS</span><b>${p.points ?? 0}</b></div>
-          <div><span>VERTICES</span><b>${p.vertices ?? 'N/A'}</b></div>
-          <div><span>POLYGONS</span><b>${p.polygons ?? 'N/A'}</b></div>
-          <div><span>TEXTURE</span><b>${p.hasTexture?'YES':'NO'}</b></div>
-          <div><span>SIZE</span><b>${fmtBytes(p.size||0)}</b></div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
-          <span class="${statusCls}">${status}</span>
-          <span class="badge">${hasSurface?'SURFACE':'POINT CLOUD'}</span>
-        </div>
-        <div class="scan-actions">
-          <button data-act="open" data-id="${p.id}">OPEN</button>
-          <button data-act="rename" data-id="${p.id}">RENAME</button>
-          <button data-act="export" data-id="${p.id}">EXPORT</button>
-          <button data-act="delete" data-id="${p.id}" class="btn-danger">DELETE</button>
-        </div>
-      </div>`;
-  }).join('');
-
-  list.querySelectorAll('button[data-act]').forEach(b=>{
-    b.onclick = async ()=>{
-      const id = b.dataset.id;
-      const act = b.dataset.act;
-      if(act === 'open') return openProject(id);
-      if(act === 'rename') return renameProject(id);
-      if(act === 'export') return exportProject(id);
-      if(act === 'delete') return deleteProject(id);
-    };
-  });
-}
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
-}
-
-async function renameProject(id){
-  const p = await dbGet(id);
-  if(!p) return;
-  const name = await promptModal('RENAME PROJECT', p.name);
-  if(!name || name === p.name) return;
-  p.name = name;
-  await dbPut(p);
-  await refreshScans();
-  toast('Project renamed', 'ok');
-}
-async function deleteProject(id){
-  const p = await dbGet(id);
-  if(!p) return;
-  const ok = await confirmModal('DELETE PROJECT',
-    `Delete "${escapeHtml(p.name)}" (${id})? This action cannot be undone.`,
-    'DELETE');
-  if(!ok) return;
-  await dbDelete(id);
-  if(state.currentProject && state.currentProject.id === id){
-    state.currentProject = null;
-  }
-  await refreshScans();
-  toast('Project deleted', 'ok');
-}
-$('#btn-delete-all').onclick = async ()=>{
-  const ok = await confirmModal('DELETE ALL LOCAL DATA',
-    'Delete ALL locally stored projects? This cannot be undone.', 'DELETE ALL');
-  if(!ok) return;
-  await dbClear();
-  state.currentProject = null;
-  await refreshScans();
-  toast('All local data deleted', 'ok');
-};
-$('#btn-new-scan').onclick = ()=>startNewProject();
-
-function startNewProject(){
-  state.currentProject = {
-    id: uid(),
-    name: 'PROJECT ' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-'),
-    createdAt: Date.now()
-  };
-  state.frames = [];
-  state.frameImages = [];
-  state.pointCloud = null;
-  state.surfaceBuilt = false;
-  state.stats = {frames:0, features:0, matches:0, points:0, filtered:0, t0:0, t1:0};
-  resetStages();
-  updateProjectHeader();
-  updateStats();
-  showSection('scanner');
-  // clear viewer
-  Viewer.setPointCloud(null);
-  setViewMode('cam');
-  setHint('PRESS START SCAN');
-  $('#btn-start').disabled = false;
-  $('#btn-pause').disabled = true;
-  $('#btn-finish').disabled = true;
-  $('#btn-cancel').disabled = true;
-  $('#btn-process').disabled = true;
-  $('#btn-save').disabled = true;
-  $('#viewer-controls').style.display = 'none';
-}
-
-async function openProject(id){
-  const p = await dbGet(id);
-  if(!p){ toast('Project not found', 'err'); return; }
-  state.currentProject = {
-    id: p.id, name: p.name, createdAt: p.createdAt
-  };
-  state.pointCloud = p.points ? {
-    points: p.points,
-    colors: p.colors || new Uint8Array(p.count || 0),
-    count: p.count || 0
-  } : null;
-  state.stats = {
-    frames: p.frames || 0,
-    features: p.features || 0,
-    matches: p.matches || 0,
-    points: p.points || 0
-  };
-  state.surfaceBuilt = !!(p.vertices > 0 && p.polygons > 0);
-  resetStages();
-  updateProjectHeader();
-  updateStats();
-  showSection('scanner');
-  // Ensure viewer initialized then load cloud
-  setTimeout(()=>{
-    Viewer.init($('#three-view'));
-    if(state.pointCloud) Viewer.setPointCloud(state.pointCloud);
-    else Viewer.setPointCloud(null);
-    $('#viewer-controls').style.display = state.pointCloud ? 'flex' : 'none';
-    setViewMode(state.pointCloud ? '3d' : 'cam');
-    setHint(state.pointCloud ? 'LOADED PROJECT (READ-ONLY)' : 'NO DATA');
-  }, 80);
-  $('#btn-start').disabled = false;
-  $('#btn-pause').disabled = true;
-  $('#btn-finish').disabled = true;
-  $('#btn-cancel').disabled = true;
-  $('#btn-process').disabled = true;
-  $('#btn-save').disabled = true;
-}
-
-/* =====================================================================
-   SCANNER SCREEN
-   ===================================================================== */
-function updateProjectHeader(){
-  const p = state.currentProject;
-  if(!p){
-    $('#proj-name').textContent = 'NO PROJECT';
-    $('#proj-id').textContent = 'ID: --';
-    return;
-  }
-  $('#proj-name').textContent = p.name;
-  $('#proj-id').textContent = 'ID: ' + p.id;
-}
-function updateStats(){
-  const s = state.stats;
-  $('#stat-frames').textContent = s.frames || 0;
-  $('#stat-features').textContent = s.features || 0;
-  $('#stat-matches').textContent = s.matches || 0;
-  $('#stat-points').textContent = s.points || 0;
-}
-function setHint(msg){ $('#scan-hint').textContent = msg; }
-function setCamStatus(msg, cls){
-  const el = $('#cam-status');
-  el.textContent = 'CAM: ' + msg;
-  el.className = cls || '';
-}
-function setProcStatus(msg, cls){
-  const el = $('#proc-status');
-  el.textContent = 'PROC: ' + msg;
-  el.className = cls || '';
-}
-function setViewMode(m){
-  const vp = $('#viewport');
-  vp.classList.toggle('mode-3d', m === '3d');
-  $$('.viewport-tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view === m));
-  if(m === '3d'){
-    setTimeout(()=>Viewer.init($('#three-view')), 30);
-  }
-}
-$$('.viewport-tabs button').forEach(b=>{
-  b.onclick = ()=>setViewMode(b.dataset.view);
+saveBtn.addEventListener('click', () => {
+  if (!landmarks) return;
+  show3D();
 });
-
-/* --- Camera --- */
-async function initCamera(){
-  if(state.stream){
-    state.cameraReady = true;
-    setCamStatus('READY', 'ok');
-    return true;
-  }
-  setCamStatus('INIT', '');
-  setStage(0, 'RUNNING');
-  try{
-    const constraints = {
-      video: {
-        facingMode: state.facingMode,
-        width: {ideal: 1280},
-        height: {ideal: 960},
-        frameRate: {ideal: 30, max: 30}
-      },
-      audio: false
-    };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    state.stream = stream;
-    const v = $('#video');
-    v.srcObject = stream;
-    await v.play().catch(()=>{});
-    state.cameraReady = true;
-    setCamStatus('READY', 'ok');
-    setStage(0, 'COMPLETE');
-    return true;
-  }catch(e){
-    setCamStatus('ERROR', 'err');
-    setStage(0, 'FAILED');
-    toast('Camera error: ' + (e.message || e.name), 'err');
-    return false;
-  }
-}
-function stopCamera(){
-  if(state.stream){
-    state.stream.getTracks().forEach(t=>t.stop());
-    state.stream = null;
-  }
-  state.cameraReady = false;
-  setCamStatus('OFF');
-}
-
-/* --- Frame capture loop --- */
-function startCaptureLoop(){
-  if(state.captureInterval) return;
-  state.captureInterval = setInterval(captureTick, 220);
-}
-function stopCaptureLoop(){
-  if(state.captureInterval){
-    clearInterval(state.captureInterval);
-    state.captureInterval = null;
-  }
-}
-
-/* Decide if we should capture the current frame based on:
-   - at least 150 ms since last capture
-   - mean pixel difference vs last captured > threshold
-*/
-let _lastGray = null;
-function captureTick(){
-  if(!state.capturing || state.paused) return;
-  if(!state.stream || !$('#video').videoWidth) return;
-  const now = performance.now();
-  if(now - state.lastFrameTime < 180) return;
-
-  setStage(1, 'RUNNING');
-  const frame = extractFrame($('#video'));
-  if(frame.kps.length < 30){
-    setStage(2, 'FAILED');
-    setStage(1, 'COMPLETE');
-    setHint('IMAGE QUALITY LOW — HOLD STEADY, IMPROVE LIGHTING');
-    return;
-  }
-  setStage(2, 'COMPLETE');
-  setStage(3, 'RUNNING');
-
-  // Decide whether to actually keep this frame (novelty check)
-  let novel = true;
-  if(state.lastFrameFeatures){
-    const m = matchFeatures(state.lastFrameFeatures.descs, frame.descs, 0.85, 80);
-    // If too many matches with previous → user hasn't moved enough
-    const ratio = m.length / Math.max(1, Math.min(
-      state.lastFrameFeatures.descs.length, frame.descs.length));
-    if(ratio > 0.55){
-      novel = false;
-    }
-    state.stats.matches = m.length;
-  }
-  state.stats.features = frame.kps.length;
-
-  if(novel){
-    frame.ts = Date.now();
-    state.frames.push(frame);
-    state.lastFrameFeatures = frame;
-    state.stats.frames = state.frames.length;
-
-    // Optionally save a downscaled JPEG for export
-    try{
-      const c = document.createElement('canvas');
-      const v = $('#video');
-      const maxW = 320;
-      const s = maxW / (v.videoWidth || 1);
-      c.width = maxW;
-      c.height = Math.round((v.videoHeight||1) * s);
-      c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-      const url = c.toDataURL('image/jpeg', 0.6);
-      state.frameImages.push(url);
-      if(state.frameImages.length > 300){
-        state.frameImages.shift();
-      }
-    }catch(e){/* ignore */}
-
-    setStage(3, 'COMPLETE');
-    setStage(4, 'COMPLETE');
-    setStage(5, 'RUNNING');
-    setHint(`CAPTURING · FRAME ${state.stats.frames} ADDED · MOVE SMOOTHLY AROUND HEAD`);
-  } else {
-    setHint(`CAPTURING · MOVE MORE FOR NOVEL VIEWPOINT (${frame.kps.length} features)`);
-  }
-  state.lastFrameTime = now;
-  updateStats();
-}
-
-/* --- Buttons --- */
-$('#btn-start').onclick = async ()=>{
-  if(state.processing) return;
-  if(!state.currentProject){
-    startNewProject();
-  }
-  const ok = await initCamera();
-  if(!ok) return;
-  state.capturing = true;
-  state.paused = false;
-  state.stats.t0 = performance.now();
-  state.frames = [];
-  state.frameImages = [];
-  state.lastFrameFeatures = null;
-  state.stats.frames = 0;
-  state.stats.features = 0;
-  state.stats.matches = 0;
-  state.stats.points = 0;
-  updateStats();
-  resetStages();
-  setStage(0, 'COMPLETE');
-  setStage(1, 'RUNNING');
-  startCaptureLoop();
-  setViewMode('cam');
-  setHint('CAPTURING · HOLD DEVICE, ORBIT HEAD SLOWLY');
-  $('#btn-start').disabled = true;
-  $('#btn-pause').disabled = false;
-  $('#btn-finish').disabled = false;
-  $('#btn-cancel').disabled = false;
-  $('#btn-process').disabled = true;
-  $('#btn-save').disabled = true;
-};
-$('#btn-pause').onclick = ()=>{
-  if(!state.capturing) return;
-  state.paused = !state.paused;
-  $('#btn-pause').textContent = state.paused ? 'RESUME' : 'PAUSE';
-  setHint(state.paused ? 'PAUSED' : 'CAPTURING · HOLD DEVICE, ORBIT HEAD SLOWLY');
-};
-$('#btn-finish').onclick = ()=>{
-  if(!state.capturing) return;
-  state.capturing = false;
-  state.paused = false;
-  stopCaptureLoop();
-  setStage(1, 'COMPLETE');
-  setHint('CAPTURE FINISHED · ' + state.frames.length + ' FRAMES');
-  $('#btn-start').disabled = false;
-  $('#btn-pause').disabled = true;
-  $('#btn-finish').disabled = true;
-  $('#btn-cancel').disabled = true;
-  $('#btn-process').disabled = state.frames.length < 2;
-  setProcStatus('READY');
-};
-$('#btn-cancel').onclick = async ()=>{
-  const ok = await confirmModal('CANCEL SCAN',
-    'Discard the current capture and return to idle?', 'DISCARD');
-  if(!ok) return;
-  state.capturing = false;
-  state.paused = false;
-  stopCaptureLoop();
-  state.frames = [];
-  state.frameImages = [];
-  state.lastFrameFeatures = null;
-  state.stats = {frames:0,features:0,matches:0,points:0,filtered:0,t0:0,t1:0};
-  updateStats();
-  resetStages();
-  setHint('SCAN CANCELLED');
-  setProcStatus('IDLE');
-  $('#btn-start').disabled = false;
-  $('#btn-pause').disabled = true;
-  $('#btn-finish').disabled = true;
-  $('#btn-cancel').disabled = true;
-  $('#btn-process').disabled = true;
-  $('#btn-save').disabled = true;
-};
-
-/* --- Processing --- */
-$('#btn-process').onclick = async ()=>{
-  if(state.processing) return;
-  if(state.frames.length < 2){
-    toast('Need at least 2 frames', 'err');
-    return;
-  }
-  state.processing = true;
-  $('#btn-process').disabled = true;
-  setProcStatus('PROCESSING', '');
-  const t0 = performance.now();
-
-  // Memory warning
-  const approxBytes = state.frames.reduce((a,f)=>
-    a + f.descs.length * 32 + f.kps.length * 16, 0);
-  if(approxBytes > 40*1024*1024){
-    const ok = await confirmModal('MEMORY WARNING',
-      `Frames require ~${fmtBytes(approxBytes)} in RAM. Continue?`, 'CONTINUE');
-    if(!ok){
-      state.processing = false;
-      $('#btn-process').disabled = false;
-      setProcStatus('CANCELLED');
-      return;
-    }
-  }
-
-  // Async: process in chunks to keep UI responsive
-  await new Promise(r=>setTimeout(r, 40));
-  setStage(4, 'RUNNING');
-
-  let result;
-  try{
-    result = buildPointCloud(state.frames, (p, m)=>{
-      setStage(4, 'COMPLETE');
-      setStage(5, 'RUNNING');
-      $('#proc-status').textContent = 'PROC: ' +
-        Math.round(p*100) + '% (' + m + ' matches)';
-    });
-  }catch(e){
-    console.error(e);
-    setProcStatus('FAILED', 'err');
-    toast('Processing failed: ' + e.message, 'err');
-    state.processing = false;
-    $('#btn-process').disabled = false;
-    return;
-  }
-  setStage(5, 'COMPLETE');
-  setStage(6, 'RUNNING');
-
-  state.pointCloud = result.count > 0 ? {
-    points: result.points,
-    colors: result.colors,
-    count: result.count
-  } : null;
-  state.stats.matches = result.stats.matches;
-  state.stats.points = result.count;
-  state.stats.filtered = result.stats.filtered;
-  state.stats.t1 = performance.now();
-  setStage(6, 'COMPLETE');
-  setStage(7, 'COMPLETE');
-  setStage(8, 'N/A');
-  setStage(9, result.count > 0 ? 'COMPLETE' : 'FAILED');
-  setProcStatus(result.count > 0 ? 'DONE (' + fmtDur(state.stats.t1-t0) + ')' : 'NO POINTS');
-
-  updateStats();
-
-  // Show point cloud
-  Viewer.init($('#three-view'));
-  Viewer.setPointCloud(state.pointCloud);
-  setViewMode('3d');
-  $('#viewer-controls').style.display = state.pointCloud ? 'flex' : 'none';
-  setHint(state.pointCloud ?
-    `POINT CLOUD READY · ${result.count} POINTS · ${result.stats.matches} MATCHES` :
-    'RECONSTRUCTION PRODUCED ZERO VALID POINTS — INSUFFICIENT PARALLAX');
-
-  state.processing = false;
-  $('#btn-process').disabled = false;
-  $('#btn-save').disabled = !state.pointCloud || state.pointCloud.count === 0;
-};
-
-/* --- Save --- */
-$('#btn-save').onclick = async ()=>{
-  if(!state.pointCloud || !state.currentProject) return;
-  setProcStatus('SAVING', '');
-  setStage(10, 'RUNNING');
-  try{
-    const pc = state.pointCloud;
-    // Estimate size
-    const pointBytes = pc.points.byteLength + pc.colors.byteLength;
-    const imgBytes = state.frameImages.reduce((a,s)=>a + s.length * 0.75, 0);
-    const rec = {
-      id: state.currentProject.id,
-      name: state.currentProject.name,
-      createdAt: state.currentProject.createdAt || Date.now(),
-      duration: (state.stats.t1 && state.stats.t0) ?
-        Math.round(state.stats.t1 - state.stats.t0) : null,
-      frames: state.stats.frames,
-      features: state.stats.features,
-      matches: state.stats.matches,
-      points: pc.count,
-      count: pc.count,
-      vertices: 0,
-      polygons: 0,
-      hasTexture: false,
-      status: pc.count > 0 ? 'COMPLETE' : 'FAILED',
-      size: Math.round(pointBytes + imgBytes),
-      pointsData: pc.points,
-      colorsData: pc.colors,
-      framesData: state.frameImages.slice(0, 200),
-      cameraModel: {
-        f: PROC_W * 0.9,
-        cx: PROC_W/2,
-        cy: PROC_H/2,
-        width: PROC_W,
-        height: PROC_H,
-        units: 'ARBITRARY (UNCALIBRATED)'
-      },
-      timestamp: Date.now()
-    };
-    await dbPut(rec);
-    setStage(10, 'COMPLETE');
-    setProcStatus('SAVED');
-    toast('Project saved to local storage', 'ok');
-    await refreshScans();
-  }catch(e){
-    console.error(e);
-    setStage(10, 'FAILED');
-    setProcStatus('SAVE FAILED', 'err');
-    toast('Save failed: ' + e.message, 'err');
-  }
-};
-
-/* =====================================================================
-   EXPORT
-   ===================================================================== */
-async function exportProject(id){
-  const p = await dbGet(id);
-  if(!p){ toast('Project not found', 'err'); return; }
-
-  const box = $('#modal-box');
-  const hasSurface = (p.vertices > 0 && p.polygons > 0);
-  const hasPoints = p.pointsData && p.count > 0;
-  box.innerHTML = `
-    <h3>EXPORT ${escapeHtml(p.name)}</h3>
-    <div style="font-family:var(--mono);font-size:10px;color:#7a8290;margin-bottom:10px">
-      POINTS: ${p.count || 0} · VERTICES: ${p.vertices || 0} · POLYGONS: ${p.polygons || 0}<br>
-      TYPE: ${hasSurface ? 'SURFACE MESH' : 'POINT CLOUD ONLY'}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <button data-fmt="ply" ${!hasPoints?'disabled':''}>EXPORT PLY (POINT CLOUD)</button>
-      <button data-fmt="obj" ${!hasSurface?'disabled':''}>EXPORT OBJ (SURFACE)</button>
-      <button data-fmt="glb" ${!hasSurface?'disabled':''}>EXPORT GLB (SURFACE)</button>
-      <button data-fmt="frames" ${!(p.framesData && p.framesData.length)?'disabled':''}>EXPORT FRAMES</button>
-      <button data-fmt="report">EXPORT TECHNICAL REPORT (JSON)</button>
-    </div>
-    <div class="modal-actions" style="margin-top:12px">
-      <button id="_exp_close">CLOSE</button>
-    </div>`;
-  $('#modal').classList.add('open');
-  $('#_exp_close').onclick = ()=>$('#modal').classList.remove('open');
-
-  box.querySelectorAll('button[data-fmt]').forEach(b=>{
-    b.onclick = async ()=>{
-      const f = b.dataset.fmt;
-      if(f === 'ply') downloadPLY(p);
-      else if(f === 'obj') downloadOBJ(p);
-      else if(f === 'glb') downloadGLB(p);
-      else if(f === 'report') downloadReport(p);
-      else if(f === 'frames') downloadFrames(p);
-      $('#modal').classList.remove('open');
-    };
-  });
-}
-
-function triggerDownload(blob, filename){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-}
-
-function downloadPLY(p){
-  if(!p.pointsData || !p.count){ toast('No points to export', 'err'); return; }
-  const pts = p.pointsData;
-  const cols = p.colorsData || new Uint8Array(p.count);
-  const lines = [];
-  lines.push('ply');
-  lines.push('format ascii 1.0');
-  lines.push('comment FORENSIC 3D — uncalibrated reconstruction');
-  lines.push('comment units: ARBITRARY');
-  lines.push('element vertex ' + p.count);
-  lines.push('property float x');
-  lines.push('property float y');
-  lines.push('property float z');
-  lines.push('property uchar red');
-  lines.push('property uchar green');
-  lines.push('property uchar blue');
-  lines.push('end_header');
-  for(let i=0;i<p.count;i++){
-    const x = pts[i*3].toFixed(6);
-    const y = pts[i*3+1].toFixed(6);
-    const z = pts[i*3+2].toFixed(6);
-    const v = cols[i] | 0;
-    lines.push(x + ' ' + y + ' ' + z + ' ' + v + ' ' + v + ' ' + v);
-  }
-  const blob = new Blob([lines.join('\n')], {type:'application/octet-stream'});
-  triggerDownload(blob, p.id + '.ply');
-  toast('Exported PLY (' + p.count + ' points)', 'ok');
-}
-
-function downloadOBJ(p){
-  toast('Surface not built in this version', 'err');
-}
-function downloadGLB(p){
-  toast('Surface not built in this version', 'err');
-}
-function downloadReport(p){
-  const report = {
-    project: { id: p.id, name: p.name, createdAt: fmtDate(p.createdAt) },
-    duration_ms: p.duration,
-    frames: p.frames,
-    features: p.features,
-    matches: p.matches,
-    points: p.count,
-    vertices: p.vertices || 0,
-    polygons: p.polygons || 0,
-    hasTexture: !!p.hasTexture,
-    status: p.status,
-    cameraModel: p.cameraModel || null,
-    reconstruction: {
-      method: 'FAST + BRIEF + orbit triangulation',
-      calibrated: false,
-      units: 'ARBITRARY'
-    },
-    disclaimer:
-      'This reconstruction is approximate and uncalibrated. ' +
-      'Do not use for metrology without independent calibration.'
-  };
-  const blob = new Blob([JSON.stringify(report, null, 2)], {type:'application/json'});
-  triggerDownload(blob, p.id + '_report.json');
-}
-function downloadFrames(p){
-  if(!p.framesData || !p.framesData.length){ toast('No frames stored', 'err'); return; }
-  // Combine into a single JSON for simplicity (avoids zip dependency)
-  const blob = new Blob([JSON.stringify({
-    id: p.id, name: p.name, frames: p.framesData
-  })], {type:'application/json'});
-  triggerDownload(blob, p.id + '_frames.json');
-  toast('Exported frames metadata+dataURLs', 'ok');
-}
-
-/* =====================================================================
-   VIEWER CONTROLS WIRING
-   ===================================================================== */
-$$('#viewer-controls [data-cam]').forEach(b=>{
-  b.onclick = ()=>Viewer.setCamera(b.dataset.cam);
-});
-$('#btn-reset-cam').onclick = ()=>Viewer.reset();
-$('#btn-toggle-grid').onclick = ()=>{
-  const v = Viewer.toggleGrid();
-  $('#btn-toggle-grid').classList.toggle('active', v);
-};
-$('#btn-toggle-axes').onclick = ()=>{
-  const v = Viewer.toggleAxes();
-  $('#btn-toggle-axes').classList.toggle('active', v);
-};
-let _persp = true;
-$('#btn-toggle-orbit').textContent = 'PERSPECTIVE';
-$('#btn-toggle-orbit').onclick = ()=>{
-  _persp = !_persp;
-  Viewer.setProjection(_persp);
-  $('#btn-toggle-orbit').textContent = _persp ? 'PERSPECTIVE' : 'ORTHOGRAPHIC';
-};
-$('#point-size').oninput = e => Viewer.setPointSize(parseInt(e.target.value, 10));
-$('#color-mode').onchange = e => Viewer.setColorMode(e.target.value);
-
-/* =====================================================================
-   INIT
-   ===================================================================== */
-(async function init(){
-  renderStages();
-  try{
-    await openDB();
-  }catch(e){
-    toast('IndexedDB unavailable: ' + e.message, 'err');
-  }
-  await refreshScans();
-
-  // Show default state
-  showSection('scans');
-
-  // Handle page visibility (Safari background kill)
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.hidden && state.capturing){
-      // auto-pause to save battery and prevent drift
-      state.paused = true;
-      $('#btn-pause').textContent = 'RESUME';
-      setHint('PAUSED (BACKGROUND)');
-    }
-  });
-
-  // Prevent iOS double-tap zoom on buttons
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', e=>{
-    const now = Date.now();
-    if(now - lastTouchEnd < 320) e.preventDefault();
-    lastTouchEnd = now;
-  }, {passive:false});
-})();
 </script>
 </body>
 </html>
