@@ -4,90 +4,350 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Молот и Котёл — 3D Восхождение</title>
 <style>
+  :root {
+    --gold: #c9a961;
+    --gold-light: #f0e0b8;
+    --bg: #0a0a0f;
+    --bg-panel: rgba(20, 20, 28, 0.94);
+    --text: #e8e8e8;
+    --text-dim: #999;
+    --danger: #e88;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; }
-  #game-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+  html, body {
+    width: 100%; height: 100vh; height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text);
+    user-select: none; -webkit-user-select: none;
+    touch-action: none; overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  #game-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
-  .menu-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; background: rgba(8, 8, 14, 0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow-y: auto; padding: 20px; }
+  /* ============ MENU ============ */
+  .menu-screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    background: rgba(8, 8, 14, 0.75);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: calc(16px + var(--safe-top)) max(16px, var(--safe-right)) calc(16px + var(--safe-bottom)) max(16px, var(--safe-left));
+  }
   .menu-screen.hidden { display: none; }
-  .menu-screen.engine-loading .menu-btn { opacity: 0.4; pointer-events: none; }
-  .menu-content { width: 100%; max-width: 400px; padding: 20px; text-align: center; }
-  .menu-title { font-size: 30px; font-weight: 800; letter-spacing: 3px; margin-bottom: 4px; background: linear-gradient(135deg, #f0e0b8, #c9a961, #8a6d3b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .menu-subtitle { font-size: 11px; color: #777; letter-spacing: 4px; margin-bottom: 26px; text-transform: uppercase; }
-  .menu-btn { display: block; width: 100%; padding: 14px; margin-bottom: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e8e8e8; font-size: 15px; letter-spacing: 1.5px; cursor: pointer; border-radius: 10px; transition: all 0.2s; font-family: inherit; text-align: center; }
-  .menu-btn:hover { background: rgba(201, 169, 97, 0.18); border-color: #c9a961; }
-  .menu-btn:active { transform: scale(0.98); }
-  .menu-btn.secondary { background: rgba(255,255,255,0.02); font-size: 13px; padding: 11px; letter-spacing: 1px; }
-  .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  #engine-hint { font-size: 11px; color: #666; margin-top: 10px; min-height: 14px; line-height: 1.4; }
+  .menu-content { width: 100%; max-width: 380px; text-align: center; padding: 4px 0; }
+  .menu-title {
+    font-size: clamp(22px, 6vw, 30px); font-weight: 800; letter-spacing: 3px;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #f0e0b8, #c9a961, #8a6d3b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .menu-subtitle {
+    font-size: 10px; color: #666; letter-spacing: 4px; margin-bottom: 20px; text-transform: uppercase;
+  }
+  .menu-btn {
+    display: block; width: 100%;
+    padding: 13px 14px; margin-bottom: 9px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text);
+    font-size: 14px; letter-spacing: 1.5px; font-weight: 500;
+    cursor: pointer; border-radius: 10px;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    font-family: inherit; text-align: center;
+    touch-action: manipulation;
+  }
+  .menu-btn:active { transform: scale(0.97); background: rgba(201,169,97,0.28); border-color: var(--gold); }
+  .menu-btn.secondary { font-size: 13px; padding: 11px 14px; letter-spacing: 1px; background: rgba(255,255,255,0.03); }
+  .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
-  #hud { position: fixed; top: 0; left: 0; right: 0; padding: 12px 14px; display: none; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none; }
+  #engine-hint {
+    font-size: 11px; color: #777; margin-top: 12px; min-height: 14px; line-height: 1.4;
+    transition: color 0.3s;
+  }
+  #engine-hint.error { color: var(--danger); }
+  #engine-hint.ready { color: #4a4; }
+
+  /* ============ HUD ============ */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) 10px calc(12px + var(--safe-left));
+    display: none;
+    justify-content: space-between; align-items: flex-start;
+    z-index: 10; pointer-events: none;
+  }
   #hud.active { display: flex; }
-  #hud .info { display: flex; flex-direction: column; gap: 6px; font-size: 13px; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
-  #hud .info .label { color: #999; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; display: inline-block; margin-right: 6px; }
-  #hud .info .value { color: #fff; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+  #hud .info { display: flex; flex-direction: column; gap: 5px; font-size: 12px; text-shadow: 0 1px 3px rgba(0,0,0,0.95); }
+  #hud .info .label { color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; display: inline-block; margin-right: 5px; }
+  #hud .info .value { color: #fff; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
   #hud-right { display: flex; gap: 8px; pointer-events: auto; }
-  .hud-btn { width: 44px; height: 44px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .hud-btn:active { background: rgba(201, 169, 97, 0.35); }
+  .hud-btn {
+    width: 42px; height: 42px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 10px;
+    color: #fff; font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: manipulation;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .hud-btn:active { background: rgba(201,169,97,0.35); transform: scale(0.94); }
 
-  #stats { position: fixed; top: 70px; left: 14px; padding: 10px 12px; background: rgba(0,0,0,0.68); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 11px; color: #bbb; font-family: 'SF Mono', Consolas, monospace; z-index: 10; display: none; backdrop-filter: blur(6px); }
+  /* ============ STATS ============ */
+  #stats {
+    position: fixed; top: calc(62px + var(--safe-top)); left: calc(12px + var(--safe-left));
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.72);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    font-size: 10px; color: #aaa;
+    font-family: 'SF Mono', Consolas, monospace;
+    z-index: 10; display: none;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    pointer-events: none;
+  }
   #stats.visible { display: block; }
-  #stats .row { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 3px; }
-  #stats .row span:last-child { color: #c9a961; font-weight: 600; }
-  #stats-canvas { display: block; margin-top: 8px; border-radius: 4px; }
+  #stats .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 2px; line-height: 1.4; }
+  #stats .row span:last-child { color: var(--gold); font-weight: 600; }
+  #stats-canvas { display: block; margin-top: 6px; border-radius: 3px; width: 140px; height: 32px; }
 
-  .overlay { position: fixed; inset: 0; background: rgba(8, 8, 14, 0.94); z-index: 200; display: flex; flex-direction: column; padding: 16px; overflow-y: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  /* ============ OVERLAYS ============ */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(8, 8, 14, 0.95);
+    z-index: 200;
+    display: flex; flex-direction: column;
+    padding: calc(14px + var(--safe-top)) max(14px, var(--safe-right)) calc(14px + var(--safe-bottom)) max(14px, var(--safe-left));
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
   .overlay.hidden { display: none; }
-  .overlay-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-shrink: 0; max-width: 500px; margin-left: auto; margin-right: auto; width: 100%; }
-  .overlay-title { font-size: 18px; font-weight: 700; color: #e8d5a8; letter-spacing: 1px; }
-  .close-btn { width: 40px; height: 40px; background: rgba(255,255,255,0.08); border: none; color: #fff; font-size: 18px; border-radius: 10px; cursor: pointer; }
-  .overlay-body { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; }
+  .overlay-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; flex-shrink: 0;
+    max-width: 480px; margin-left: auto; margin-right: auto; width: 100%;
+  }
+  .overlay-title { font-size: 17px; font-weight: 700; color: #e8d5a8; letter-spacing: 1px; }
+  .close-btn {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.08);
+    border: none; color: #fff;
+    font-size: 18px; border-radius: 10px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .close-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.94); }
+  .overlay-body { flex: 1; max-width: 480px; margin: 0 auto; width: 100%; }
 
-  .setting-group { margin-bottom: 18px; }
-  .setting-group-title { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
-  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .setting-row:last-child { border-bottom: none; }
-  .setting-row label { font-size: 14px; color: #ccc; flex: 1; padding-right: 12px; }
-  .setting-row .control { flex-shrink: 0; }
-  .setting-row select { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 7px 10px; border-radius: 8px; font-family: inherit; font-size: 13px; min-width: 130px; }
-  .setting-row input[type=range] { width: 130px; accent-color: #c9a961; }
-  .toggle { position: relative; width: 44px; height: 24px; background: rgba(255,255,255,0.14); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
-  .toggle.on { background: #c9a961; }
-  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
-  .toggle.on::after { transform: translateX(20px); }
+  /* ============ SETTINGS ============ */
+  .setting-group { margin-bottom: 12px; }
+  .setting-group-title {
+    font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; padding-left: 2px;
+  }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px; margin-bottom: 3px;
+    min-height: 42px;
+  }
+  .setting-row label { font-size: 13px; color: #ccc; flex: 1; padding-right: 10px; }
+  .setting-row .control { flex-shrink: 0; display: flex; align-items: center; }
+  .setting-row select {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; padding: 6px 8px;
+    border-radius: 7px; font-family: inherit; font-size: 12px;
+    min-width: 120px; max-width: 140px;
+    touch-action: manipulation;
+  }
+  .setting-row input[type=range] {
+    width: 120px; accent-color: var(--gold);
+    touch-action: manipulation;
+    height: 28px;
+  }
+  .toggle {
+    position: relative; width: 42px; height: 24px;
+    background: rgba(255,255,255,0.14); border-radius: 12px;
+    cursor: pointer; transition: background 0.2s;
+    touch-action: manipulation;
+  }
+  .toggle.on { background: var(--gold); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(18px); }
 
-  #touch-indicator { position: fixed; width: 54px; height: 54px; border: 2px solid rgba(201,169,97,0.7); border-radius: 50%; pointer-events: none; display: none; z-index: 6; transform: translate(-50%, -50%); box-shadow: 0 0 20px rgba(201,169,97,0.4); }
+  /* ============ TOUCH ============ */
+  #touch-indicator {
+    position: fixed; width: 52px; height: 52px;
+    border: 2px solid rgba(201,169,97,0.7);
+    border-radius: 50%; pointer-events: none;
+    display: none; z-index: 6;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 20px rgba(201,169,97,0.4);
+    transition: opacity 0.15s;
+  }
   #touch-indicator.visible { display: block; }
 
-  .info-text { color: #aaa; font-size: 14px; line-height: 1.75; }
+  /* ============ INFO TEXT ============ */
+  .info-text { color: #b8b8b8; font-size: 13px; line-height: 1.7; }
   .info-text p { margin-bottom: 10px; }
-  .info-text strong { color: #c9a961; }
-  .info-text .stat-line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .info-text strong { color: var(--gold); }
+  .info-text .stat-line {
+    display: flex; justify-content: space-between;
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
   .info-text .stat-line span:first-child { color: #888; }
   .info-text .stat-line span:last-child { color: #e8d5a8; font-weight: 600; }
 
-  #victory .victory-content { text-align: center; }
-  #victory .victory-title { font-size: 54px; margin-bottom: 8px; }
-  #victory .victory-time { font-size: 22px; color: #c9a961; margin-bottom: 24px; font-variant-numeric: tabular-nums; }
-  #victory .info-text { text-align: center; font-size: 15px; margin-bottom: 22px; }
+  /* ============ VICTORY ============ */
+  #victory .victory-content { text-align: center; padding-top: 40px; }
+  #victory .victory-title { font-size: 60px; margin-bottom: 10px; line-height: 1; }
+  #victory .victory-time { font-size: 22px; color: var(--gold); margin: 16px 0 24px; font-variant-numeric: tabular-nums; font-weight: 700; }
+  #victory .info-text { text-align: center; font-size: 15px; margin-bottom: 20px; }
 
-  #rotate-hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #ccc; padding: 8px 16px; border-radius: 8px; font-size: 11px; z-index: 50; display: none; border: 1px solid rgba(255,255,255,0.1); }
+  /* ============ ROTATE HINT ============ */
+  #rotate-hint {
+    position: fixed;
+    bottom: calc(12px + var(--safe-bottom));
+    left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.85); color: #ccc;
+    padding: 6px 14px; border-radius: 8px;
+    font-size: 10px; z-index: 50;
+    display: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
+  }
   @media (orientation: portrait) and (max-width: 500px) {
     #rotate-hint.show { display: block; }
   }
 
-  .mode-btn { display: block; width: 100%; padding: 16px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #e8e8e8; cursor: pointer; border-radius: 10px; font-family: inherit; text-align: left; transition: all 0.2s; }
-  .mode-btn:hover, .mode-btn.selected { background: rgba(201, 169, 97, 0.2); border-color: #c9a961; }
-  .mode-btn .mode-name { font-weight: 700; font-size: 15px; }
-  .mode-btn .mode-desc { font-size: 12px; color: #999; margin-top: 4px; }
+  /* ============ MODE ============ */
+  .mode-btn {
+    display: block; width: 100%;
+    padding: 14px 16px; margin-bottom: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text);
+    cursor: pointer; border-radius: 10px;
+    font-family: inherit; text-align: left;
+    transition: all 0.15s;
+    touch-action: manipulation;
+  }
+  .mode-btn:active { transform: scale(0.98); }
+  .mode-btn.selected { background: rgba(201,169,97,0.22); border-color: var(--gold); }
+  .mode-btn .mode-name { font-weight: 700; font-size: 14px; }
+  .mode-btn .mode-desc { font-size: 11px; color: #999; margin-top: 4px; line-height: 1.4; }
+
+  /* ============ TOAST ============ */
+  #toast-container {
+    position: fixed;
+    bottom: calc(20px + var(--safe-bottom));
+    left: 50%; transform: translateX(-50%);
+    z-index: 5000;
+    display: flex; flex-direction: column;
+    gap: 8px; pointer-events: none;
+    align-items: center;
+    max-width: 90vw;
+  }
+  .toast {
+    background: rgba(20,20,30,0.96);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+    border: 1px solid rgba(201,169,97,0.35);
+    animation: toast-in 0.25s ease-out;
+    max-width: 320px;
+    text-align: center;
+    line-height: 1.4;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .toast.out { animation: toast-out 0.25s ease-in forwards; }
+  @keyframes toast-out { to { opacity: 0; transform: translateY(14px) scale(0.95); } }
+
+  /* ============ CONFIRM ============ */
+  #confirm-dialog {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 5000;
+    padding: 20px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #confirm-dialog.hidden { display: none; }
+  .confirm-content {
+    background: #1a1a24;
+    border: 1px solid rgba(201,169,97,0.35);
+    border-radius: 14px;
+    padding: 22px 20px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+    animation: toast-in 0.25s ease-out;
+  }
+  .confirm-message {
+    color: #ddd; font-size: 15px;
+    margin-bottom: 20px; text-align: center; line-height: 1.5;
+  }
+  .confirm-buttons { display: flex; gap: 10px; }
+  .confirm-btn {
+    flex: 1; padding: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: #fff; border-radius: 9px;
+    font-size: 14px; cursor: pointer;
+    font-family: inherit;
+    touch-action: manipulation;
+    transition: background 0.15s;
+  }
+  .confirm-btn:active { transform: scale(0.97); }
+  .confirm-btn.yes { background: rgba(201,169,97,0.25); border-color: var(--gold); color: #fff; font-weight: 600; }
+  .confirm-btn.no { background: rgba(255,255,255,0.03); }
+
+  /* ============ MOBILE COMPACT ============ */
+  @media (max-height: 700px) {
+    .menu-title { font-size: 24px; }
+    .menu-subtitle { font-size: 9px; margin-bottom: 14px; }
+    .menu-btn { padding: 10px 12px; font-size: 13px; margin-bottom: 7px; }
+    .menu-btn.secondary { padding: 9px 12px; font-size: 12px; }
+    .setting-row { padding: 6px 8px; min-height: 38px; }
+    .setting-row label { font-size: 12px; }
+    .overlay-title { font-size: 16px; }
+  }
+  @media (max-width: 360px) {
+    .setting-row select { min-width: 100px; }
+    .setting-row input[type=range] { width: 100px; }
+  }
 </style>
 </head>
 <body>
+
 <canvas id="game-canvas"></canvas>
 
-<div id="main-menu" class="menu-screen engine-loading">
+<!-- ГЛАВНОЕ МЕНЮ -->
+<div id="main-menu" class="menu-screen">
   <div class="menu-content">
     <div class="menu-title">МОЛОТ И КОТЁЛ</div>
     <div class="menu-subtitle">3D Восхождение</div>
@@ -98,20 +358,23 @@
     <button class="menu-btn secondary" data-action="open-controls">Управление</button>
     <button class="menu-btn secondary" data-action="open-stats">Статистика</button>
     <button class="menu-btn secondary" data-action="open-about">Об игре</button>
-    <div id="engine-hint"></div>
+    <div id="engine-hint">Загрузка 3D-движка...</div>
   </div>
 </div>
 
+<!-- HUD -->
 <div id="hud">
   <div class="info">
     <div><span class="label">Время</span><span class="value" id="hud-time">0:00</span></div>
     <div><span class="label">Высота</span><span class="value" id="hud-height">0.0 м</span></div>
   </div>
   <div id="hud-right">
+    <button class="hud-btn" id="btn-fullscreen" title="На весь экран">⛶</button>
     <button class="hud-btn" id="btn-pause" title="Пауза">⏸</button>
   </div>
 </div>
 
+<!-- STATS -->
 <div id="stats">
   <div class="row"><span>FPS:</span><span id="stat-fps">0</span></div>
   <div class="row"><span>Средний:</span><span id="stat-avg">0</span></div>
@@ -119,13 +382,16 @@
   <div class="row"><span>Лимит:</span><span id="stat-limit">60</span></div>
   <div class="row"><span>Качество:</span><span id="stat-quality">высокое</span></div>
   <div class="row"><span>Объектов:</span><span id="stat-objs">0</span></div>
-  <canvas id="stats-canvas" width="160" height="40"></canvas>
+  <canvas id="stats-canvas" width="140" height="32"></canvas>
 </div>
 
 <div id="touch-indicator"></div>
 
+<!-- ПАУЗА -->
 <div id="pause-menu" class="overlay hidden">
-  <div class="overlay-header"><div class="overlay-title">Пауза</div></div>
+  <div class="overlay-header">
+    <div class="overlay-title">Пауза</div>
+  </div>
   <div class="overlay-body">
     <button class="menu-btn" data-action="resume">Продолжить</button>
     <button class="menu-btn secondary" data-action="restart">Начать заново</button>
@@ -134,6 +400,7 @@
   </div>
 </div>
 
+<!-- НАСТРОЙКИ -->
 <div id="settings-screen" class="overlay hidden">
   <div class="overlay-header">
     <div class="overlay-title">Настройки</div>
@@ -146,11 +413,11 @@
         <label>Лимит FPS</label>
         <div class="control">
           <select id="s-fps-limit">
-            <option value="30">30</option>
-            <option value="45">45</option>
-            <option value="60">60</option>
-            <option value="90">90</option>
-            <option value="120">120</option>
+            <option value="30">30 FPS</option>
+            <option value="45">45 FPS</option>
+            <option value="60">60 FPS</option>
+            <option value="90">90 FPS</option>
+            <option value="120">120 FPS</option>
             <option value="0">Без ограничения</option>
           </select>
         </div>
@@ -217,6 +484,7 @@
   </div>
 </div>
 
+<!-- УПРАВЛЕНИЕ -->
 <div id="controls-screen" class="overlay hidden">
   <div class="overlay-header">
     <div class="overlay-title">Управление</div>
@@ -237,6 +505,7 @@
   </div>
 </div>
 
+<!-- СТАТИСТИКА -->
 <div id="stats-screen" class="overlay hidden">
   <div class="overlay-header">
     <div class="overlay-title">Статистика</div>
@@ -244,9 +513,11 @@
   </div>
   <div class="overlay-body">
     <div class="info-text" id="stats-content"></div>
+    <button class="menu-btn secondary" data-action="reset-progress" style="margin-top: 16px;">Сбросить прогресс</button>
   </div>
 </div>
 
+<!-- ОБ ИГРЕ -->
 <div id="about-screen" class="overlay hidden">
   <div class="overlay-header">
     <div class="overlay-title">Об игре</div>
@@ -257,10 +528,12 @@
       <p><strong>Молот и Котёл</strong> — 3D-игра о восхождении, вдохновлённая классикой жанра.</p>
       <p>Вам предстоит, управляя лишь молотом, взобраться на вершину высокой башни. Используйте инерцию, цепляйтесь за выступы и не позволяйте себе упасть.</p>
       <p>Вся физика, графика и звук созданы процедурно в браузере. Оригинальная игра не использовалась.</p>
+      <p style="margin-top: 16px; font-size: 11px; color: #666;">Версия 1.1 · Three.js + cannon-es</p>
     </div>
   </div>
 </div>
 
+<!-- РЕЖИМ -->
 <div id="mode-screen" class="overlay hidden">
   <div class="overlay-header">
     <div class="overlay-title">Режим игры</div>
@@ -278,8 +551,11 @@
   </div>
 </div>
 
+<!-- ПОБЕДА -->
 <div id="victory" class="overlay hidden">
-  <div class="overlay-header"><div class="overlay-title">Победа!</div></div>
+  <div class="overlay-header">
+    <div class="overlay-title">Победа!</div>
+  </div>
   <div class="overlay-body victory-content">
     <div class="victory-title">🏆</div>
     <div class="info-text">Вы покорили вершину!</div>
@@ -291,35 +567,45 @@
 
 <div id="rotate-hint">Поверните устройство горизонтально для удобства</div>
 
-<script>
-  // Фолбэк: если движок не загрузился за 20 секунд — сообщаем под кнопками
-  setTimeout(function () {
-    if (!window.__engineReady) {
-      var hint = document.getElementById('engine-hint');
-      if (hint) {
-        hint.textContent = 'Не удалось загрузить 3D-движок. Проверьте интернет и обновите страницу.';
-        hint.style.color = '#e88';
-      }
-    }
-  }, 20000);
-</script>
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- CONFIRM -->
+<div id="confirm-dialog" class="hidden">
+  <div class="confirm-content">
+    <div class="confirm-message" id="confirm-message"></div>
+    <div class="confirm-buttons">
+      <button class="confirm-btn no" data-confirm="no">Отмена</button>
+      <button class="confirm-btn yes" data-confirm="yes">ОК</button>
+    </div>
+  </div>
+</div>
 
 <script type="importmap">
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.module.js"
+    "three-fallback": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.module.js",
+    "cannon-es-fallback": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.module.js"
   }
 }
 </script>
 
 <script type="module">
-import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
 
 /* =========================================================
-   НАСТРОЙКИ И СОХРАНЕНИЯ
+   СОСТОЯНИЕ
    ========================================================= */
+const state = {
+  phase: 'menu',
+  startTime: 0,
+  elapsed: 0,
+  zone: 0,
+  shakeTime: 0,
+  shakeMag: 0
+};
+
 const DEFAULT_SETTINGS = {
   fpsLimit: 60,
   quality: 'high',
@@ -339,7 +625,6 @@ let settings = { ...DEFAULT_SETTINGS };
 let saveData = {
   playerPos: null,
   hammerAngle: null,
-  startTime: null,
   elapsedTime: 0,
   bestTime: null,
   maxHeight: 0,
@@ -369,293 +654,42 @@ function saveGameLS() {
 loadStorage();
 
 /* =========================================================
-   THREE.JS
+   TOAST / CONFIRM
    ========================================================= */
-const canvas = document.getElementById('game-canvas');
-let renderer;
-try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: settings.quality !== 'min' && settings.quality !== 'low', powerPreference: 'high-performance', alpha: false });
-} catch (e) {
-  const hint = document.getElementById('engine-hint');
-  if (hint) { hint.textContent = 'WebGL не поддерживается вашим устройством.'; hint.style.color = '#e88'; }
-  throw e;
-}
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = settings.shadows;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
-
-const scene = new THREE.Scene();
-const skyColor = new THREE.Color(0x8fb8d8);
-scene.background = skyColor;
-scene.fog = new THREE.Fog(0x8fb8d8, 30, settings.far);
-
-const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 500);
-camera.position.set(0, 3, 12);
-
-const menuCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
-
-/* Освещение */
-const ambient = new THREE.AmbientLight(0xa9c4e0, 0.75);
-scene.add(ambient);
-const hemi = new THREE.HemisphereLight(0xd8ecff, 0x4a3a28, 0.55);
-scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff0d8, 1.3);
-sun.position.set(14, 30, 12);
-sun.castShadow = settings.shadows;
-sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.left = -25;
-sun.shadow.camera.right = 25;
-sun.shadow.camera.top = 35;
-sun.shadow.camera.bottom = -8;
-sun.shadow.camera.near = 1;
-sun.shadow.camera.far = 100;
-sun.shadow.bias = -0.0005;
-scene.add(sun);
-scene.add(sun.target);
-
-/* =========================================================
-   CANNON ФИЗИКА
-   ========================================================= */
-const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -20, 0) });
-world.broadphase = new CANNON.SAPBroadphase(world);
-world.allowSleep = false;
-world.solver.iterations = 12;
-world.solver.tolerance = 0.001;
-world.defaultContactMaterial.friction = 0.65;
-world.defaultContactMaterial.restitution = 0.08;
-
-const matPlayer = new CANNON.Material('player');
-const matWorld = new CANNON.Material('world');
-const matHammer = new CANNON.Material('hammer');
-
-world.addContactMaterial(new CANNON.ContactMaterial(matPlayer, matWorld, {
-  friction: 0.85, restitution: 0.03,
-  contactEquationStiffness: 1e8, contactEquationRelaxation: 3
-}));
-world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matWorld, {
-  friction: 0.5, restitution: 0.15,
-  contactEquationStiffness: 1e8, contactEquationRelaxation: 3
-}));
-world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matPlayer, {
-  friction: 0.3, restitution: 0.1
-}));
-
-/* =========================================================
-   МАТЕРИАЛЫ (процедурные текстуры)
-   ========================================================= */
-function makeNoiseTexture(base, variation, size = 64) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < size * size * 0.6; i++) {
-    const x = Math.random() * size, y = Math.random() * size;
-    const a = Math.random() * variation;
-    ctx.fillStyle = `rgba(0,0,0,${a})`;
-    ctx.fillRect(x, y, 1, 1);
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(2, 2);
-  return tex;
+const toastContainer = document.getElementById('toast-container');
+function showToast(msg, duration = 2400) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  toastContainer.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 300);
+  }, duration);
 }
 
-const rockTex = makeNoiseTexture('#7a7a80', 0.5);
-const woodTex = makeNoiseTexture('#6b4a2b', 0.45);
-const metalTex = makeNoiseTexture('#4a4a55', 0.35);
-const groundTex = makeNoiseTexture('#5a6b3a', 0.5);
+const confirmDialog = document.getElementById('confirm-dialog');
+const confirmMessageEl = document.getElementById('confirm-message');
+let confirmResolver = null;
 
-const rockMat = new THREE.MeshStandardMaterial({ color: 0x96969e, map: rockTex, roughness: 0.92, metalness: 0.05 });
-const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.85, metalness: 0.05 });
-const metalMat = new THREE.MeshStandardMaterial({ color: 0x5a5a68, map: metalTex, roughness: 0.42, metalness: 0.75 });
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x6a7a4a, map: groundTex, roughness: 0.95, metalness: 0.02 });
-
-/* =========================================================
-   УРОВЕНЬ
-   ========================================================= */
-const levelMeshes = [];
-const levelBodies = [];
-
-function addBox(x, y, w, h, d, type) {
-  const body = new CANNON.Body({
-    mass: 0,
-    shape: new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2)),
-    position: new CANNON.Vec3(x, y, 0),
-    material: matWorld
+function showConfirm(message) {
+  return new Promise(resolve => {
+    confirmMessageEl.textContent = message;
+    confirmDialog.classList.remove('hidden');
+    confirmResolver = resolve;
   });
-  body.type = CANNON.Body.STATIC;
-  world.addBody(body);
-  levelBodies.push(body);
-
-  const geo = new THREE.BoxGeometry(w, h, d);
-  let mat = rockMat;
-  if (type === 'wood') mat = woodMat;
-  else if (type === 'metal') mat = metalMat;
-  else if (type === 'ground') mat = groundMat;
-
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x, y, 0);
-  mesh.castShadow = settings.shadows;
-  mesh.receiveShadow = settings.shadows;
-  scene.add(mesh);
-  levelMeshes.push(mesh);
-  return { body, mesh };
 }
 
-/* Проектирование уровня */
-const LEVEL_LAYOUT = [
-  [0, -1.2, 14, 2.4, 3.5, 'ground'],
-  [2.8, 1.1, 1.4, 1.8, 2.2, 'rock'],
-  [-2.2, 2.2, 1.8, 0.5, 2.2, 'rock'],
-  [1.6, 3.7, 1.6, 0.5, 2.2, 'rock'],
-  [3.6, 4.6, 0.7, 3.2, 2.2, 'rock'],
-  [1.8, 6.3, 1.8, 0.5, 2.2, 'rock'],
-  [-2.6, 5.2, 0.7, 3.4, 0.7, 'wood'],
-  [-1.0, 8.0, 3.2, 0.35, 0.8, 'wood'],
-  [2.6, 9.2, 1.6, 0.5, 2.2, 'rock'],
-  [-1.2, 10.6, 3.2, 0.28, 0.6, 'wood'],
-  [2.0, 12.2, 1.8, 0.55, 2.2, 'rock'],
-  [-2.4, 12.6, 0.7, 4.2, 2.2, 'rock'],
-  [0.6, 14.9, 1.6, 0.45, 2.2, 'rock'],
-  [3.0, 16.4, 2.8, 0.32, 0.6, 'metal'],
-  [-0.8, 17.9, 1.6, 0.45, 2.2, 'rock'],
-  [1.4, 19.4, 2.0, 0.5, 2.2, 'rock'],
-  [0, 21.0, 4.5, 0.6, 2.4, 'metal'],
-  [0, 23.2, 0.35, 2.8, 0.35, 'metal']
-];
-
-for (const [x, y, w, h, d, t] of LEVEL_LAYOUT) addBox(x, y, w, h, d, t);
-
-function addDecorRock(x, y, z, s) {
-  const geo = new THREE.IcosahedronGeometry(s, 0);
-  const mat = rockMat.clone();
-  mat.color.offsetHSL((Math.random() - 0.5) * 0.05, 0, (Math.random() - 0.5) * 0.15);
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
-  m.castShadow = settings.shadows;
-  m.receiveShadow = settings.shadows;
-  scene.add(m);
-  levelMeshes.push(m);
-}
-for (let i = 0; i < 24; i++) {
-  addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, -3 - Math.random() * 6, 0.8 + Math.random() * 1.8);
-  addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, 3 + Math.random() * 6, 0.8 + Math.random() * 1.8);
-}
-
-const flagGeo = new THREE.ConeGeometry(0.35, 0.8, 4);
-const flagMat = new THREE.MeshStandardMaterial({ color: 0xd4b060, metalness: 0.6, roughness: 0.35 });
-const flag = new THREE.Mesh(flagGeo, flagMat);
-flag.position.set(0, 24.8, 0);
-scene.add(flag);
+confirmDialog.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-confirm]');
+  if (!btn) return;
+  confirmDialog.classList.add('hidden');
+  const res = btn.dataset.confirm === 'yes';
+  if (confirmResolver) { confirmResolver(res); confirmResolver = null; }
+});
 
 /* =========================================================
-   ИГРОК И МОЛОТ
-   ========================================================= */
-const PLAYER_START = { x: 0, y: 0.6 };
-const PLAYER_RADIUS = 0.5;
-const HAMMER_LEN = 3.0;
-const HAMMER_HALF = HAMMER_LEN / 2;
-const HAMMER_RADIUS = 0.13;
-
-const playerBody = new CANNON.Body({
-  mass: 4,
-  shape: new CANNON.Sphere(PLAYER_RADIUS),
-  material: matPlayer,
-  linearDamping: 0.05,
-  angularDamping: 0.7
-});
-playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
-playerBody.fixedRotation = false;
-playerBody.updateMassProperties();
-world.addBody(playerBody);
-
-const hammerBody = new CANNON.Body({
-  mass: 0.9,
-  shape: new CANNON.Box(new CANNON.Vec3(HAMMER_HALF, HAMMER_RADIUS, HAMMER_RADIUS)),
-  material: matHammer,
-  linearDamping: 0.02,
-  angularDamping: 0.05
-});
-hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
-hammerBody.angularFactor.set(0, 0, 1);
-hammerBody.updateMassProperties();
-world.addBody(hammerBody);
-
-const hinge = new CANNON.HingeConstraint(playerBody, hammerBody, {
-  pivotA: new CANNON.Vec3(0, 0, 0),
-  axisA: new CANNON.Vec3(0, 0, 1),
-  pivotB: new CANNON.Vec3(-HAMMER_HALF, 0, 0),
-  axisB: new CANNON.Vec3(0, 0, 1),
-  collideConnected: false
-});
-hinge.enableMotor();
-hinge.setMotorSpeed(0);
-hinge.setMotorMaxForce(280);
-world.addConstraint(hinge);
-
-/* Визуальные модели */
-const playerGroup = new THREE.Group();
-const potGeo = new THREE.CylinderGeometry(0.55, 0.5, 0.85, 14);
-const potMat = new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.55, roughness: 0.55 });
-const potMesh = new THREE.Mesh(potGeo, potMat);
-potMesh.castShadow = settings.shadows;
-potMesh.receiveShadow = settings.shadows;
-playerGroup.add(potMesh);
-
-const rimGeo = new THREE.TorusGeometry(0.55, 0.06, 8, 18);
-const rimMesh = new THREE.Mesh(rimGeo, new THREE.MeshStandardMaterial({ color: 0x555562, metalness: 0.8, roughness: 0.3 }));
-rimMesh.rotation.x = Math.PI / 2;
-rimMesh.position.y = 0.42;
-rimMesh.castShadow = settings.shadows;
-playerGroup.add(rimMesh);
-
-const headGeo = new THREE.SphereGeometry(0.28, 16, 16);
-const headMat = new THREE.MeshStandardMaterial({ color: 0xd9b48c, roughness: 0.75 });
-const headMesh = new THREE.Mesh(headGeo, headMat);
-headMesh.position.y = 0.55;
-headMesh.castShadow = settings.shadows;
-playerGroup.add(headMesh);
-
-const hairGeo = new THREE.SphereGeometry(0.3, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-const hairMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 });
-const hairMesh = new THREE.Mesh(hairGeo, hairMat);
-hairMesh.position.y = 0.62;
-hairMesh.castShadow = settings.shadows;
-playerGroup.add(hairMesh);
-
-scene.add(playerGroup);
-
-const hammerGroup = new THREE.Group();
-const handleGeo = new THREE.CylinderGeometry(0.075, 0.09, HAMMER_LEN, 10);
-const handleMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.7, metalness: 0.05 });
-const handleMesh = new THREE.Mesh(handleGeo, handleMat);
-handleMesh.rotation.z = Math.PI / 2;
-handleMesh.castShadow = settings.shadows;
-hammerGroup.add(handleMesh);
-
-const hammerHeadGeo = new THREE.BoxGeometry(0.55, 0.4, 0.4);
-const hammerHeadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a45, metalness: 0.85, roughness: 0.35 });
-const hammerHeadMesh = new THREE.Mesh(hammerHeadGeo, hammerHeadMat);
-hammerHeadMesh.position.x = HAMMER_HALF - 0.1;
-hammerHeadMesh.castShadow = settings.shadows;
-hammerGroup.add(hammerHeadMesh);
-
-const hammerBackGeo = new THREE.BoxGeometry(0.2, 0.3, 0.3);
-const hammerBackMesh = new THREE.Mesh(hammerBackGeo, hammerHeadMat);
-hammerBackMesh.position.x = -HAMMER_HALF - 0.05;
-hammerBackMesh.castShadow = settings.shadows;
-hammerGroup.add(hammerBackMesh);
-
-scene.add(hammerGroup);
-
-/* =========================================================
-   АУДИО
+   ЗВУК
    ========================================================= */
 let audioCtx = null;
 function initAudio() {
@@ -664,7 +698,8 @@ function initAudio() {
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
-function playTone(freq, duration, type = 'sine', vol = 0.3, detune = 0) {
+function playTone(freq, duration, type, vol, detune) {
+  type = type || 'sine'; vol = vol || 0.3; detune = detune || 0;
   if (!audioCtx || settings.mute || settings.volume === 0) return;
   try {
     const osc = audioCtx.createOscillator();
@@ -686,32 +721,348 @@ function playImpact(strength) {
   playTone(90 + Math.random() * 30, 0.14, 'square', 0.15 * s);
   playTone(55 + Math.random() * 20, 0.2, 'sine', 0.22 * s);
 }
-function playSlide() {
-  playTone(220 + Math.random() * 60, 0.06, 'sawtooth', 0.03);
-}
+function playSlide() { playTone(220 + Math.random() * 60, 0.06, 'sawtooth', 0.03); }
 function playZoneChime() {
   playTone(523, 0.35, 'sine', 0.15);
   setTimeout(() => playTone(784, 0.35, 'sine', 0.15), 120);
   setTimeout(() => playTone(1046, 0.5, 'sine', 0.15), 240);
 }
 function playVictory() {
-  const notes = [523, 659, 784, 1046, 1318];
-  notes.forEach((f, i) => setTimeout(() => playTone(f, 0.6, 'sine', 0.2), i * 130));
+  [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => playTone(f, 0.6, 'sine', 0.2), i * 130));
 }
 
-hammerBody.addEventListener('collide', (e) => {
+/* =========================================================
+   ДВИЖОК
+   ========================================================= */
+let THREE = null, CANNON = null;
+let engineReady = false, engineError = false;
+let scene, camera, menuCamera, renderer, sun;
+let world, playerBody, hammerBody, hinge;
+let playerGroup, hammerGroup;
+let levelMeshes = [];
+let ambientOsc = null;
+
+function updateEngineStatus() {
+  const hint = document.getElementById('engine-hint');
+  if (!hint) return;
+  if (engineReady) {
+    hint.textContent = '';
+    hint.classList.remove('error');
+    hint.classList.add('ready');
+  } else if (engineError) {
+    hint.textContent = 'Не удалось загрузить движок. Проверьте интернет и обновите страницу.';
+    hint.classList.remove('ready');
+    hint.classList.add('error');
+  } else {
+    hint.textContent = 'Загрузка 3D-движка...';
+    hint.classList.remove('error', 'ready');
+  }
+}
+
+(async () => {
   try {
-    const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
-    if (v > 1.2) playImpact(Math.min(1, v / 12));
-    else if (v > 0.3) playSlide();
-  } catch (e) {}
-});
-playerBody.addEventListener('collide', (e) => {
-  try {
-    const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
-    if (v > 6) playImpact(Math.min(0.7, v / 20));
-  } catch (e) {}
-});
+    const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
+    try {
+      THREE = await Promise.race([import('three'), timeout(15000)]);
+    } catch (e1) {
+      THREE = await Promise.race([import('three-fallback'), timeout(15000)]);
+    }
+    try {
+      CANNON = await Promise.race([import('cannon-es'), timeout(15000)]);
+    } catch (e1) {
+      CANNON = await Promise.race([import('cannon-es-fallback'), timeout(15000)]);
+    }
+    await initGame();
+    engineReady = true;
+  } catch (e) {
+    engineError = true;
+    console.error('Engine load failed:', e);
+  }
+  updateEngineStatus();
+  updateContinueButton();
+})();
+
+/* =========================================================
+   ИНИЦИАЛИЗАЦИЯ ИГРЫ
+   ========================================================= */
+const PLAYER_START = { x: 0, y: 0.6 };
+const PLAYER_RADIUS = 0.5;
+const HAMMER_LEN = 3.0;
+const HAMMER_HALF = HAMMER_LEN / 2;
+const HAMMER_RADIUS = 0.13;
+
+const ZONES = [
+  { y: 0.0, name: 'Земля' },
+  { y: 4.0, name: 'Скалы' },
+  { y: 8.5, name: 'Деревья' },
+  { y: 12.5, name: 'Утёс' },
+  { y: 16.5, name: 'Небеса' },
+  { y: 20.5, name: 'Вершина' }
+];
+
+const QUALITY_PRESETS = {
+  min:    { shadows: false, renderScale: 60, far: 60,  shadowSize: 512,  pixelRatioCap: 1 },
+  low:    { shadows: false, renderScale: 75, far: 80,  shadowSize: 512,  pixelRatioCap: 1.5 },
+  medium: { shadows: true,  renderScale: 85, far: 100, shadowSize: 1024, pixelRatioCap: 1.5 },
+  high:   { shadows: true,  renderScale: 100, far: 120, shadowSize: 1024, pixelRatioCap: 2 },
+  ultra:  { shadows: true,  renderScale: 100, far: 200, shadowSize: 2048, pixelRatioCap: 2 }
+};
+
+const LEVEL_LAYOUT = [
+  [0, -1.2, 14, 2.4, 3.5, 'ground'],
+  [2.8, 1.1, 1.4, 1.8, 2.2, 'rock'],
+  [-2.2, 2.2, 1.8, 0.5, 2.2, 'rock'],
+  [1.6, 3.7, 1.6, 0.5, 2.2, 'rock'],
+  [3.6, 4.6, 0.7, 3.2, 2.2, 'rock'],
+  [1.8, 6.3, 1.8, 0.5, 2.2, 'rock'],
+  [-2.6, 5.2, 0.7, 3.4, 0.7, 'wood'],
+  [-1.0, 8.0, 3.2, 0.35, 0.8, 'wood'],
+  [2.6, 9.2, 1.6, 0.5, 2.2, 'rock'],
+  [-1.2, 10.6, 3.2, 0.28, 0.6, 'wood'],
+  [2.0, 12.2, 1.8, 0.55, 2.2, 'rock'],
+  [-2.4, 12.6, 0.7, 4.2, 2.2, 'rock'],
+  [0.6, 14.9, 1.6, 0.45, 2.2, 'rock'],
+  [3.0, 16.4, 2.8, 0.32, 0.6, 'metal'],
+  [-0.8, 17.9, 1.6, 0.45, 2.2, 'rock'],
+  [1.4, 19.4, 2.0, 0.5, 2.2, 'rock'],
+  [0, 21.0, 4.5, 0.6, 2.4, 'metal'],
+  [0, 23.2, 0.35, 2.8, 0.35, 'metal']
+];
+
+let matPlayer, matWorld, matHammer;
+
+async function initGame() {
+  const canvas = document.getElementById('game-canvas');
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: settings.quality !== 'min' && settings.quality !== 'low',
+    powerPreference: 'high-performance',
+    alpha: false
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = settings.shadows;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x8fb8d8);
+  scene.fog = new THREE.Fog(0x8fb8d8, 30, settings.far);
+
+  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(0, 3, 12);
+  menuCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+
+  // Освещение
+  scene.add(new THREE.AmbientLight(0xa9c4e0, 0.75));
+  scene.add(new THREE.HemisphereLight(0xd8ecff, 0x4a3a28, 0.55));
+  sun = new THREE.DirectionalLight(0xfff0d8, 1.3);
+  sun.position.set(14, 30, 12);
+  sun.castShadow = settings.shadows;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -25;
+  sun.shadow.camera.right = 25;
+  sun.shadow.camera.top = 35;
+  sun.shadow.camera.bottom = -8;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 100;
+  sun.shadow.bias = -0.0005;
+  scene.add(sun);
+  scene.add(sun.target);
+
+  // Материалы
+  function makeNoiseTexture(base, variation, size) {
+    size = size || 64;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < size * size * 0.6; i++) {
+      const a = Math.random() * variation;
+      ctx.fillStyle = `rgba(0,0,0,${a})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
+    return tex;
+  }
+  const rockTex = makeNoiseTexture('#7a7a80', 0.5);
+  const woodTex = makeNoiseTexture('#6b4a2b', 0.45);
+  const metalTex = makeNoiseTexture('#4a4a55', 0.35);
+  const groundTex = makeNoiseTexture('#5a6b3a', 0.5);
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0x96969e, map: rockTex, roughness: 0.92, metalness: 0.05 });
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.85, metalness: 0.05 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x5a5a68, map: metalTex, roughness: 0.42, metalness: 0.75 });
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x6a7a4a, map: groundTex, roughness: 0.95, metalness: 0.02 });
+
+  // Физика
+  world = new CANNON.World({ gravity: new CANNON.Vec3(0, -20, 0) });
+  world.broadphase = new CANNON.SAPBroadphase(world);
+  world.allowSleep = false;
+  world.solver.iterations = 12;
+  world.solver.tolerance = 0.001;
+  world.defaultContactMaterial.friction = 0.65;
+  world.defaultContactMaterial.restitution = 0.08;
+
+  matPlayer = new CANNON.Material('player');
+  matWorld = new CANNON.Material('world');
+  matHammer = new CANNON.Material('hammer');
+  world.addContactMaterial(new CANNON.ContactMaterial(matPlayer, matWorld, { friction: 0.85, restitution: 0.03, contactEquationStiffness: 1e8, contactEquationRelaxation: 3 }));
+  world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matWorld, { friction: 0.5, restitution: 0.15, contactEquationStiffness: 1e8, contactEquationRelaxation: 3 }));
+  world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matPlayer, { friction: 0.3, restitution: 0.1 }));
+
+  // Уровень
+  function addBox(x, y, w, h, d, type) {
+    const body = new CANNON.Body({
+      mass: 0,
+      shape: new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2)),
+      position: new CANNON.Vec3(x, y, 0),
+      material: matWorld
+    });
+    body.type = CANNON.Body.STATIC;
+    world.addBody(body);
+    let mat = rockMat;
+    if (type === 'wood') mat = woodMat;
+    else if (type === 'metal') mat = metalMat;
+    else if (type === 'ground') mat = groundMat;
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, 0);
+    mesh.castShadow = settings.shadows;
+    mesh.receiveShadow = settings.shadows;
+    scene.add(mesh);
+    levelMeshes.push(mesh);
+  }
+  for (const [x, y, w, h, d, t] of LEVEL_LAYOUT) addBox(x, y, w, h, d, t);
+
+  function addDecorRock(x, y, z, s) {
+    const geo = new THREE.IcosahedronGeometry(s, 0);
+    const mat = rockMat.clone();
+    mat.color.offsetHSL((Math.random() - 0.5) * 0.05, 0, (Math.random() - 0.5) * 0.15);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+    m.castShadow = settings.shadows;
+    m.receiveShadow = settings.shadows;
+    scene.add(m);
+    levelMeshes.push(m);
+  }
+  for (let i = 0; i < 24; i++) {
+    addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, -3 - Math.random() * 6, 0.8 + Math.random() * 1.8);
+    addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, 3 + Math.random() * 6, 0.8 + Math.random() * 1.8);
+  }
+
+  const flag = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.8, 4), new THREE.MeshStandardMaterial({ color: 0xd4b060, metalness: 0.6, roughness: 0.35 }));
+  flag.position.set(0, 24.8, 0);
+  scene.add(flag);
+
+  // Игрок
+  playerBody = new CANNON.Body({ mass: 4, shape: new CANNON.Sphere(PLAYER_RADIUS), material: matPlayer, linearDamping: 0.05, angularDamping: 0.7 });
+  playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
+  playerBody.updateMassProperties();
+  world.addBody(playerBody);
+
+  hammerBody = new CANNON.Body({
+    mass: 0.9,
+    shape: new CANNON.Box(new CANNON.Vec3(HAMMER_HALF, HAMMER_RADIUS, HAMMER_RADIUS)),
+    material: matHammer, linearDamping: 0.02, angularDamping: 0.05
+  });
+  hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
+  hammerBody.angularFactor.set(0, 0, 1);
+  hammerBody.updateMassProperties();
+  world.addBody(hammerBody);
+
+  hinge = new CANNON.HingeConstraint(playerBody, hammerBody, {
+    pivotA: new CANNON.Vec3(0, 0, 0), axisA: new CANNON.Vec3(0, 0, 1),
+    pivotB: new CANNON.Vec3(-HAMMER_HALF, 0, 0), axisB: new CANNON.Vec3(0, 0, 1),
+    collideConnected: false
+  });
+  hinge.enableMotor();
+  hinge.setMotorSpeed(0);
+  hinge.setMotorMaxForce(280);
+  world.addConstraint(hinge);
+
+  // Визуальные модели
+  playerGroup = new THREE.Group();
+  const potMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.5, 0.85, 14), new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.55, roughness: 0.55 }));
+  potMesh.castShadow = settings.shadows; potMesh.receiveShadow = settings.shadows;
+  playerGroup.add(potMesh);
+  const rimMesh = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.06, 8, 18), new THREE.MeshStandardMaterial({ color: 0x555562, metalness: 0.8, roughness: 0.3 }));
+  rimMesh.rotation.x = Math.PI / 2; rimMesh.position.y = 0.42; rimMesh.castShadow = settings.shadows;
+  playerGroup.add(rimMesh);
+  const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xd9b48c, roughness: 0.75 }));
+  headMesh.position.y = 0.55; headMesh.castShadow = settings.shadows;
+  playerGroup.add(headMesh);
+  const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 }));
+  hairMesh.position.y = 0.62; hairMesh.castShadow = settings.shadows;
+  playerGroup.add(hairMesh);
+  scene.add(playerGroup);
+
+  hammerGroup = new THREE.Group();
+  const handleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, HAMMER_LEN, 10), new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.7, metalness: 0.05 }));
+  handleMesh.rotation.z = Math.PI / 2; handleMesh.castShadow = settings.shadows;
+  hammerGroup.add(handleMesh);
+  const hammerHeadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a45, metalness: 0.85, roughness: 0.35 });
+  const hammerHeadMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.4), hammerHeadMat);
+  hammerHeadMesh.position.x = HAMMER_HALF - 0.1; hammerHeadMesh.castShadow = settings.shadows;
+  hammerGroup.add(hammerHeadMesh);
+  const hammerBackMesh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.3), hammerHeadMat);
+  hammerBackMesh.position.x = -HAMMER_HALF - 0.05; hammerBackMesh.castShadow = settings.shadows;
+  hammerGroup.add(hammerBackMesh);
+  scene.add(hammerGroup);
+
+  // Звуки на столкновения
+  hammerBody.addEventListener('collide', (e) => {
+    try {
+      const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
+      if (v > 1.2) playImpact(Math.min(1, v / 12));
+      else if (v > 0.3) playSlide();
+    } catch (err) {}
+  });
+  playerBody.addEventListener('collide', (e) => {
+    try {
+      const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
+      if (v > 6) playImpact(Math.min(0.7, v / 20));
+    } catch (err) {}
+  });
+
+  applyQuality(settings.quality);
+  onResize();
+}
+
+/* =========================================================
+   КАЧЕСТВО
+   ========================================================= */
+function applyQuality(preset) {
+  const p = QUALITY_PRESETS[preset] || QUALITY_PRESETS.high;
+  settings.quality = preset;
+  settings.shadows = p.shadows;
+  settings.renderScale = p.renderScale;
+  settings.far = p.far;
+  if (!engineReady) return;
+
+  renderer.shadowMap.enabled = p.shadows;
+  sun.castShadow = p.shadows;
+  if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+  sun.shadow.mapSize.set(p.shadowSize, p.shadowSize);
+  scene.fog.far = p.far;
+  sun.shadow.camera.far = Math.max(80, p.far);
+
+  const dpr = Math.min(window.devicePixelRatio || 1, p.pixelRatioCap);
+  renderer.setPixelRatio(dpr * (settings.renderScale / 100));
+
+  for (const m of levelMeshes) {
+    m.castShadow = p.shadows;
+    m.receiveShadow = p.shadows;
+  }
+  if (playerGroup) playerGroup.traverse(o => { if (o.isMesh) { o.castShadow = p.shadows; o.receiveShadow = p.shadows; } });
+  if (hammerGroup) hammerGroup.traverse(o => { if (o.isMesh) { o.castShadow = p.shadows; } });
+
+  saveSettingsLS();
+}
 
 /* =========================================================
    УПРАВЛЕНИЕ
@@ -719,21 +1070,18 @@ playerBody.addEventListener('collide', (e) => {
 let pointerActive = false;
 let pointerTargetX = 0;
 let pointerTargetY = 0;
+const touchIndicator = document.getElementById('touch-indicator');
+const canvas = document.getElementById('game-canvas');
 
 function updatePointerFromClient(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
-  const ny = -(((clientY - rect.top) / rect.height) * 2 - 1);
-  pointerTargetX = nx;
-  pointerTargetY = ny;
+  pointerTargetX = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerTargetY = -(((clientY - rect.top) / rect.height) * 2 - 1);
 }
-
-const touchIndicator = document.getElementById('touch-indicator');
 
 canvas.addEventListener('mousedown', (e) => {
   if (state.phase !== 'playing') return;
-  e.preventDefault();
-  initAudio();
+  e.preventDefault(); initAudio();
   pointerActive = true;
   updatePointerFromClient(e.clientX, e.clientY);
 });
@@ -746,8 +1094,7 @@ canvas.addEventListener('mouseleave', () => { pointerActive = false; });
 
 canvas.addEventListener('touchstart', (e) => {
   if (state.phase !== 'playing') return;
-  e.preventDefault();
-  initAudio();
+  e.preventDefault(); initAudio();
   const t = e.touches[0];
   pointerActive = true;
   updatePointerFromClient(t.clientX, t.clientY);
@@ -785,92 +1132,28 @@ window.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   СОСТОЯНИЕ ИГРЫ
+   ПОЛНОЭКРАННЫЙ РЕЖИМ
    ========================================================= */
-const state = {
-  phase: 'menu',
-  pointerLocked: false,
-  startTime: 0,
-  elapsed: 0,
-  highestY: 0,
-  zone: 0,
-  shakeTime: 0,
-  shakeMag: 0
-};
-
-const ZONES = [
-  { y: 0.0, name: 'Земля' },
-  { y: 4.0, name: 'Скалы' },
-  { y: 8.5, name: 'Деревья' },
-  { y: 12.5, name: 'Утёс' },
-  { y: 16.5, name: 'Небеса' },
-  { y: 20.5, name: 'Вершина' }
-];
-
-/* =========================================================
-   КАЧЕСТВО ГРАФИКИ
-   ========================================================= */
-const QUALITY_PRESETS = {
-  min:    { shadows: false, renderScale: 60, far: 60,  shadowSize: 512,  pixelRatioCap: 1 },
-  low:    { shadows: false, renderScale: 75, far: 80,  shadowSize: 512,  pixelRatioCap: 1.5 },
-  medium: { shadows: true,  renderScale: 85, far: 100, shadowSize: 1024, pixelRatioCap: 1.5 },
-  high:   { shadows: true,  renderScale: 100, far: 120, shadowSize: 1024, pixelRatioCap: 2 },
-  ultra:  { shadows: true,  renderScale: 100, far: 200, shadowSize: 2048, pixelRatioCap: 2 }
-};
-
-function applyQuality(preset) {
-  const p = QUALITY_PRESETS[preset] || QUALITY_PRESETS.high;
-  settings.quality = preset;
-  settings.shadows = p.shadows;
-  settings.renderScale = p.renderScale;
-  settings.far = p.far;
-
-  renderer.shadowMap.enabled = p.shadows;
-  sun.castShadow = p.shadows;
-  if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
-  sun.shadow.mapSize.set(p.shadowSize, p.shadowSize);
-
-  scene.fog.far = p.far;
-  sun.shadow.camera.far = Math.max(80, p.far);
-
-  const dpr = Math.min(window.devicePixelRatio || 1, p.pixelRatioCap);
-  renderer.setPixelRatio(dpr * (settings.renderScale / 100));
-
-  for (const m of levelMeshes) {
-    m.castShadow = p.shadows;
-    m.receiveShadow = p.shadows;
-  }
-  potMesh.castShadow = p.shadows;
-  potMesh.receiveShadow = p.shadows;
-  hammerHeadMesh.castShadow = p.shadows;
-  handleMesh.castShadow = p.shadows;
-  headMesh.castShadow = p.shadows;
-  hairMesh.castShadow = p.shadows;
-  rimMesh.castShadow = p.shadows;
-
-  saveSettingsLS();
-}
-
-/* =========================================================
-   ЗВУК ОКРУЖЕНИЯ
-   ========================================================= */
-let ambientOsc = null;
-function startAmbient() {
-  if (!audioCtx || ambientOsc) return;
+function toggleFullscreen() {
   try {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = 'sine';
-    o.frequency.value = 55;
-    g.gain.value = 0.015 * (settings.volume / 100);
-    o.connect(g).connect(audioCtx.destination);
-    o.start();
-    ambientOsc = { osc: o, gain: g };
-  } catch (e) {}
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) {
+        const p = req.call(el);
+        if (p && p.catch) p.catch(() => showToast('Полноэкранный режим недоступен'));
+      } else {
+        showToast('Полноэкранный режим недоступен');
+      }
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document);
+    }
+  } catch (e) { showToast('Полноэкранный режим недоступен'); }
 }
 
 /* =========================================================
-   ИГРОВОЙ ЦИКЛ
+   ФИЗИКА / ИГРОВОЙ ЦИКЛ
    ========================================================= */
 const FIXED_TIMESTEP = 1 / 60;
 let physicsAccumulator = 0;
@@ -887,10 +1170,6 @@ let lastFrameMs = 0;
 const statsCanvas = document.getElementById('stats-canvas');
 const statsCtx = statsCanvas.getContext('2d');
 
-function getTargetAngle() {
-  if (Math.abs(pointerTargetX) < 0.02 && Math.abs(pointerTargetY) < 0.02) return null;
-  return Math.atan2(pointerTargetY, pointerTargetX);
-}
 function wrapAngle(a) {
   while (a > Math.PI) a -= Math.PI * 2;
   while (a < -Math.PI) a += Math.PI * 2;
@@ -901,13 +1180,16 @@ function getHammerAngle() {
   const dy = hammerBody.position.y - playerBody.position.y;
   return Math.atan2(dy, dx);
 }
+function getTargetAngle() {
+  if (Math.abs(pointerTargetX) < 0.02 && Math.abs(pointerTargetY) < 0.02) return null;
+  return Math.atan2(pointerTargetY, pointerTargetX);
+}
 
 function physicsStep() {
   if (state.phase === 'playing') {
     const targetAngle = getTargetAngle();
     if (targetAngle !== null) {
-      const currentAngle = getHammerAngle();
-      let err = wrapAngle(targetAngle - currentAngle);
+      const err = wrapAngle(targetAngle - getHammerAngle());
       const sens = settings.sensitivity / 100;
       const motorSpeed = Math.max(-18, Math.min(18, err * 8 * sens));
       hinge.setMotorSpeed(motorSpeed);
@@ -917,18 +1199,14 @@ function physicsStep() {
   } else {
     hinge.setMotorSpeed(0);
   }
-
   world.step(FIXED_TIMESTEP, 0, 1);
-
   playerBody.position.z = 0;
   playerBody.velocity.z = 0;
   playerBody.angularVelocity.z *= 0.9;
-
   hammerBody.position.z = 0;
   hammerBody.velocity.z = 0;
   hammerBody.angularVelocity.x = 0;
   hammerBody.angularVelocity.y = 0;
-
   if (playerBody.position.y < -6) {
     playerBody.position.y = -6;
     playerBody.velocity.y = 0;
@@ -936,6 +1214,7 @@ function physicsStep() {
 }
 
 function syncVisuals() {
+  if (!playerGroup) return;
   playerGroup.position.set(playerBody.position.x, playerBody.position.y, 0);
   playerGroup.quaternion.identity();
   hammerGroup.position.set(hammerBody.position.x, hammerBody.position.y, 0);
@@ -950,15 +1229,13 @@ function updateCamera(dt) {
   camera.position.x += (px - camera.position.x) * 0.08;
   camera.position.y += (targetY - camera.position.y) * 0.1;
   camera.position.z = dist;
-
   if (settings.screenshake && state.shakeTime > 0) {
     const s = state.shakeMag * (state.shakeTime / 0.35);
     camera.position.x += (Math.random() - 0.5) * s;
     camera.position.y += (Math.random() - 0.5) * s;
     state.shakeTime -= dt;
   }
-  const lookY = py + 1.2;
-  camera.lookAt(px, lookY, 0);
+  camera.lookAt(px, py + 1.2, 0);
 }
 
 function updateMenuCamera(now) {
@@ -993,14 +1270,10 @@ function updateHUD() {
 
   if (playerBody.position.y > saveData.maxHeight) saveData.maxHeight = playerBody.position.y;
 
-  if (playerBody.position.y > 22.5 && state.phase === 'playing') {
-    triggerVictory();
-  }
+  if (playerBody.position.y > 22.5 && state.phase === 'playing') triggerVictory();
 
   if (settings.mode === 'checkpoint' && state.phase === 'playing' && saveData.checkpoint && saveData.checkpointZone > 0) {
-    if (playerBody.position.y < ZONES[saveData.checkpointZone].y - 4) {
-      respawnAtCheckpoint();
-    }
+    if (playerBody.position.y < ZONES[saveData.checkpointZone].y - 4) respawnAtCheckpoint();
   }
 
   saveData.elapsedTime = state.elapsed;
@@ -1058,7 +1331,6 @@ function updateFPSMeter(dt) {
     avgFPS = Math.round(fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length);
     frameCount = 0;
     fpsAccum = 0;
-
     if (settings.showStats) {
       document.getElementById('stat-fps').textContent = measuredFPS;
       document.getElementById('stat-avg').textContent = avgFPS;
@@ -1092,14 +1364,14 @@ function drawFPSGraph() {
   for (let i = 0; i < fpsHistory.length; i++) {
     const x = (i / (MAX_FPS_HISTORY - 1)) * w;
     const y = h - (fpsHistory[i] / maxVal) * h;
-    if (i === 0) statsCtx.moveTo(x, y);
-    else statsCtx.lineTo(x, y);
+    if (i === 0) statsCtx.moveTo(x, y); else statsCtx.lineTo(x, y);
   }
   statsCtx.stroke();
 }
 
 function animate(now) {
   requestAnimationFrame(animate);
+  if (!engineReady) return;
 
   const interval = settings.fpsLimit > 0 ? 1000 / settings.fpsLimit : 0;
   if (interval > 0 && now - lastRenderTime < interval - 1.5) return;
@@ -1138,7 +1410,7 @@ function animate(now) {
 }
 
 /* =========================================================
-   UI ЛОГИКА
+   UI: ОТКРЫТИЕ / ЗАКРЫТИЕ
    ========================================================= */
 function showEl(id) { document.getElementById(id).classList.remove('hidden'); }
 function hideEl(id) { document.getElementById(id).classList.add('hidden'); }
@@ -1158,16 +1430,23 @@ function applySettingsToUI() {
   setToggle('s-show-stats', settings.showStats);
   setToggle('s-screenshake', settings.screenshake);
   setToggle('s-mute', settings.mute);
-  document.getElementById('stats').classList.toggle('visible', settings.showStats);
+  document.getElementById('stats').classList.toggle('visible', settings.showStats && state.phase === 'playing');
 }
 
 function setToggle(id, on) {
   const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.toggle('on', !!on);
+  if (el) el.classList.toggle('on', !!on);
 }
-function getToggle(id) {
-  return document.getElementById(id).classList.contains('on');
+
+function updateModeButtons() {
+  document.getElementById('mode-classic').classList.toggle('selected', settings.mode === 'classic');
+  document.getElementById('mode-checkpoint').classList.toggle('selected', settings.mode === 'checkpoint');
+}
+
+function updateContinueButton() {
+  const btn = document.getElementById('btn-continue');
+  if (!btn) return;
+  btn.disabled = !(saveData.hasSave && saveData.playerPos);
 }
 
 function showMainMenu() {
@@ -1176,29 +1455,25 @@ function showMainMenu() {
   showEl('main-menu');
   document.getElementById('hud').classList.remove('active');
   document.getElementById('stats').classList.remove('visible');
-  const contBtn = document.getElementById('btn-continue');
-  contBtn.disabled = !saveData.hasSave || !saveData.playerPos;
+  updateContinueButton();
   updateModeButtons();
 }
 
-function updateModeButtons() {
-  document.getElementById('mode-classic').classList.toggle('selected', settings.mode === 'classic');
-  document.getElementById('mode-checkpoint').classList.toggle('selected', settings.mode === 'checkpoint');
-}
-
-function startNewGame() {
+function startGame() {
+  if (!engineReady) {
+    showToast(engineError ? 'Движок не загружен. Обновите страницу.' : 'Загрузка движка, подождите...');
+    return;
+  }
   initAudio();
   state.phase = 'playing';
   state.zone = 0;
   state.elapsed = 0;
   state.startTime = performance.now();
-  state.highestY = 0;
 
   playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
   playerBody.velocity.set(0, 0, 0);
   playerBody.angularVelocity.set(0, 0, 0);
   playerBody.quaternion.set(0, 0, 0, 1);
-
   hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
   hammerBody.velocity.set(0, 0, 0);
   hammerBody.angularVelocity.set(0, 0, 0);
@@ -1218,25 +1493,34 @@ function startNewGame() {
   lastFrameTime = performance.now();
   lastRenderTime = 0;
 
-  if (audioCtx) startAmbient();
+  if (audioCtx && !ambientOsc) {
+    try {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = 55;
+      g.gain.value = 0.015 * (settings.volume / 100);
+      o.connect(g).connect(audioCtx.destination);
+      o.start();
+      ambientOsc = { osc: o, gain: g };
+    } catch (e) {}
+  }
   saveGameLS();
 }
 
 function resumeFromSave() {
-  if (!saveData.playerPos) { startNewGame(); return; }
+  if (!engineReady) { showToast('Загрузка движка, подождите...'); return; }
+  if (!saveData.playerPos) { showToast('Нет сохранения'); return; }
   initAudio();
   state.phase = 'playing';
   state.elapsed = saveData.elapsedTime || 0;
   state.startTime = performance.now() - state.elapsed * 1000;
   state.zone = saveData.checkpointZone || 0;
-  state.highestY = saveData.maxHeight || 0;
 
   const [x, y] = saveData.playerPos;
   playerBody.position.set(x, y, 0);
   playerBody.velocity.set(0, 0, 0);
   playerBody.angularVelocity.set(0, 0, 0);
   playerBody.quaternion.set(0, 0, 0, 1);
-
   const ang = saveData.hammerAngle || 0;
   hammerBody.position.set(x + Math.cos(ang) * HAMMER_HALF, y + Math.sin(ang) * HAMMER_HALF, 0);
   hammerBody.velocity.set(0, 0, 0);
@@ -1252,27 +1536,28 @@ function resumeFromSave() {
   physicsAccumulator = 0;
   lastFrameTime = performance.now();
   lastRenderTime = 0;
-
-  if (audioCtx) startAmbient();
 }
 
 function pauseGame() {
   if (state.phase !== 'playing') return;
   state.phase = 'paused';
+  hideAllOverlays();
   showEl('pause-menu');
   document.getElementById('hud').classList.remove('active');
   document.getElementById('stats').classList.remove('visible');
   touchIndicator.classList.remove('visible');
   pointerActive = false;
-
-  saveData.playerPos = [playerBody.position.x, playerBody.position.y];
-  saveData.hammerAngle = getHammerAngle();
-  saveData.hasSave = true;
-  saveGameLS();
+  if (engineReady) {
+    saveData.playerPos = [playerBody.position.x, playerBody.position.y];
+    saveData.hammerAngle = getHammerAngle();
+    saveData.hasSave = true;
+    saveGameLS();
+  }
 }
 
 function resumeGame() {
   if (state.phase !== 'paused') return;
+  if (!engineReady) { showToast('Движок не загружен'); return; }
   state.phase = 'playing';
   hideAllOverlays();
   document.getElementById('hud').classList.add('active');
@@ -1282,165 +1567,13 @@ function resumeGame() {
   lastRenderTime = 0;
 }
 
-function restartGame() {
-  const confirmed = confirm('Начать заново? Текущий прогресс будет потерян.');
-  if (!confirmed) return;
+async function restartGame() {
+  const ok = await showConfirm('Начать заново? Текущий прогресс будет потерян.');
+  if (!ok) return;
   saveData.checkpoint = null;
   saveData.checkpointZone = 0;
   saveData.elapsedTime = 0;
-  startNewGame();
-}
-
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  initAudio();
-
-  switch (action) {
-    case 'play': startNewGame(); break;
-    case 'continue': resumeFromSave(); break;
-    case 'open-mode':
-      hideEl('main-menu'); showEl('mode-screen'); updateModeButtons(); break;
-    case 'close-mode':
-      hideEl('mode-screen'); showEl('main-menu'); break;
-    case 'open-settings':
-      hideEl('main-menu'); hideEl('pause-menu'); hideEl('mode-screen');
-      showEl('settings-screen'); applySettingsToUI(); break;
-    case 'close-settings':
-      hideEl('settings-screen');
-      if (state.phase === 'paused') showEl('pause-menu');
-      else showEl('main-menu');
-      break;
-    case 'open-controls':
-      hideEl('main-menu'); showEl('controls-screen'); break;
-    case 'close-controls':
-      hideEl('controls-screen'); showEl('main-menu'); break;
-    case 'open-stats':
-      hideEl('main-menu'); renderStatsScreen(); showEl('stats-screen'); break;
-    case 'close-stats':
-      hideEl('stats-screen'); showEl('main-menu'); break;
-    case 'open-about':
-      hideEl('main-menu'); showEl('about-screen'); break;
-    case 'close-about':
-      hideEl('about-screen'); showEl('main-menu'); break;
-    case 'resume': resumeGame(); break;
-    case 'restart': restartGame(); break;
-    case 'main-menu':
-      if (state.phase === 'paused' || state.phase === 'playing') {
-        if (!confirm('Выйти в главное меню? Прогресс сохранится.')) return;
-        saveData.playerPos = [playerBody.position.x, playerBody.position.y];
-        saveData.hammerAngle = getHammerAngle();
-        saveData.hasSave = true;
-        saveGameLS();
-      }
-      showMainMenu(); break;
-    case 'reset-settings':
-      settings = { ...DEFAULT_SETTINGS };
-      saveSettingsLS();
-      applyQuality(settings.quality);
-      applySettingsToUI();
-      break;
-    case 'autotune': runAutoTune(); break;
-    case 'victory-restart':
-      hideEl('victory'); startNewGame(); break;
-    case 'victory-menu':
-      hideEl('victory'); showMainMenu(); break;
-  }
-});
-
-document.getElementById('mode-classic').addEventListener('click', () => {
-  settings.mode = 'classic'; saveSettingsLS(); updateModeButtons();
-});
-document.getElementById('mode-checkpoint').addEventListener('click', () => {
-  settings.mode = 'checkpoint'; saveSettingsLS(); updateModeButtons();
-});
-
-document.getElementById('btn-pause').addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (state.phase === 'playing') pauseGame();
-});
-
-document.getElementById('s-fps-limit').addEventListener('change', (e) => {
-  settings.fpsLimit = parseInt(e.target.value, 10);
-  saveSettingsLS();
-  lastRenderTime = 0;
-});
-document.getElementById('s-quality').addEventListener('change', (e) => {
-  applyQuality(e.target.value);
-  applySettingsToUI();
-});
-document.getElementById('s-render-scale').addEventListener('input', (e) => {
-  settings.renderScale = parseInt(e.target.value, 10);
-  const dpr = Math.min(window.devicePixelRatio || 1, QUALITY_PRESETS[settings.quality].pixelRatioCap);
-  renderer.setPixelRatio(dpr * (settings.renderScale / 100));
-  saveSettingsLS();
-});
-document.getElementById('s-far').addEventListener('input', (e) => {
-  settings.far = parseInt(e.target.value, 10);
-  scene.fog.far = settings.far;
-  saveSettingsLS();
-});
-document.getElementById('s-volume').addEventListener('input', (e) => {
-  settings.volume = parseInt(e.target.value, 10);
-  if (ambientOsc) ambientOsc.gain.gain.value = 0.015 * (settings.volume / 100);
-  saveSettingsLS();
-});
-document.getElementById('s-sensitivity').addEventListener('input', (e) => {
-  settings.sensitivity = parseInt(e.target.value, 10);
-  saveSettingsLS();
-});
-document.getElementById('s-shadows').addEventListener('click', () => {
-  settings.shadows = !settings.shadows;
-  setToggle('s-shadows', settings.shadows);
-  renderer.shadowMap.enabled = settings.shadows;
-  sun.castShadow = settings.shadows;
-  saveSettingsLS();
-});
-document.getElementById('s-show-stats').addEventListener('click', () => {
-  settings.showStats = !settings.showStats;
-  setToggle('s-show-stats', settings.showStats);
-  document.getElementById('stats').classList.toggle('visible', settings.showStats);
-  saveSettingsLS();
-});
-document.getElementById('s-screenshake').addEventListener('click', () => {
-  settings.screenshake = !settings.screenshake;
-  setToggle('s-screenshake', settings.screenshake);
-  saveSettingsLS();
-});
-document.getElementById('s-mute').addEventListener('click', () => {
-  settings.mute = !settings.mute;
-  setToggle('s-mute', settings.mute);
-  saveSettingsLS();
-});
-
-let autoTuneRunning = false;
-function runAutoTune() {
-  if (autoTuneRunning) return;
-  autoTuneRunning = true;
-  settings.renderScale = 100;
-  let frames = 0;
-  let tStart = performance.now();
-  let last = tStart;
-  function sample(now) {
-    frames++;
-    last = now;
-    if (now - tStart > 2000) {
-      const fps = frames / ((now - tStart) / 1000);
-      autoTuneRunning = false;
-      let q = 'min';
-      if (fps >= 110) q = 'ultra';
-      else if (fps >= 55) q = 'high';
-      else if (fps >= 40) q = 'medium';
-      else if (fps >= 25) q = 'low';
-      applyQuality(q);
-      applySettingsToUI();
-      alert('Автонастройка: выбрано качество «' + q + '» (средний FPS ~' + Math.round(fps) + ')');
-      return;
-    }
-    requestAnimationFrame(sample);
-  }
-  requestAnimationFrame(sample);
+  startGame();
 }
 
 function renderStatsScreen() {
@@ -1465,41 +1598,272 @@ function formatTime(sec) {
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+/* =========================================================
+   ОБРАБОТЧИК ВСЕХ КНОПОК
+   ========================================================= */
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  initAudio();
+
+  switch (action) {
+    case 'play':
+      startGame();
+      break;
+    case 'continue':
+      resumeFromSave();
+      break;
+    case 'open-mode':
+      hideEl('main-menu');
+      showEl('mode-screen');
+      updateModeButtons();
+      break;
+    case 'close-mode':
+      hideEl('mode-screen');
+      showEl('main-menu');
+      break;
+    case 'open-settings':
+      hideEl('main-menu');
+      hideEl('pause-menu');
+      hideEl('mode-screen');
+      showEl('settings-screen');
+      applySettingsToUI();
+      break;
+    case 'close-settings':
+      hideEl('settings-screen');
+      if (state.phase === 'paused') showEl('pause-menu');
+      else showEl('main-menu');
+      break;
+    case 'open-controls':
+      hideEl('main-menu');
+      showEl('controls-screen');
+      break;
+    case 'close-controls':
+      hideEl('controls-screen');
+      showEl('main-menu');
+      break;
+    case 'open-stats':
+      hideEl('main-menu');
+      renderStatsScreen();
+      showEl('stats-screen');
+      break;
+    case 'close-stats':
+      hideEl('stats-screen');
+      showEl('main-menu');
+      break;
+    case 'open-about':
+      hideEl('main-menu');
+      showEl('about-screen');
+      break;
+    case 'close-about':
+      hideEl('about-screen');
+      showEl('main-menu');
+      break;
+    case 'resume':
+      resumeGame();
+      break;
+    case 'restart':
+      restartGame();
+      break;
+    case 'main-menu': {
+      if (state.phase === 'paused' || state.phase === 'playing') {
+        const ok = await showConfirm('Выйти в главное меню? Прогресс сохранится.');
+        if (!ok) return;
+        if (engineReady) {
+          saveData.playerPos = [playerBody.position.x, playerBody.position.y];
+          saveData.hammerAngle = getHammerAngle();
+          saveData.hasSave = true;
+          saveGameLS();
+        }
+      }
+      showMainMenu();
+      break;
+    }
+    case 'reset-settings':
+      settings = { ...DEFAULT_SETTINGS };
+      saveSettingsLS();
+      if (engineReady) applyQuality(settings.quality);
+      applySettingsToUI();
+      showToast('Настройки сброшены');
+      break;
+    case 'autotune':
+      runAutoTune();
+      break;
+    case 'victory-restart':
+      hideEl('victory');
+      startGame();
+      break;
+    case 'victory-menu':
+      hideEl('victory');
+      showMainMenu();
+      break;
+    case 'reset-progress': {
+      const ok = await showConfirm('Сбросить всю статистику и сохранение?');
+      if (!ok) return;
+      saveData = {
+        playerPos: null, hammerAngle: null, elapsedTime: 0, bestTime: null,
+        maxHeight: 0, falls: 0, totalPlayTime: 0, checkpoint: null, checkpointZone: 0, hasSave: false
+      };
+      try { localStorage.removeItem('hammer_pot_save_v1'); } catch (e) {}
+      showToast('Прогресс сброшен');
+      renderStatsScreen();
+      updateContinueButton();
+      break;
+    }
+  }
+});
+
+/* Кнопки режимов */
+document.getElementById('mode-classic').addEventListener('click', () => {
+  settings.mode = 'classic';
+  saveSettingsLS();
+  updateModeButtons();
+  showToast('Режим: Классический');
+  setTimeout(() => { hideEl('mode-screen'); showEl('main-menu'); }, 180);
+});
+document.getElementById('mode-checkpoint').addEventListener('click', () => {
+  settings.mode = 'checkpoint';
+  saveSettingsLS();
+  updateModeButtons();
+  showToast('Режим: С контрольными точками');
+  setTimeout(() => { hideEl('mode-screen'); showEl('main-menu'); }, 180);
+});
+
+/* Кнопки HUD */
+document.getElementById('btn-pause').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (state.phase === 'playing') pauseGame();
+});
+document.getElementById('btn-fullscreen').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleFullscreen();
+});
+
+/* Настройки: слушатели */
+document.getElementById('s-fps-limit').addEventListener('change', (e) => {
+  settings.fpsLimit = parseInt(e.target.value, 10);
+  saveSettingsLS();
+  lastRenderTime = 0;
+  showToast('Лимит FPS: ' + (settings.fpsLimit === 0 ? 'без ограничения' : settings.fpsLimit));
+});
+document.getElementById('s-quality').addEventListener('change', (e) => {
+  applyQuality(e.target.value);
+  applySettingsToUI();
+  showToast('Качество: ' + e.target.value);
+});
+document.getElementById('s-render-scale').addEventListener('input', (e) => {
+  settings.renderScale = parseInt(e.target.value, 10);
+  if (engineReady) {
+    const dpr = Math.min(window.devicePixelRatio || 1, QUALITY_PRESETS[settings.quality].pixelRatioCap);
+    renderer.setPixelRatio(dpr * (settings.renderScale / 100));
+  }
+  saveSettingsLS();
+});
+document.getElementById('s-far').addEventListener('input', (e) => {
+  settings.far = parseInt(e.target.value, 10);
+  if (engineReady) scene.fog.far = settings.far;
+  saveSettingsLS();
+});
+document.getElementById('s-volume').addEventListener('input', (e) => {
+  settings.volume = parseInt(e.target.value, 10);
+  if (ambientOsc) ambientOsc.gain.gain.value = 0.015 * (settings.volume / 100);
+  saveSettingsLS();
+});
+document.getElementById('s-sensitivity').addEventListener('input', (e) => {
+  settings.sensitivity = parseInt(e.target.value, 10);
+  saveSettingsLS();
+});
+document.getElementById('s-shadows').addEventListener('click', () => {
+  settings.shadows = !settings.shadows;
+  setToggle('s-shadows', settings.shadows);
+  if (engineReady) {
+    renderer.shadowMap.enabled = settings.shadows;
+    sun.castShadow = settings.shadows;
+  }
+  saveSettingsLS();
+  showToast('Тени: ' + (settings.shadows ? 'вкл' : 'выкл'));
+});
+document.getElementById('s-show-stats').addEventListener('click', () => {
+  settings.showStats = !settings.showStats;
+  setToggle('s-show-stats', settings.showStats);
+  document.getElementById('stats').classList.toggle('visible', settings.showStats && state.phase === 'playing');
+  saveSettingsLS();
+});
+document.getElementById('s-screenshake').addEventListener('click', () => {
+  settings.screenshake = !settings.screenshake;
+  setToggle('s-screenshake', settings.screenshake);
+  saveSettingsLS();
+});
+document.getElementById('s-mute').addEventListener('click', () => {
+  settings.mute = !settings.mute;
+  setToggle('s-mute', settings.mute);
+  if (ambientOsc) ambientOsc.gain.gain.value = settings.mute ? 0 : 0.015 * (settings.volume / 100);
+  saveSettingsLS();
+  showToast('Звук: ' + (settings.mute ? 'выкл' : 'вкл'));
+});
+
+/* Автонастройка */
+let autoTuneRunning = false;
+function runAutoTune() {
+  if (!engineReady) { showToast('Движок не загружен'); return; }
+  if (autoTuneRunning) return;
+  autoTuneRunning = true;
+  showToast('Тестирование производительности...');
+  const origScale = settings.renderScale;
+  settings.renderScale = 100;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  let frames = 0;
+  const tStart = performance.now();
+  function sample(now) {
+    frames++;
+    if (now - tStart > 2000) {
+      const fps = frames / ((now - tStart) / 1000);
+      autoTuneRunning = false;
+      let q = 'min';
+      if (fps >= 100) q = 'ultra';
+      else if (fps >= 55) q = 'high';
+      else if (fps >= 40) q = 'medium';
+      else if (fps >= 25) q = 'low';
+      applyQuality(q);
+      applySettingsToUI();
+      showToast('Автонастройка: качество «' + q + '» (~' + Math.round(fps) + ' FPS)');
+      return;
+    }
+    requestAnimationFrame(sample);
+  }
+  requestAnimationFrame(sample);
+}
+
+/* Ресайз */
 function onResize() {
   const w = window.innerWidth, h = window.innerHeight;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  menuCamera.aspect = w / h;
-  menuCamera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
+  if (engineReady) {
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    menuCamera.aspect = w / h; menuCamera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
+  }
   document.getElementById('rotate-hint').classList.toggle('show', w < h && w < 500);
 }
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
+/* Пауза при уходе в фон */
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && state.phase === 'playing') pauseGame();
 });
 
 /* =========================================================
-   СТАРТ
+   ИНИЦИАЛИЗАЦИЯ UI
    ========================================================= */
-applyQuality(settings.quality);
 applySettingsToUI();
-onResize();
+updateModeButtons();
+updateContinueButton();
 showMainMenu();
-
-// Движок готов — разблокируем меню
-window.__engineReady = true;
-const menuEl = document.getElementById('main-menu');
-if (menuEl) menuEl.classList.remove('engine-loading');
-const hintEl = document.getElementById('engine-hint');
-if (hintEl) hintEl.textContent = '';
-document.querySelectorAll('#main-menu .menu-btn').forEach(b => b.disabled = false);
-
-hammerBody.angularVelocity.set(0, 0, 1);
+onResize();
 requestAnimationFrame(animate);
+
 </script>
 </body>
 </html>
