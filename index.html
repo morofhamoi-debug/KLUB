@@ -6,1828 +6,1518 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Молот и Котёл — 3D Восхождение</title>
+<title>Молот и Котёл</title>
 <style>
-  :root {
-    --gold: #c9a961;
-    --gold-light: #f0e0b8;
-    --bg: #0a0a0f;
-    --bg-panel: rgba(20, 20, 28, 0.94);
-    --text: #e8e8e8;
-    --text-dim: #999;
-    --danger: #e88;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-left: env(safe-area-inset-left, 0px);
-    --safe-right: env(safe-area-inset-right, 0px);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
-  html, body {
-    width: 100%; height: 100vh; height: 100dvh;
-    overflow: hidden;
-    background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text);
-    user-select: none; -webkit-user-select: none;
-    touch-action: none; overscroll-behavior: none;
-    -webkit-font-smoothing: antialiased;
-  }
-  #game-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-
-  /* ============ MENU ============ */
-  .menu-screen {
-    position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 100;
-    background: rgba(8, 8, 14, 0.75);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding: calc(16px + var(--safe-top)) max(16px, var(--safe-right)) calc(16px + var(--safe-bottom)) max(16px, var(--safe-left));
-  }
-  .menu-screen.hidden { display: none; }
-  .menu-content { width: 100%; max-width: 380px; text-align: center; padding: 4px 0; }
-  .menu-title {
-    font-size: clamp(22px, 6vw, 30px); font-weight: 800; letter-spacing: 3px;
-    margin-bottom: 4px;
-    background: linear-gradient(135deg, #f0e0b8, #c9a961, #8a6d3b);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .menu-subtitle {
-    font-size: 10px; color: #666; letter-spacing: 4px; margin-bottom: 20px; text-transform: uppercase;
-  }
-  .menu-btn {
-    display: block; width: 100%;
-    padding: 13px 14px; margin-bottom: 9px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: var(--text);
-    font-size: 14px; letter-spacing: 1.5px; font-weight: 500;
-    cursor: pointer; border-radius: 10px;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
-    font-family: inherit; text-align: center;
-    touch-action: manipulation;
-  }
-  .menu-btn:active { transform: scale(0.97); background: rgba(201,169,97,0.28); border-color: var(--gold); }
-  .menu-btn.secondary { font-size: 13px; padding: 11px 14px; letter-spacing: 1px; background: rgba(255,255,255,0.03); }
-  .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
-
-  #engine-hint {
-    font-size: 11px; color: #777; margin-top: 12px; min-height: 14px; line-height: 1.4;
-    transition: color 0.3s;
-  }
-  #engine-hint.error { color: var(--danger); }
-  #engine-hint.ready { color: #4a4; }
-
-  /* ============ HUD ============ */
-  #hud {
-    position: fixed; top: 0; left: 0; right: 0;
-    padding: calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) 10px calc(12px + var(--safe-left));
-    display: none;
-    justify-content: space-between; align-items: flex-start;
-    z-index: 10; pointer-events: none;
-  }
-  #hud.active { display: flex; }
-  #hud .info { display: flex; flex-direction: column; gap: 5px; font-size: 12px; text-shadow: 0 1px 3px rgba(0,0,0,0.95); }
-  #hud .info .label { color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; display: inline-block; margin-right: 5px; }
-  #hud .info .value { color: #fff; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
-  #hud-right { display: flex; gap: 8px; pointer-events: auto; }
-  .hud-btn {
-    width: 42px; height: 42px;
-    background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 10px;
-    color: #fff; font-size: 16px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    touch-action: manipulation;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  }
-  .hud-btn:active { background: rgba(201,169,97,0.35); transform: scale(0.94); }
-
-  /* ============ STATS ============ */
-  #stats {
-    position: fixed; top: calc(62px + var(--safe-top)); left: calc(12px + var(--safe-left));
-    padding: 8px 10px;
-    background: rgba(0,0,0,0.72);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    font-size: 10px; color: #aaa;
-    font-family: 'SF Mono', Consolas, monospace;
-    z-index: 10; display: none;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    pointer-events: none;
-  }
-  #stats.visible { display: block; }
-  #stats .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 2px; line-height: 1.4; }
-  #stats .row span:last-child { color: var(--gold); font-weight: 600; }
-  #stats-canvas { display: block; margin-top: 6px; border-radius: 3px; width: 140px; height: 32px; }
-
-  /* ============ OVERLAYS ============ */
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(8, 8, 14, 0.95);
-    z-index: 200;
-    display: flex; flex-direction: column;
-    padding: calc(14px + var(--safe-top)) max(14px, var(--safe-right)) calc(14px + var(--safe-bottom)) max(14px, var(--safe-left));
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  }
-  .overlay.hidden { display: none; }
-  .overlay-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px; flex-shrink: 0;
-    max-width: 480px; margin-left: auto; margin-right: auto; width: 100%;
-  }
-  .overlay-title { font-size: 17px; font-weight: 700; color: #e8d5a8; letter-spacing: 1px; }
-  .close-btn {
-    width: 40px; height: 40px;
-    background: rgba(255,255,255,0.08);
-    border: none; color: #fff;
-    font-size: 18px; border-radius: 10px;
-    cursor: pointer; touch-action: manipulation;
-  }
-  .close-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.94); }
-  .overlay-body { flex: 1; max-width: 480px; margin: 0 auto; width: 100%; }
-
-  /* ============ SETTINGS ============ */
-  .setting-group { margin-bottom: 12px; }
-  .setting-group-title {
-    font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; padding-left: 2px;
-  }
-  .setting-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    background: rgba(255,255,255,0.02);
-    border-radius: 6px; margin-bottom: 3px;
-    min-height: 42px;
-  }
-  .setting-row label { font-size: 13px; color: #ccc; flex: 1; padding-right: 10px; }
-  .setting-row .control { flex-shrink: 0; display: flex; align-items: center; }
-  .setting-row select {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: #fff; padding: 6px 8px;
-    border-radius: 7px; font-family: inherit; font-size: 12px;
-    min-width: 120px; max-width: 140px;
-    touch-action: manipulation;
-  }
-  .setting-row input[type=range] {
-    width: 120px; accent-color: var(--gold);
-    touch-action: manipulation;
-    height: 28px;
-  }
-  .toggle {
-    position: relative; width: 42px; height: 24px;
-    background: rgba(255,255,255,0.14); border-radius: 12px;
-    cursor: pointer; transition: background 0.2s;
-    touch-action: manipulation;
-  }
-  .toggle.on { background: var(--gold); }
-  .toggle::after {
-    content: ''; position: absolute; top: 3px; left: 3px;
-    width: 18px; height: 18px; background: #fff; border-radius: 50%;
-    transition: transform 0.2s;
-  }
-  .toggle.on::after { transform: translateX(18px); }
-
-  /* ============ TOUCH ============ */
-  #touch-indicator {
-    position: fixed; width: 52px; height: 52px;
-    border: 2px solid rgba(201,169,97,0.7);
-    border-radius: 50%; pointer-events: none;
-    display: none; z-index: 6;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 20px rgba(201,169,97,0.4);
-    transition: opacity 0.15s;
-  }
-  #touch-indicator.visible { display: block; }
-
-  /* ============ INFO TEXT ============ */
-  .info-text { color: #b8b8b8; font-size: 13px; line-height: 1.7; }
-  .info-text p { margin-bottom: 10px; }
-  .info-text strong { color: var(--gold); }
-  .info-text .stat-line {
-    display: flex; justify-content: space-between;
-    padding: 9px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    font-size: 13px;
-  }
-  .info-text .stat-line span:first-child { color: #888; }
-  .info-text .stat-line span:last-child { color: #e8d5a8; font-weight: 600; }
-
-  /* ============ VICTORY ============ */
-  #victory .victory-content { text-align: center; padding-top: 40px; }
-  #victory .victory-title { font-size: 60px; margin-bottom: 10px; line-height: 1; }
-  #victory .victory-time { font-size: 22px; color: var(--gold); margin: 16px 0 24px; font-variant-numeric: tabular-nums; font-weight: 700; }
-  #victory .info-text { text-align: center; font-size: 15px; margin-bottom: 20px; }
-
-  /* ============ ROTATE HINT ============ */
-  #rotate-hint {
-    position: fixed;
-    bottom: calc(12px + var(--safe-bottom));
-    left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.85); color: #ccc;
-    padding: 6px 14px; border-radius: 8px;
-    font-size: 10px; z-index: 50;
-    display: none;
-    border: 1px solid rgba(255,255,255,0.1);
-    white-space: nowrap;
-  }
-  @media (orientation: portrait) and (max-width: 500px) {
-    #rotate-hint.show { display: block; }
-  }
-
-  /* ============ MODE ============ */
-  .mode-btn {
-    display: block; width: 100%;
-    padding: 14px 16px; margin-bottom: 10px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: var(--text);
-    cursor: pointer; border-radius: 10px;
-    font-family: inherit; text-align: left;
-    transition: all 0.15s;
-    touch-action: manipulation;
-  }
-  .mode-btn:active { transform: scale(0.98); }
-  .mode-btn.selected { background: rgba(201,169,97,0.22); border-color: var(--gold); }
-  .mode-btn .mode-name { font-weight: 700; font-size: 14px; }
-  .mode-btn .mode-desc { font-size: 11px; color: #999; margin-top: 4px; line-height: 1.4; }
-
-  /* ============ TOAST ============ */
-  #toast-container {
-    position: fixed;
-    bottom: calc(20px + var(--safe-bottom));
-    left: 50%; transform: translateX(-50%);
-    z-index: 5000;
-    display: flex; flex-direction: column;
-    gap: 8px; pointer-events: none;
-    align-items: center;
-    max-width: 90vw;
-  }
-  .toast {
-    background: rgba(20,20,30,0.96);
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-size: 13px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
-    border: 1px solid rgba(201,169,97,0.35);
-    animation: toast-in 0.25s ease-out;
-    max-width: 320px;
-    text-align: center;
-    line-height: 1.4;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  }
-  @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  .toast.out { animation: toast-out 0.25s ease-in forwards; }
-  @keyframes toast-out { to { opacity: 0; transform: translateY(14px) scale(0.95); } }
-
-  /* ============ CONFIRM ============ */
-  #confirm-dialog {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 5000;
-    padding: 20px;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  }
-  #confirm-dialog.hidden { display: none; }
-  .confirm-content {
-    background: #1a1a24;
-    border: 1px solid rgba(201,169,97,0.35);
-    border-radius: 14px;
-    padding: 22px 20px;
-    max-width: 340px;
-    width: 100%;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.8);
-    animation: toast-in 0.25s ease-out;
-  }
-  .confirm-message {
-    color: #ddd; font-size: 15px;
-    margin-bottom: 20px; text-align: center; line-height: 1.5;
-  }
-  .confirm-buttons { display: flex; gap: 10px; }
-  .confirm-btn {
-    flex: 1; padding: 12px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.05);
-    color: #fff; border-radius: 9px;
-    font-size: 14px; cursor: pointer;
-    font-family: inherit;
-    touch-action: manipulation;
-    transition: background 0.15s;
-  }
-  .confirm-btn:active { transform: scale(0.97); }
-  .confirm-btn.yes { background: rgba(201,169,97,0.25); border-color: var(--gold); color: #fff; font-weight: 600; }
-  .confirm-btn.no { background: rgba(255,255,255,0.03); }
-
-  /* ============ MOBILE COMPACT ============ */
-  @media (max-height: 700px) {
-    .menu-title { font-size: 24px; }
-    .menu-subtitle { font-size: 9px; margin-bottom: 14px; }
-    .menu-btn { padding: 10px 12px; font-size: 13px; margin-bottom: 7px; }
-    .menu-btn.secondary { padding: 9px 12px; font-size: 12px; }
-    .setting-row { padding: 6px 8px; min-height: 38px; }
-    .setting-row label { font-size: 12px; }
-    .overlay-title { font-size: 16px; }
-  }
-  @media (max-width: 360px) {
-    .setting-row select { min-width: 100px; }
-    .setting-row input[type=range] { width: 100px; }
-  }
+:root{
+  --gold:#c9a961;--gold-light:#f0e0b8;--bg:#0a0a12;--text:#e8e8e8;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{width:100%;height:100vh;height:100dvh;overflow:hidden;background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text);
+  user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:#1a2a3a}
+.scr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;
+  background:rgba(6,8,14,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:calc(14px + var(--safe-top)) max(14px,var(--safe-right)) calc(14px + var(--safe-bottom)) max(14px,var(--safe-left))}
+.scr.hidden{display:none}
+.menu-c{width:100%;max-width:360px;text-align:center}
+.title{font-size:clamp(20px,5.5vw,28px);font-weight:800;letter-spacing:3px;margin-bottom:4px;
+  background:linear-gradient(135deg,#f0e0b8,#c9a961,#8a6d3b);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:9px;color:#666;letter-spacing:4px;margin-bottom:20px;text-transform:uppercase}
+.btn{display:block;width:100%;padding:13px 14px;margin-bottom:8px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);
+  font-size:14px;letter-spacing:1.5px;font-weight:500;cursor:pointer;border-radius:10px;
+  transition:background .15s,border-color .15s,transform .1s;font-family:inherit;text-align:center;touch-action:manipulation}
+.btn:active{transform:scale(.97);background:rgba(201,169,97,.3);border-color:var(--gold)}
+.btn.sec{font-size:13px;padding:11px 14px;letter-spacing:1px;background:rgba(255,255,255,.03)}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+#hud{position:fixed;top:0;left:0;right:0;
+  padding:calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) 10px calc(12px + var(--safe-left));
+  display:none;justify-content:space-between;align-items:flex-start;z-index:10;pointer-events:none}
+#hud.on{display:flex}
+.hud-info{display:flex;flex-direction:column;gap:5px;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.95)}
+.hud-info .lbl{color:#8a8a90;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;display:inline-block;margin-right:5px}
+.hud-info .val{color:#fff;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+#hud-r{display:flex;gap:8px;pointer-events:auto}
+.hbtn{width:42px;height:42px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;touch-action:manipulation;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.hbtn:active{background:rgba(201,169,97,.4);transform:scale(.94)}
+#stats{position:fixed;top:calc(62px + var(--safe-top));left:calc(12px + var(--safe-left));
+  padding:8px 10px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;font-size:10px;color:#aaa;font-family:'SF Mono',Consolas,monospace;
+  z-index:10;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:none}
+#stats.on{display:block}
+#stats .r{display:flex;justify-content:space-between;gap:12px;margin-bottom:2px;line-height:1.4}
+#stats .r span:last-child{color:var(--gold);font-weight:600}
+#stats-cv{display:block;margin-top:6px;border-radius:3px;width:140px;height:32px}
+.ov{position:fixed;inset:0;background:rgba(6,8,14,.95);z-index:200;display:flex;flex-direction:column;
+  padding:calc(14px + var(--safe-top)) max(14px,var(--safe-right)) calc(14px + var(--safe-bottom)) max(14px,var(--safe-left));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.ov.hidden{display:none}
+.ov-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;
+  max-width:460px;margin-left:auto;margin-right:auto;width:100%}
+.ov-t{font-size:17px;font-weight:700;color:#e8d5a8;letter-spacing:1px}
+.x{width:40px;height:40px;background:rgba(255,255,255,.08);border:none;color:#fff;font-size:18px;
+  border-radius:10px;cursor:pointer;touch-action:manipulation}
+.x:active{background:rgba(255,255,255,.2);transform:scale(.94)}
+.ov-b{flex:1;max-width:460px;margin:0 auto;width:100%}
+.grp{margin-bottom:12px}
+.grp-t{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;padding-left:2px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;
+  border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);
+  border-radius:6px;margin-bottom:3px;min-height:42px}
+.row label{font-size:13px;color:#ccc;flex:1;padding-right:10px}
+.row .ctrl{flex-shrink:0;display:flex;align-items:center}
+.row select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;
+  padding:6px 8px;border-radius:7px;font-family:inherit;font-size:12px;min-width:120px;max-width:140px;touch-action:manipulation}
+.row input[type=range]{width:120px;accent-color:var(--gold);height:28px;touch-action:manipulation}
+.tg{position:relative;width:42px;height:24px;background:rgba(255,255,255,.14);border-radius:12px;
+  cursor:pointer;transition:background .2s;touch-action:manipulation}
+.tg.on{background:var(--gold)}
+.tg::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;
+  border-radius:50%;transition:transform .2s}
+.tg.on::after{transform:translateX(18px)}
+#ti{position:fixed;width:52px;height:52px;border:2px solid rgba(201,169,97,.8);border-radius:50%;
+  pointer-events:none;display:none;z-index:6;transform:translate(-50%,-50%);
+  box-shadow:0 0 24px rgba(201,169,97,.5);transition:opacity .15s}
+#ti.on{display:block}
+.txt{color:#b8b8b8;font-size:13px;line-height:1.7}
+.txt p{margin-bottom:10px}.txt strong{color:var(--gold)}
+.txt .st{display:flex;justify-content:space-between;padding:9px 10px;
+  border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.txt .st span:first-child{color:#888}.txt .st span:last-child{color:#e8d5a8;font-weight:600}
+#vic .vic-c{text-align:center;padding-top:40px}
+#vic .vic-t{font-size:60px;margin-bottom:10px;line-height:1}
+#vic .vic-time{font-size:22px;color:var(--gold);margin:16px 0 24px;font-variant-numeric:tabular-nums;font-weight:700}
+#vic .txt{text-align:center;font-size:15px;margin-bottom:20px}
+#rot{position:fixed;bottom:calc(12px + var(--safe-bottom));left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.85);color:#ccc;padding:6px 14px;border-radius:8px;font-size:10px;
+  z-index:50;display:none;border:1px solid rgba(255,255,255,.1);white-space:nowrap}
+@media(orientation:portrait) and (max-width:500px){#rot.on{display:block}}
+.mode-b{display:block;width:100%;padding:14px 16px;margin-bottom:10px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--text);
+  cursor:pointer;border-radius:10px;font-family:inherit;text-align:left;transition:all .15s;touch-action:manipulation}
+.mode-b:active{transform:scale(.98)}
+.mode-b.sel{background:rgba(201,169,97,.22);border-color:var(--gold)}
+.mode-b .mn{font-weight:700;font-size:14px}
+.mode-b .md{font-size:11px;color:#999;margin-top:4px;line-height:1.4}
+#toasts{position:fixed;bottom:calc(20px + var(--safe-bottom));left:50%;transform:translateX(-50%);
+  z-index:5000;display:flex;flex-direction:column;gap:8px;pointer-events:none;align-items:center;max-width:90vw}
+.toast{background:rgba(20,20,30,.96);color:#fff;padding:10px 18px;border-radius:10px;
+  font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.6);border:1px solid rgba(201,169,97,.4);
+  animation:tin .25s ease-out;max-width:320px;text-align:center;line-height:1.4;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+@keyframes tin{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.toast.out{animation:tout .25s ease-in forwards}
+@keyframes tout{to{opacity:0;transform:translateY(14px) scale(.95)}}
+#conf{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;
+  justify-content:center;z-index:5000;padding:20px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#conf.hidden{display:none}
+.conf-c{background:#1a1a24;border:1px solid rgba(201,169,97,.4);border-radius:14px;
+  padding:22px 20px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.8);
+  animation:tin .25s ease-out}
+.conf-m{color:#ddd;font-size:15px;margin-bottom:20px;text-align:center;line-height:1.5}
+.conf-b{display:flex;gap:10px}
+.conf-x{flex:1;padding:12px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);
+  color:#fff;border-radius:9px;font-size:14px;cursor:pointer;font-family:inherit;touch-action:manipulation}
+.conf-x:active{transform:scale(.97)}
+.conf-x.yes{background:rgba(201,169,97,.28);border-color:var(--gold);font-weight:600}
+@media(max-height:700px){
+  .title{font-size:22px}.subtitle{font-size:9px;margin-bottom:14px}
+  .btn{padding:10px 12px;font-size:13px;margin-bottom:7px}.btn.sec{padding:9px 12px;font-size:12px}
+  .row{padding:6px 8px;min-height:38px}.row label{font-size:12px}.ov-t{font-size:16px}
+}
+@media(max-width:360px){.row select{min-width:100px}.row input[type=range]{width:100px}}
 </style>
 </head>
 <body>
+<canvas id="cv"></canvas>
 
-<canvas id="game-canvas"></canvas>
-
-<!-- ГЛАВНОЕ МЕНЮ -->
-<div id="main-menu" class="menu-screen">
-  <div class="menu-content">
-    <div class="menu-title">МОЛОТ И КОТЁЛ</div>
-    <div class="menu-subtitle">3D Восхождение</div>
-    <button class="menu-btn" data-action="play">Играть</button>
-    <button class="menu-btn" data-action="continue" id="btn-continue">Продолжить</button>
-    <button class="menu-btn secondary" data-action="open-mode">Выбор режима</button>
-    <button class="menu-btn secondary" data-action="open-settings">Настройки</button>
-    <button class="menu-btn secondary" data-action="open-controls">Управление</button>
-    <button class="menu-btn secondary" data-action="open-stats">Статистика</button>
-    <button class="menu-btn secondary" data-action="open-about">Об игре</button>
-    <div id="engine-hint">Загрузка 3D-движка...</div>
+<div id="main-menu" class="scr">
+  <div class="menu-c">
+    <div class="title">МОЛОТ И КОТЁЛ</div>
+    <div class="subtitle">Восхождение</div>
+    <button class="btn" data-action="play">Играть</button>
+    <button class="btn" data-action="continue" id="btn-continue">Продолжить</button>
+    <button class="btn sec" data-action="open-mode">Режим</button>
+    <button class="btn sec" data-action="open-settings">Настройки</button>
+    <button class="btn sec" data-action="open-controls">Управление</button>
+    <button class="btn sec" data-action="open-stats">Статистика</button>
+    <button class="btn sec" data-action="open-about">Об игре</button>
   </div>
 </div>
 
-<!-- HUD -->
 <div id="hud">
-  <div class="info">
-    <div><span class="label">Время</span><span class="value" id="hud-time">0:00</span></div>
-    <div><span class="label">Высота</span><span class="value" id="hud-height">0.0 м</span></div>
+  <div class="hud-info">
+    <div><span class="lbl">Время</span><span class="val" id="h-time">0:00</span></div>
+    <div><span class="lbl">Высота</span><span class="val" id="h-height">0.0 м</span></div>
+    <div><span class="lbl">Зона</span><span class="val" id="h-zone">Земля</span></div>
   </div>
-  <div id="hud-right">
-    <button class="hud-btn" id="btn-fullscreen" title="На весь экран">⛶</button>
-    <button class="hud-btn" id="btn-pause" title="Пауза">⏸</button>
+  <div id="hud-r">
+    <button class="hbtn" id="btn-fs" title="На весь экран">⛶</button>
+    <button class="hbtn" id="btn-pause" title="Пауза">⏸</button>
   </div>
 </div>
 
-<!-- STATS -->
 <div id="stats">
-  <div class="row"><span>FPS:</span><span id="stat-fps">0</span></div>
-  <div class="row"><span>Средний:</span><span id="stat-avg">0</span></div>
-  <div class="row"><span>Кадр:</span><span id="stat-frame">0 мс</span></div>
-  <div class="row"><span>Лимит:</span><span id="stat-limit">60</span></div>
-  <div class="row"><span>Качество:</span><span id="stat-quality">высокое</span></div>
-  <div class="row"><span>Объектов:</span><span id="stat-objs">0</span></div>
-  <canvas id="stats-canvas" width="140" height="32"></canvas>
+  <div class="r"><span>FPS:</span><span id="s-fps">0</span></div>
+  <div class="r"><span>Средний:</span><span id="s-avg">0</span></div>
+  <div class="r"><span>Кадр:</span><span id="s-frame">0 мс</span></div>
+  <div class="r"><span>Лимит:</span><span id="s-limit">60</span></div>
+  <div class="r"><span>Качество:</span><span id="s-quality">высокое</span></div>
+  <canvas id="stats-cv" width="140" height="32"></canvas>
 </div>
 
-<div id="touch-indicator"></div>
+<div id="ti"></div>
 
-<!-- ПАУЗА -->
-<div id="pause-menu" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Пауза</div>
-  </div>
-  <div class="overlay-body">
-    <button class="menu-btn" data-action="resume">Продолжить</button>
-    <button class="menu-btn secondary" data-action="restart">Начать заново</button>
-    <button class="menu-btn secondary" data-action="open-settings">Настройки</button>
-    <button class="menu-btn secondary" data-action="main-menu">В главное меню</button>
+<div id="pause-menu" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Пауза</div></div>
+  <div class="ov-b">
+    <button class="btn" data-action="resume">Продолжить</button>
+    <button class="btn sec" data-action="restart">Начать заново</button>
+    <button class="btn sec" data-action="open-settings">Настройки</button>
+    <button class="btn sec" data-action="main-menu">В главное меню</button>
   </div>
 </div>
 
-<!-- НАСТРОЙКИ -->
-<div id="settings-screen" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Настройки</div>
-    <button class="close-btn" data-action="close-settings">✕</button>
-  </div>
-  <div class="overlay-body">
-    <div class="setting-group">
-      <div class="setting-group-title">Частота кадров</div>
-      <div class="setting-row">
-        <label>Лимит FPS</label>
-        <div class="control">
-          <select id="s-fps-limit">
-            <option value="30">30 FPS</option>
-            <option value="45">45 FPS</option>
-            <option value="60">60 FPS</option>
-            <option value="90">90 FPS</option>
-            <option value="120">120 FPS</option>
-            <option value="0">Без ограничения</option>
-          </select>
-        </div>
-      </div>
-      <div class="setting-row">
-        <label>Показывать статистику</label>
-        <div class="control"><div class="toggle" id="s-show-stats"></div></div>
-      </div>
+<div id="settings-screen" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Настройки</div><button class="x" data-action="close-settings">✕</button></div>
+  <div class="ov-b">
+    <div class="grp">
+      <div class="grp-t">Частота кадров</div>
+      <div class="row"><label>Лимит FPS</label><div class="ctrl">
+        <select id="s-fps-limit">
+          <option value="30">30 FPS</option><option value="45">45 FPS</option>
+          <option value="60">60 FPS</option><option value="90">90 FPS</option>
+          <option value="120">120 FPS</option><option value="0">Без ограничения</option>
+        </select></div></div>
+      <div class="row"><label>Показывать статистику</label><div class="ctrl"><div class="tg" id="s-show-stats"></div></div></div>
     </div>
-    <div class="setting-group">
-      <div class="setting-group-title">Графика</div>
-      <div class="setting-row">
-        <label>Качество</label>
-        <div class="control">
-          <select id="s-quality">
-            <option value="min">Минимальное</option>
-            <option value="low">Низкое</option>
-            <option value="medium">Среднее</option>
-            <option value="high">Высокое</option>
-            <option value="ultra">Ультра</option>
-          </select>
-        </div>
-      </div>
-      <div class="setting-row">
-        <label>Тени</label>
-        <div class="control"><div class="toggle" id="s-shadows"></div></div>
-      </div>
-      <div class="setting-row">
-        <label>Масштаб рендеринга</label>
-        <div class="control"><input type="range" id="s-render-scale" min="50" max="100" step="5"></div>
-      </div>
-      <div class="setting-row">
-        <label>Дальность прорисовки</label>
-        <div class="control"><input type="range" id="s-far" min="30" max="200" step="5"></div>
-      </div>
+    <div class="grp">
+      <div class="grp-t">Графика</div>
+      <div class="row"><label>Качество</label><div class="ctrl">
+        <select id="s-quality">
+          <option value="min">Минимальное</option><option value="low">Низкое</option>
+          <option value="medium">Среднее</option><option value="high">Высокое</option>
+          <option value="ultra">Ультра</option>
+        </select></div></div>
+      <div class="row"><label>Частицы</label><div class="ctrl"><div class="tg" id="s-particles"></div></div></div>
+      <div class="row"><label>Тени</label><div class="ctrl"><div class="tg" id="s-shadows"></div></div></div>
     </div>
-    <div class="setting-group">
-      <div class="setting-group-title">Отображение</div>
-      <div class="setting-row">
-        <label>Тряска экрана</label>
-        <div class="control"><div class="toggle" id="s-screenshake"></div></div>
-      </div>
+    <div class="grp">
+      <div class="grp-t">Отображение</div>
+      <div class="row"><label>Тряска экрана</label><div class="ctrl"><div class="tg" id="s-screenshake"></div></div></div>
+      <div class="row"><label>Показывать FPS в HUD</label><div class="ctrl"><div class="tg" id="s-hud-fps"></div></div></div>
     </div>
-    <div class="setting-group">
-      <div class="setting-group-title">Звук</div>
-      <div class="setting-row">
-        <label>Громкость</label>
-        <div class="control"><input type="range" id="s-volume" min="0" max="100" step="5"></div>
-      </div>
-      <div class="setting-row">
-        <label>Отключить звук</label>
-        <div class="control"><div class="toggle" id="s-mute"></div></div>
-      </div>
+    <div class="grp">
+      <div class="grp-t">Звук</div>
+      <div class="row"><label>Громкость</label><div class="ctrl"><input type="range" id="s-volume" min="0" max="100" step="5"></div></div>
+      <div class="row"><label>Отключить звук</label><div class="ctrl"><div class="tg" id="s-mute"></div></div></div>
     </div>
-    <div class="setting-group">
-      <div class="setting-group-title">Управление</div>
-      <div class="setting-row">
-        <label>Чувствительность молота</label>
-        <div class="control"><input type="range" id="s-sensitivity" min="50" max="200" step="10"></div>
-      </div>
+    <div class="grp">
+      <div class="grp-t">Управление</div>
+      <div class="row"><label>Чувствительность</label><div class="ctrl"><input type="range" id="s-sens" min="30" max="200" step="10"></div></div>
     </div>
-    <button class="menu-btn secondary" data-action="autotune">Автонастройка</button>
-    <button class="menu-btn secondary" data-action="reset-settings">Сбросить настройки</button>
+    <button class="btn sec" data-action="autotune">Автонастройка</button>
+    <button class="btn sec" data-action="reset-settings">Сбросить настройки</button>
   </div>
 </div>
 
-<!-- УПРАВЛЕНИЕ -->
-<div id="controls-screen" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Управление</div>
-    <button class="close-btn" data-action="close-controls">✕</button>
-  </div>
-  <div class="overlay-body">
-    <div class="info-text">
-      <p><strong>ПК:</strong></p>
-      <p>• Зажмите левую кнопку мыши и двигайте ей — молот следует в направлении курсора.</p>
-      <p>• ESC или P — пауза.</p>
-      <p>• R — начать заново.</p>
-      <p><br><strong>Мобильное устройство:</strong></p>
-      <p>• Коснитесь экрана и двигайте пальцем — молот направляется к пальцу.</p>
-      <p>• Кнопка ⏸ в верхнем правом углу — пауза.</p>
-      <p><br><strong>Цель:</strong></p>
-      <p>Используя молот, взберитесь на вершину башни. Не падайте!</p>
-    </div>
+<div id="controls-screen" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Управление</div><button class="x" data-action="close-controls">✕</button></div>
+  <div class="ov-b"><div class="txt">
+    <p><strong>ПК:</strong></p>
+    <p>• Зажмите левую кнопку мыши и двигайте — молот следует за курсором.</p>
+    <p>• ESC или P — пауза. R — рестарт.</p>
+    <p><br><strong>Телефон:</strong></p>
+    <p>• Коснитесь экрана и двигайте пальцем — молот идёт к пальцу.</p>
+    <p>• Кнопка ⏸ — пауза.</p>
+    <p><br><strong>Цель:</strong> молотом цепляйтесь за выступы и забирайтесь на вершину башни.</p>
+  </div></div>
+</div>
+
+<div id="stats-screen" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Статистика</div><button class="x" data-action="close-stats">✕</button></div>
+  <div class="ov-b">
+    <div class="txt" id="stats-content"></div>
+    <button class="btn sec" data-action="reset-progress" style="margin-top:16px">Сбросить прогресс</button>
   </div>
 </div>
 
-<!-- СТАТИСТИКА -->
-<div id="stats-screen" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Статистика</div>
-    <button class="close-btn" data-action="close-stats">✕</button>
-  </div>
-  <div class="overlay-body">
-    <div class="info-text" id="stats-content"></div>
-    <button class="menu-btn secondary" data-action="reset-progress" style="margin-top: 16px;">Сбросить прогресс</button>
-  </div>
+<div id="about-screen" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Об игре</div><button class="x" data-action="close-about">✕</button></div>
+  <div class="ov-b"><div class="txt">
+    <p><strong>Молот и Котёл</strong> — игра о восхождении. Управляя лишь молотом, взберитесь на вершину башни. Используйте инерцию, цепляйтесь за выступы, не падайте.</p>
+    <p>Вся физика, графика и звук созданы процедурно в браузере, без внешних библиотек и без интернета.</p>
+    <p style="margin-top:16px;font-size:11px;color:#666">Версия 2.0 · Чистый Canvas</p>
+  </div></div>
 </div>
 
-<!-- ОБ ИГРЕ -->
-<div id="about-screen" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Об игре</div>
-    <button class="close-btn" data-action="close-about">✕</button>
-  </div>
-  <div class="overlay-body">
-    <div class="info-text">
-      <p><strong>Молот и Котёл</strong> — 3D-игра о восхождении, вдохновлённая классикой жанра.</p>
-      <p>Вам предстоит, управляя лишь молотом, взобраться на вершину высокой башни. Используйте инерцию, цепляйтесь за выступы и не позволяйте себе упасть.</p>
-      <p>Вся физика, графика и звук созданы процедурно в браузере. Оригинальная игра не использовалась.</p>
-      <p style="margin-top: 16px; font-size: 11px; color: #666;">Версия 1.1 · Three.js + cannon-es</p>
-    </div>
-  </div>
-</div>
-
-<!-- РЕЖИМ -->
-<div id="mode-screen" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Режим игры</div>
-    <button class="close-btn" data-action="close-mode">✕</button>
-  </div>
-  <div class="overlay-body">
-    <button class="mode-btn" data-mode="classic" id="mode-classic">
-      <div class="mode-name">Классический</div>
-      <div class="mode-desc">Ошибка — и вы падаете вниз до самого основания.</div>
+<div id="mode-screen" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Режим</div><button class="x" data-action="close-mode">✕</button></div>
+  <div class="ov-b">
+    <button class="mode-b" data-mode="classic" id="mode-classic">
+      <div class="mn">Классический</div><div class="md">Ошибка — и вы падаете до основания.</div>
     </button>
-    <button class="mode-btn" data-mode="checkpoint" id="mode-checkpoint">
-      <div class="mode-name">С контрольными точками</div>
-      <div class="mode-desc">При падении вы возвращаетесь к последней достигнутой зоне.</div>
+    <button class="mode-b" data-mode="checkpoint" id="mode-checkpoint">
+      <div class="mn">С контрольными точками</div><div class="md">При падении возвращаетесь к последней зоне.</div>
     </button>
   </div>
 </div>
 
-<!-- ПОБЕДА -->
-<div id="victory" class="overlay hidden">
-  <div class="overlay-header">
-    <div class="overlay-title">Победа!</div>
-  </div>
-  <div class="overlay-body victory-content">
-    <div class="victory-title">🏆</div>
-    <div class="info-text">Вы покорили вершину!</div>
-    <div class="victory-time" id="victory-time"></div>
-    <button class="menu-btn" data-action="victory-restart">Играть снова</button>
-    <button class="menu-btn secondary" data-action="victory-menu">В главное меню</button>
+<div id="vic" class="ov hidden">
+  <div class="ov-h"><div class="ov-t">Победа!</div></div>
+  <div class="ov-b vic-c">
+    <div class="vic-t">🏆</div>
+    <div class="txt">Вы покорили вершину!</div>
+    <div class="vic-time" id="vic-time"></div>
+    <button class="btn" data-action="victory-restart">Играть снова</button>
+    <button class="btn sec" data-action="victory-menu">В главное меню</button>
   </div>
 </div>
 
-<div id="rotate-hint">Поверните устройство горизонтально для удобства</div>
+<div id="rot">Поверните устройство горизонтально</div>
+<div id="toasts"></div>
 
-<!-- TOAST -->
-<div id="toast-container"></div>
-
-<!-- CONFIRM -->
-<div id="confirm-dialog" class="hidden">
-  <div class="confirm-content">
-    <div class="confirm-message" id="confirm-message"></div>
-    <div class="confirm-buttons">
-      <button class="confirm-btn no" data-confirm="no">Отмена</button>
-      <button class="confirm-btn yes" data-confirm="yes">ОК</button>
+<div id="conf" class="hidden">
+  <div class="conf-c">
+    <div class="conf-m" id="conf-msg"></div>
+    <div class="conf-b">
+      <button class="conf-x" data-confirm="no">Отмена</button>
+      <button class="conf-x yes" data-confirm="yes">ОК</button>
     </div>
   </div>
 </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three-fallback": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.module.js",
-    "cannon-es-fallback": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.module.js"
-  }
-}
-</script>
+<script>
+'use strict';
 
-<script type="module">
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function normAng(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;}
+function dist2(x1,y1,x2,y2){var dx=x2-x1,dy=y2-y1;return dx*dx+dy*dy;}
+function formatTime(sec){sec=Math.floor(sec);var m=Math.floor(sec/60),s=sec%60;return m+':'+(s<10?'0':'')+s;}
 
-/* =========================================================
-   СОСТОЯНИЕ
-   ========================================================= */
-const state = {
-  phase: 'menu',
-  startTime: 0,
-  elapsed: 0,
-  zone: 0,
-  shakeTime: 0,
-  shakeMag: 0
+var toastContainer=document.getElementById('toasts');
+function showToast(msg,dur){dur=dur||2400;var t=document.createElement('div');t.className='toast';t.textContent=msg;
+  toastContainer.appendChild(t);setTimeout(function(){t.classList.add('out');setTimeout(function(){t.remove();},300);},dur);}
+
+var confirmDialog=document.getElementById('conf');
+var confirmMsgEl=document.getElementById('conf-msg');
+var confirmResolver=null;
+function showConfirm(msg){return new Promise(function(res){
+  confirmMsgEl.textContent=msg;confirmDialog.classList.remove('hidden');confirmResolver=res;});}
+confirmDialog.addEventListener('click',function(e){
+  var b=e.target.closest('[data-confirm]');if(!b)return;
+  confirmDialog.classList.add('hidden');
+  if(confirmResolver){confirmResolver(b.dataset.confirm==='yes');confirmResolver=null;}});
+
+/* ============================================================
+   НАСТРОЙКИ И СОХРАНЕНИЯ
+   ============================================================ */
+var DEFAULT_SETTINGS={
+  fpsLimit:60,quality:'high',particles:true,shadows:true,showStats:false,
+  screenshake:true,hudFps:false,volume:60,mute:false,sensitivity:100,mode:'classic'
+};
+var settings={};
+var saveData={
+  playerPos:null,hammerAngle:null,elapsedTime:0,bestTime:null,maxHeight:0,
+  falls:0,totalPlayTime:0,checkpoint:null,checkpointZone:0,hasSave:false
 };
 
-const DEFAULT_SETTINGS = {
-  fpsLimit: 60,
-  quality: 'high',
-  shadows: true,
-  renderScale: 100,
-  far: 120,
-  showStats: false,
-  screenshake: true,
-  volume: 60,
-  mute: false,
-  sensitivity: 100,
-  mode: 'classic'
-};
-
-let settings = { ...DEFAULT_SETTINGS };
-
-let saveData = {
-  playerPos: null,
-  hammerAngle: null,
-  elapsedTime: 0,
-  bestTime: null,
-  maxHeight: 0,
-  falls: 0,
-  totalPlayTime: 0,
-  checkpoint: null,
-  checkpointZone: 0,
-  hasSave: false
-};
-
-function loadStorage() {
-  try {
-    const s = localStorage.getItem('hammer_pot_settings_v1');
-    if (s) Object.assign(settings, JSON.parse(s));
-  } catch (e) { console.warn('settings load failed', e); }
-  try {
-    const g = localStorage.getItem('hammer_pot_save_v1');
-    if (g) Object.assign(saveData, JSON.parse(g));
-  } catch (e) { console.warn('save load failed', e); }
+function loadStorage(){
+  var k,v;
+  for(k in DEFAULT_SETTINGS)settings[k]=DEFAULT_SETTINGS[k];
+  try{var s=localStorage.getItem('hp_settings_v2');if(s){var o=JSON.parse(s);for(k in o)if(k in settings)settings[k]=o[k];}}catch(e){}
+  try{var g=localStorage.getItem('hp_save_v2');if(g){var p=JSON.parse(g);for(k in p)if(k in saveData)saveData[k]=p[k];}}catch(e){}
 }
-function saveSettingsLS() {
-  try { localStorage.setItem('hammer_pot_settings_v1', JSON.stringify(settings)); } catch (e) {}
-}
-function saveGameLS() {
-  try { localStorage.setItem('hammer_pot_save_v1', JSON.stringify(saveData)); } catch (e) {}
-}
+function saveSettingsLS(){try{localStorage.setItem('hp_settings_v2',JSON.stringify(settings));}catch(e){}}
+function saveGameLS(){try{localStorage.setItem('hp_save_v2',JSON.stringify(saveData));}catch(e){}}
 loadStorage();
 
-/* =========================================================
-   TOAST / CONFIRM
-   ========================================================= */
-const toastContainer = document.getElementById('toast-container');
-function showToast(msg, duration = 2400) {
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  toastContainer.appendChild(t);
-  setTimeout(() => {
-    t.classList.add('out');
-    setTimeout(() => t.remove(), 300);
-  }, duration);
+/* ============================================================
+   ЗВУК (Web Audio, процедурный)
+   ============================================================ */
+var audioCtx=null,ambient=null;
+function initAudio(){
+  if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}}
+  if(audioCtx.state==='suspended')audioCtx.resume();
+}
+function playTone(freq,dur,type,vol){
+  type=type||'sine';vol=vol||0.3;
+  if(!audioCtx||settings.mute||settings.volume===0)return;
+  try{
+    var osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+    osc.type=type;osc.frequency.value=freq;
+    var v=vol*(settings.volume/100);
+    g.gain.setValueAtTime(v,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0005,audioCtx.currentTime+dur);
+    osc.connect(g);g.connect(audioCtx.destination);
+    osc.start();osc.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function playHit(strength){
+  var s=clamp(strength,0.1,1);
+  playTone(90+Math.random()*30,0.14,'square',0.12*s);
+  playTone(55+Math.random()*20,0.2,'sine',0.2*s);
+}
+function playSlide(){playTone(200+Math.random()*60,0.06,'sawtooth',0.03);}
+function playZone(){playTone(523,0.35,'sine',0.15);setTimeout(function(){playTone(784,0.35,'sine',0.15);},120);setTimeout(function(){playTone(1046,0.5,'sine',0.15);},240);}
+function playVictory(){[523,659,784,1046,1318].forEach(function(f,i){setTimeout(function(){playTone(f,0.6,'sine',0.2);},i*130);});}
+function playFall(){playTone(150,0.6,'sawtooth',0.15);}
+function startAmbient(){
+  if(!audioCtx||ambient)return;
+  try{
+    var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type='sine';o.frequency.value=55;
+    g.gain.value=0.015*(settings.volume/100);
+    o.connect(g);g.connect(audioCtx.destination);o.start();
+    ambient={osc:o,gain:g};
+  }catch(e){}
+}
+function updateAmbientVol(){
+  if(ambient)ambient.gain.gain.value=settings.mute?0:0.015*(settings.volume/100);
 }
 
-const confirmDialog = document.getElementById('confirm-dialog');
-const confirmMessageEl = document.getElementById('confirm-message');
-let confirmResolver = null;
+/* ============================================================
+   УРОВЕНЬ
+   ============================================================ */
+var ZONES=[
+  {y:0,name:'Земля'},{y:5,name:'Скалы'},{y:10,name:'Деревья'},
+  {y:15,name:'Утёс'},{y:20,name:'Небеса'},{y:24,name:'Вершина'}
+];
 
-function showConfirm(message) {
-  return new Promise(resolve => {
-    confirmMessageEl.textContent = message;
-    confirmDialog.classList.remove('hidden');
-    confirmResolver = resolve;
-  });
-}
+// x, y (центр), w, h, type
+var LEVEL=[
+  // Земля
+  {x:0,y:0,w:40,h:2,type:'ground'},
+  // Правые ступени
+  {x:6,y:2,w:3,h:1,type:'rock'},
+  {x:9,y:4,w:3,h:0.6,type:'rock'},
+  {x:12,y:6,w:2,h:0.5,type:'wood'},
+  // Левые скалы
+  {x:-6,y:4,w:4,h:5,type:'rock'},
+  {x:-6,y:7,w:5,h:0.4,type:'wood'},
+  // Центральная стена
+  {x:1,y:5,w:1.2,h:5,type:'rock'},
+  {x:1.5,y:8,w:2.5,h:0.4,type:'metal'},
+  // Верхние платформы
+  {x:-4,y:10,w:2.5,h:0.5,type:'rock'},
+  {x:6,y:10,w:1.2,h:6,type:'metal'},
+  {x:6,y:13.5,w:2.5,h:0.4,type:'metal'},
+  // Середина
+  {x:0,y:12,w:2,h:0.5,type:'wood'},
+  {x:-3,y:14.5,w:2,h:0.4,type:'metal'},
+  // Верх
+  {x:3,y:16,w:1.5,h:0.4,type:'metal'},
+  {x:1,y:18,w:1,h:5,type:'rock'},
+  {x:1,y:21,w:3,h:0.5,type:'metal'},
+  // Финал
+  {x:0,y:23.5,w:4.5,h:0.6,type:'metal'}
+];
 
-confirmDialog.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-confirm]');
-  if (!btn) return;
-  confirmDialog.classList.add('hidden');
-  const res = btn.dataset.confirm === 'yes';
-  if (confirmResolver) { confirmResolver(res); confirmResolver = null; }
-});
-
-/* =========================================================
-   ЗВУК
-   ========================================================= */
-let audioCtx = null;
-function initAudio() {
-  if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+// Декор (без коллизии)
+var DECOR=[];
+(function(){
+  for(var i=0;i<30;i++){
+    DECOR.push({
+      x:(Math.random()-0.5)*30,
+      y:Math.random()*28-2,
+      z:-3-Math.random()*8,
+      r:0.8+Math.random()*2,
+      rot:Math.random()*6.28
+    });
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-function playTone(freq, duration, type, vol, detune) {
-  type = type || 'sine'; vol = vol || 0.3; detune = detune || 0;
-  if (!audioCtx || settings.mute || settings.volume === 0) return;
-  try {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    osc.detune.value = detune;
-    const v = vol * (settings.volume / 100);
-    gain.gain.setValueAtTime(v, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0005, audioCtx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-  } catch (e) {}
-}
-function playImpact(strength) {
-  const s = Math.max(0.1, Math.min(1, strength));
-  playTone(90 + Math.random() * 30, 0.14, 'square', 0.15 * s);
-  playTone(55 + Math.random() * 20, 0.2, 'sine', 0.22 * s);
-}
-function playSlide() { playTone(220 + Math.random() * 60, 0.06, 'sawtooth', 0.03); }
-function playZoneChime() {
-  playTone(523, 0.35, 'sine', 0.15);
-  setTimeout(() => playTone(784, 0.35, 'sine', 0.15), 120);
-  setTimeout(() => playTone(1046, 0.5, 'sine', 0.15), 240);
-}
-function playVictory() {
-  [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => playTone(f, 0.6, 'sine', 0.2), i * 130));
-}
-
-/* =========================================================
-   ДВИЖОК
-   ========================================================= */
-let THREE = null, CANNON = null;
-let engineReady = false, engineError = false;
-let scene, camera, menuCamera, renderer, sun;
-let world, playerBody, hammerBody, hinge;
-let playerGroup, hammerGroup;
-let levelMeshes = [];
-let ambientOsc = null;
-
-function updateEngineStatus() {
-  const hint = document.getElementById('engine-hint');
-  if (!hint) return;
-  if (engineReady) {
-    hint.textContent = '';
-    hint.classList.remove('error');
-    hint.classList.add('ready');
-  } else if (engineError) {
-    hint.textContent = 'Не удалось загрузить движок. Проверьте интернет и обновите страницу.';
-    hint.classList.remove('ready');
-    hint.classList.add('error');
-  } else {
-    hint.textContent = 'Загрузка 3D-движка...';
-    hint.classList.remove('error', 'ready');
-  }
-}
-
-(async () => {
-  try {
-    const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
-    try {
-      THREE = await Promise.race([import('three'), timeout(15000)]);
-    } catch (e1) {
-      THREE = await Promise.race([import('three-fallback'), timeout(15000)]);
-    }
-    try {
-      CANNON = await Promise.race([import('cannon-es'), timeout(15000)]);
-    } catch (e1) {
-      CANNON = await Promise.race([import('cannon-es-fallback'), timeout(15000)]);
-    }
-    await initGame();
-    engineReady = true;
-  } catch (e) {
-    engineError = true;
-    console.error('Engine load failed:', e);
-  }
-  updateEngineStatus();
-  updateContinueButton();
 })();
 
-/* =========================================================
-   ИНИЦИАЛИЗАЦИЯ ИГРЫ
-   ========================================================= */
-const PLAYER_START = { x: 0, y: 0.6 };
-const PLAYER_RADIUS = 0.5;
-const HAMMER_LEN = 3.0;
-const HAMMER_HALF = HAMMER_LEN / 2;
-const HAMMER_RADIUS = 0.13;
-
-const ZONES = [
-  { y: 0.0, name: 'Земля' },
-  { y: 4.0, name: 'Скалы' },
-  { y: 8.5, name: 'Деревья' },
-  { y: 12.5, name: 'Утёс' },
-  { y: 16.5, name: 'Небеса' },
-  { y: 20.5, name: 'Вершина' }
-];
-
-const QUALITY_PRESETS = {
-  min:    { shadows: false, renderScale: 60, far: 60,  shadowSize: 512,  pixelRatioCap: 1 },
-  low:    { shadows: false, renderScale: 75, far: 80,  shadowSize: 512,  pixelRatioCap: 1.5 },
-  medium: { shadows: true,  renderScale: 85, far: 100, shadowSize: 1024, pixelRatioCap: 1.5 },
-  high:   { shadows: true,  renderScale: 100, far: 120, shadowSize: 1024, pixelRatioCap: 2 },
-  ultra:  { shadows: true,  renderScale: 100, far: 200, shadowSize: 2048, pixelRatioCap: 2 }
+/* ============================================================
+   СОСТОЯНИЕ ИГРЫ
+   ============================================================ */
+var state={
+  phase:'menu',startTime:0,elapsed:0,zone:0,
+  shakeTime:0,shakeMag:0,
+  pointerDown:false,pointerX:0,pointerY:0,
+  camX:0,camY:2,camZ:1
 };
 
-const LEVEL_LAYOUT = [
-  [0, -1.2, 14, 2.4, 3.5, 'ground'],
-  [2.8, 1.1, 1.4, 1.8, 2.2, 'rock'],
-  [-2.2, 2.2, 1.8, 0.5, 2.2, 'rock'],
-  [1.6, 3.7, 1.6, 0.5, 2.2, 'rock'],
-  [3.6, 4.6, 0.7, 3.2, 2.2, 'rock'],
-  [1.8, 6.3, 1.8, 0.5, 2.2, 'rock'],
-  [-2.6, 5.2, 0.7, 3.4, 0.7, 'wood'],
-  [-1.0, 8.0, 3.2, 0.35, 0.8, 'wood'],
-  [2.6, 9.2, 1.6, 0.5, 2.2, 'rock'],
-  [-1.2, 10.6, 3.2, 0.28, 0.6, 'wood'],
-  [2.0, 12.2, 1.8, 0.55, 2.2, 'rock'],
-  [-2.4, 12.6, 0.7, 4.2, 2.2, 'rock'],
-  [0.6, 14.9, 1.6, 0.45, 2.2, 'rock'],
-  [3.0, 16.4, 2.8, 0.32, 0.6, 'metal'],
-  [-0.8, 17.9, 1.6, 0.45, 2.2, 'rock'],
-  [1.4, 19.4, 2.0, 0.5, 2.2, 'rock'],
-  [0, 21.0, 4.5, 0.6, 2.4, 'metal'],
-  [0, 23.2, 0.35, 2.8, 0.35, 'metal']
-];
+var PHYS={
+  gravity:32,
+  playerR:0.55,
+  playerMass:2.5,
+  hammerLen:3.2,
+  hammerR:0.16,
+  hammerMass:0.6,
+  controlOm:22,
+  controlZeta:0.92,
+  restitution:0.35,
+  angularDamp:0.9,
+  linearDamp:0.999,
+  maxVel:45,
+  maxAngVel:25
+};
 
-let matPlayer, matWorld, matHammer;
+var player={x:0,y:2.5,vx:0,vy:0,onGround:false};
+var hammer={angle:-Math.PI/4,angVel:0};
+var particles=[];
 
-async function initGame() {
-  const canvas = document.getElementById('game-canvas');
-  renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: settings.quality !== 'min' && settings.quality !== 'low',
-    powerPreference: 'high-performance',
-    alpha: false
-  });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = settings.shadows;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+/* ============================================================
+   CANVAS
+   ============================================================ */
+var cv=document.getElementById('cv');
+var ctx=cv.getContext('2d',{alpha:false});
+var W=0,H=0,DPR=1;
+function resizeCanvas(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  var scale=1;
+  if(settings.quality==='min')scale=0.6;
+  else if(settings.quality==='low')scale=0.75;
+  else if(settings.quality==='medium')scale=0.9;
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=Math.floor(W*DPR*scale);
+  cv.height=Math.floor(H*DPR*scale);
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(DPR*scale,0,0,DPR*scale,0,0);
+  document.getElementById('rot').classList.toggle('on',W<H&&W<500);
+}
+window.addEventListener('resize',resizeCanvas);
+window.addEventListener('orientationchange',function(){setTimeout(resizeCanvas,200);});
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x8fb8d8);
-  scene.fog = new THREE.Fog(0x8fb8d8, 30, settings.far);
+/* ============================================================
+   КООРДИНАТЫ: МИР ↔ ЭКРАН
+   ============================================================ */
+var BASE_ZOOM=52; // пикселей на единицу мира
+function worldToScreen(wx,wy){
+  return {
+    x:W/2+(wx-state.camX)*BASE_ZOOM*state.camZ,
+    y:H/2-(wy-state.camY)*BASE_ZOOM*state.camZ
+  };
+}
+function screenToWorld(sx,sy){
+  return {
+    x:(sx-W/2)/(BASE_ZOOM*state.camZ)+state.camX,
+    y:state.camY-(sy-H/2)/(BASE_ZOOM*state.camZ)
+  };
+}
 
-  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 500);
-  camera.position.set(0, 3, 12);
-  menuCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+/* ============================================================
+   ФИЗИКА
+   ============================================================ */
+function closestPointOnBox(px,py,box){
+  var l=box.x-box.w/2,r=box.x+box.w/2;
+  var b=box.y-box.h/2,t=box.y+box.h/2;
+  var cx=clamp(px,l,r);
+  var cy=clamp(py,b,t);
+  return {x:cx,y:cy,inside:px>l&&px<r&&py>b&&py<t};
+}
 
-  // Освещение
-  scene.add(new THREE.AmbientLight(0xa9c4e0, 0.75));
-  scene.add(new THREE.HemisphereLight(0xd8ecff, 0x4a3a28, 0.55));
-  sun = new THREE.DirectionalLight(0xfff0d8, 1.3);
-  sun.position.set(14, 30, 12);
-  sun.castShadow = settings.shadows;
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.left = -25;
-  sun.shadow.camera.right = 25;
-  sun.shadow.camera.top = 35;
-  sun.shadow.camera.bottom = -8;
-  sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 100;
-  sun.shadow.bias = -0.0005;
-  scene.add(sun);
-  scene.add(sun.target);
-
-  // Материалы
-  function makeNoiseTexture(base, variation, size) {
-    size = size || 64;
-    const c = document.createElement('canvas');
-    c.width = c.height = size;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < size * size * 0.6; i++) {
-      const a = Math.random() * variation;
-      ctx.fillStyle = `rgba(0,0,0,${a})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
-    }
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2, 2);
-    return tex;
+function circleVsBox(cx,cy,radius,box){
+  var cp=closestPointOnBox(cx,cy,box);
+  if(cp.inside){
+    var l=box.x-box.w/2,r=box.x+box.w/2;
+    var b=box.y-box.h/2,t=box.y+box.h/2;
+    var dl=cx-l,dr=r-cx,db=cy-b,dt=t-cy;
+    var mn=Math.min(dl,dr,db,dt);
+    var nx=0,ny=0;
+    if(mn===dl){nx=-1;}
+    else if(mn===dr){nx=1;}
+    else if(mn===db){ny=-1;}
+    else{ny=1;}
+    return {nx:nx,ny:ny,pen:radius+mn};
   }
-  const rockTex = makeNoiseTexture('#7a7a80', 0.5);
-  const woodTex = makeNoiseTexture('#6b4a2b', 0.45);
-  const metalTex = makeNoiseTexture('#4a4a55', 0.35);
-  const groundTex = makeNoiseTexture('#5a6b3a', 0.5);
-  const rockMat = new THREE.MeshStandardMaterial({ color: 0x96969e, map: rockTex, roughness: 0.92, metalness: 0.05 });
-  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.85, metalness: 0.05 });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x5a5a68, map: metalTex, roughness: 0.42, metalness: 0.75 });
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x6a7a4a, map: groundTex, roughness: 0.95, metalness: 0.02 });
+  var dx=cx-cp.x,dy=cy-cp.y;
+  var d2=dx*dx+dy*dy;
+  if(d2>radius*radius)return null;
+  var d=Math.sqrt(d2)||0.0001;
+  return {nx:dx/d,ny:dy/d,pen:radius-d};
+}
 
-  // Физика
-  world = new CANNON.World({ gravity: new CANNON.Vec3(0, -20, 0) });
-  world.broadphase = new CANNON.SAPBroadphase(world);
-  world.allowSleep = false;
-  world.solver.iterations = 12;
-  world.solver.tolerance = 0.001;
-  world.defaultContactMaterial.friction = 0.65;
-  world.defaultContactMaterial.restitution = 0.08;
+function getHammerHead(){
+  return {
+    x:player.x+Math.cos(hammer.angle)*PHYS.hammerLen,
+    y:player.y+Math.sin(hammer.angle)*PHYS.hammerLen
+  };
+}
 
-  matPlayer = new CANNON.Material('player');
-  matWorld = new CANNON.Material('world');
-  matHammer = new CANNON.Material('hammer');
-  world.addContactMaterial(new CANNON.ContactMaterial(matPlayer, matWorld, { friction: 0.85, restitution: 0.03, contactEquationStiffness: 1e8, contactEquationRelaxation: 3 }));
-  world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matWorld, { friction: 0.5, restitution: 0.15, contactEquationStiffness: 1e8, contactEquationRelaxation: 3 }));
-  world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matPlayer, { friction: 0.3, restitution: 0.1 }));
+function getHammerHeadVel(){
+  var perpX=-Math.sin(hammer.angle);
+  var perpY=Math.cos(hammer.angle);
+  return {
+    x:player.vx+perpX*PHYS.hammerLen*hammer.angVel,
+    y:player.vy+perpY*PHYS.hammerLen*hammer.angVel
+  };
+}
 
-  // Уровень
-  function addBox(x, y, w, h, d, type) {
-    const body = new CANNON.Body({
-      mass: 0,
-      shape: new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2)),
-      position: new CANNON.Vec3(x, y, 0),
-      material: matWorld
+function spawnParticles(x,y,n,color,spd){
+  if(!settings.particles)return;
+  n=n||6;spd=spd||4;
+  for(var i=0;i<n;i++){
+    var a=Math.random()*Math.PI*2,s=spd*(0.5+Math.random());
+    particles.push({
+      x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
+      life:0.5+Math.random()*0.3,max:0.8,
+      size:2+Math.random()*3,color:color||'#c9a961'
     });
-    body.type = CANNON.Body.STATIC;
-    world.addBody(body);
-    let mat = rockMat;
-    if (type === 'wood') mat = woodMat;
-    else if (type === 'metal') mat = metalMat;
-    else if (type === 'ground') mat = groundMat;
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    mesh.position.set(x, y, 0);
-    mesh.castShadow = settings.shadows;
-    mesh.receiveShadow = settings.shadows;
-    scene.add(mesh);
-    levelMeshes.push(mesh);
   }
-  for (const [x, y, w, h, d, t] of LEVEL_LAYOUT) addBox(x, y, w, h, d, t);
-
-  function addDecorRock(x, y, z, s) {
-    const geo = new THREE.IcosahedronGeometry(s, 0);
-    const mat = rockMat.clone();
-    mat.color.offsetHSL((Math.random() - 0.5) * 0.05, 0, (Math.random() - 0.5) * 0.15);
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    m.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
-    m.castShadow = settings.shadows;
-    m.receiveShadow = settings.shadows;
-    scene.add(m);
-    levelMeshes.push(m);
-  }
-  for (let i = 0; i < 24; i++) {
-    addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, -3 - Math.random() * 6, 0.8 + Math.random() * 1.8);
-    addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, 3 + Math.random() * 6, 0.8 + Math.random() * 1.8);
-  }
-
-  const flag = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.8, 4), new THREE.MeshStandardMaterial({ color: 0xd4b060, metalness: 0.6, roughness: 0.35 }));
-  flag.position.set(0, 24.8, 0);
-  scene.add(flag);
-
-  // Игрок
-  playerBody = new CANNON.Body({ mass: 4, shape: new CANNON.Sphere(PLAYER_RADIUS), material: matPlayer, linearDamping: 0.05, angularDamping: 0.7 });
-  playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
-  playerBody.updateMassProperties();
-  world.addBody(playerBody);
-
-  hammerBody = new CANNON.Body({
-    mass: 0.9,
-    shape: new CANNON.Box(new CANNON.Vec3(HAMMER_HALF, HAMMER_RADIUS, HAMMER_RADIUS)),
-    material: matHammer, linearDamping: 0.02, angularDamping: 0.05
-  });
-  hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
-  hammerBody.angularFactor.set(0, 0, 1);
-  hammerBody.updateMassProperties();
-  world.addBody(hammerBody);
-
-  hinge = new CANNON.HingeConstraint(playerBody, hammerBody, {
-    pivotA: new CANNON.Vec3(0, 0, 0), axisA: new CANNON.Vec3(0, 0, 1),
-    pivotB: new CANNON.Vec3(-HAMMER_HALF, 0, 0), axisB: new CANNON.Vec3(0, 0, 1),
-    collideConnected: false
-  });
-  hinge.enableMotor();
-  hinge.setMotorSpeed(0);
-  hinge.setMotorMaxForce(280);
-  world.addConstraint(hinge);
-
-  // Визуальные модели
-  playerGroup = new THREE.Group();
-  const potMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.5, 0.85, 14), new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.55, roughness: 0.55 }));
-  potMesh.castShadow = settings.shadows; potMesh.receiveShadow = settings.shadows;
-  playerGroup.add(potMesh);
-  const rimMesh = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.06, 8, 18), new THREE.MeshStandardMaterial({ color: 0x555562, metalness: 0.8, roughness: 0.3 }));
-  rimMesh.rotation.x = Math.PI / 2; rimMesh.position.y = 0.42; rimMesh.castShadow = settings.shadows;
-  playerGroup.add(rimMesh);
-  const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xd9b48c, roughness: 0.75 }));
-  headMesh.position.y = 0.55; headMesh.castShadow = settings.shadows;
-  playerGroup.add(headMesh);
-  const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 }));
-  hairMesh.position.y = 0.62; hairMesh.castShadow = settings.shadows;
-  playerGroup.add(hairMesh);
-  scene.add(playerGroup);
-
-  hammerGroup = new THREE.Group();
-  const handleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, HAMMER_LEN, 10), new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.7, metalness: 0.05 }));
-  handleMesh.rotation.z = Math.PI / 2; handleMesh.castShadow = settings.shadows;
-  hammerGroup.add(handleMesh);
-  const hammerHeadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a45, metalness: 0.85, roughness: 0.35 });
-  const hammerHeadMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.4), hammerHeadMat);
-  hammerHeadMesh.position.x = HAMMER_HALF - 0.1; hammerHeadMesh.castShadow = settings.shadows;
-  hammerGroup.add(hammerHeadMesh);
-  const hammerBackMesh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.3), hammerHeadMat);
-  hammerBackMesh.position.x = -HAMMER_HALF - 0.05; hammerBackMesh.castShadow = settings.shadows;
-  hammerGroup.add(hammerBackMesh);
-  scene.add(hammerGroup);
-
-  // Звуки на столкновения
-  hammerBody.addEventListener('collide', (e) => {
-    try {
-      const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
-      if (v > 1.2) playImpact(Math.min(1, v / 12));
-      else if (v > 0.3) playSlide();
-    } catch (err) {}
-  });
-  playerBody.addEventListener('collide', (e) => {
-    try {
-      const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
-      if (v > 6) playImpact(Math.min(0.7, v / 20));
-    } catch (err) {}
-  });
-
-  applyQuality(settings.quality);
-  onResize();
 }
 
-/* =========================================================
-   КАЧЕСТВО
-   ========================================================= */
-function applyQuality(preset) {
-  const p = QUALITY_PRESETS[preset] || QUALITY_PRESETS.high;
-  settings.quality = preset;
-  settings.shadows = p.shadows;
-  settings.renderScale = p.renderScale;
-  settings.far = p.far;
-  if (!engineReady) return;
+function stepPhysics(dt){
+  if(state.phase!=='playing')return;
 
-  renderer.shadowMap.enabled = p.shadows;
-  sun.castShadow = p.shadows;
-  if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
-  sun.shadow.mapSize.set(p.shadowSize, p.shadowSize);
-  scene.fog.far = p.far;
-  sun.shadow.camera.far = Math.max(80, p.far);
+  // 1. Гравитация
+  player.vy-=PHYS.gravity*dt;
+  player.onGround=false;
 
-  const dpr = Math.min(window.devicePixelRatio || 1, p.pixelRatioCap);
-  renderer.setPixelRatio(dpr * (settings.renderScale / 100));
-
-  for (const m of levelMeshes) {
-    m.castShadow = p.shadows;
-    m.receiveShadow = p.shadows;
+  // 2. Управление молотом
+  if(state.pointerDown){
+    var wm=screenToWorld(state.pointerX,state.pointerY);
+    var targetA=Math.atan2(wm.y-player.y,wm.x-player.x);
+    var err=normAng(targetA-hammer.angle);
+    var om=PHYS.controlOm;
+    var zeta=PHYS.controlZeta;
+    var sens=settings.sensitivity/100;
+    var accel=om*om*err*sens-2*zeta*om*hammer.angVel;
+    hammer.angVel+=accel*dt;
+  }else{
+    hammer.angVel*=PHYS.angularDamp;
   }
-  if (playerGroup) playerGroup.traverse(o => { if (o.isMesh) { o.castShadow = p.shadows; o.receiveShadow = p.shadows; } });
-  if (hammerGroup) hammerGroup.traverse(o => { if (o.isMesh) { o.castShadow = p.shadows; } });
+  hammer.angVel=clamp(hammer.angVel,-PHYS.maxAngVel,PHYS.maxAngVel);
+  hammer.angle+=hammer.angVel*dt;
 
-  saveSettingsLS();
-}
-
-/* =========================================================
-   УПРАВЛЕНИЕ
-   ========================================================= */
-let pointerActive = false;
-let pointerTargetX = 0;
-let pointerTargetY = 0;
-const touchIndicator = document.getElementById('touch-indicator');
-const canvas = document.getElementById('game-canvas');
-
-function updatePointerFromClient(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  pointerTargetX = ((clientX - rect.left) / rect.width) * 2 - 1;
-  pointerTargetY = -(((clientY - rect.top) / rect.height) * 2 - 1);
-}
-
-canvas.addEventListener('mousedown', (e) => {
-  if (state.phase !== 'playing') return;
-  e.preventDefault(); initAudio();
-  pointerActive = true;
-  updatePointerFromClient(e.clientX, e.clientY);
-});
-canvas.addEventListener('mousemove', (e) => {
-  if (!pointerActive) return;
-  updatePointerFromClient(e.clientX, e.clientY);
-});
-canvas.addEventListener('mouseup', () => { pointerActive = false; });
-canvas.addEventListener('mouseleave', () => { pointerActive = false; });
-
-canvas.addEventListener('touchstart', (e) => {
-  if (state.phase !== 'playing') return;
-  e.preventDefault(); initAudio();
-  const t = e.touches[0];
-  pointerActive = true;
-  updatePointerFromClient(t.clientX, t.clientY);
-  touchIndicator.style.left = t.clientX + 'px';
-  touchIndicator.style.top = t.clientY + 'px';
-  touchIndicator.classList.add('visible');
-}, { passive: false });
-canvas.addEventListener('touchmove', (e) => {
-  if (!pointerActive) return;
-  e.preventDefault();
-  const t = e.touches[0];
-  updatePointerFromClient(t.clientX, t.clientY);
-  touchIndicator.style.left = t.clientX + 'px';
-  touchIndicator.style.top = t.clientY + 'px';
-}, { passive: false });
-canvas.addEventListener('touchend', (e) => {
-  e.preventDefault();
-  pointerActive = false;
-  touchIndicator.classList.remove('visible');
-}, { passive: false });
-canvas.addEventListener('touchcancel', () => {
-  pointerActive = false;
-  touchIndicator.classList.remove('visible');
-});
-
-document.addEventListener('contextmenu', (e) => { if (state.phase === 'playing') e.preventDefault(); });
-
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
-    if (state.phase === 'playing') pauseGame();
-    else if (state.phase === 'paused') resumeGame();
-  } else if ((e.key === 'r' || e.key === 'R') && (state.phase === 'playing' || state.phase === 'paused')) {
-    restartGame();
-  }
-});
-
-/* =========================================================
-   ПОЛНОЭКРАННЫЙ РЕЖИМ
-   ========================================================= */
-function toggleFullscreen() {
-  try {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      const el = document.documentElement;
-      const req = el.requestFullscreen || el.webkitRequestFullscreen;
-      if (req) {
-        const p = req.call(el);
-        if (p && p.catch) p.catch(() => showToast('Полноэкранный режим недоступен'));
-      } else {
-        showToast('Полноэкранный режим недоступен');
-      }
-    } else {
-      const exit = document.exitFullscreen || document.webkitExitFullscreen;
-      if (exit) exit.call(document);
+  // 3. Столкновение головки молота
+  var hh=getHammerHead();
+  var hhv=getHammerHeadVel();
+  var maxPen=0,hitNx=0,hitNy=0;
+  for(var i=0;i<LEVEL.length;i++){
+    var box=LEVEL[i];
+    var c=circleVsBox(hh.x,hh.y,PHYS.hammerR,box);
+    if(!c)continue;
+    // Коррекция позиции игрока
+    player.x+=c.nx*c.pen*0.85;
+    player.y+=c.ny*c.pen*0.85;
+    // Импульс от скорости головки
+    var vn=hhv.x*c.nx+hhv.y*c.ny;
+    if(vn<0){
+      var imp=-vn*(1+PHYS.restitution);
+      player.vx+=c.nx*imp*0.7;
+      player.vy+=c.ny*imp*0.7;
+      // Вращение молота
+      var perpX=-Math.sin(hammer.angle);
+      var perpY=Math.cos(hammer.angle);
+      var angComp=perpX*c.nx+perpY*c.ny;
+      hammer.angVel-=angComp*imp*0.5/PHYS.hammerLen;
+      // Звук и частицы
+      if(-vn>2){playHit(Math.min(1,-vn/12));spawnParticles(hh.x,hh.y,4,'#c9a961',3);}
+      else if(-vn>0.4){playSlide();}
     }
-  } catch (e) { showToast('Полноэкранный режим недоступен'); }
-}
+    if(c.pen>maxPen){maxPen=c.pen;hitNx=c.nx;hitNy=c.ny;}
+  }
+  if(maxPen>0.25&&state.shakeTime<=0&&settings.screenshake){
+    state.shakeTime=0.15;state.shakeMag=0.06;
+  }
 
-/* =========================================================
-   ФИЗИКА / ИГРОВОЙ ЦИКЛ
-   ========================================================= */
-const FIXED_TIMESTEP = 1 / 60;
-let physicsAccumulator = 0;
-let lastFrameTime = performance.now();
-let lastRenderTime = 0;
-let frameCount = 0;
-let fpsAccum = 0;
-let measuredFPS = 0;
-let avgFPS = 0;
-let fpsHistory = [];
-const MAX_FPS_HISTORY = 60;
-let lastFrameMs = 0;
+  // 4. Обновление позиции игрока
+  player.vx*=PHYS.linearDamp;
+  player.vy*=PHYS.linearDamp;
+  var sp=Math.sqrt(player.vx*player.vx+player.vy*player.vy);
+  if(sp>PHYS.maxVel){player.vx*=PHYS.maxVel/sp;player.vy*=PHYS.maxVel/sp;}
+  player.x+=player.vx*dt;
+  player.y+=player.vy*dt;
 
-const statsCanvas = document.getElementById('stats-canvas');
-const statsCtx = statsCanvas.getContext('2d');
-
-function wrapAngle(a) {
-  while (a > Math.PI) a -= Math.PI * 2;
-  while (a < -Math.PI) a += Math.PI * 2;
-  return a;
-}
-function getHammerAngle() {
-  const dx = hammerBody.position.x - playerBody.position.x;
-  const dy = hammerBody.position.y - playerBody.position.y;
-  return Math.atan2(dy, dx);
-}
-function getTargetAngle() {
-  if (Math.abs(pointerTargetX) < 0.02 && Math.abs(pointerTargetY) < 0.02) return null;
-  return Math.atan2(pointerTargetY, pointerTargetX);
-}
-
-function physicsStep() {
-  if (state.phase === 'playing') {
-    const targetAngle = getTargetAngle();
-    if (targetAngle !== null) {
-      const err = wrapAngle(targetAngle - getHammerAngle());
-      const sens = settings.sensitivity / 100;
-      const motorSpeed = Math.max(-18, Math.min(18, err * 8 * sens));
-      hinge.setMotorSpeed(motorSpeed);
-    } else {
-      hinge.setMotorSpeed(0);
+  // 5. Столкновение игрока
+  for(var j=0;j<LEVEL.length;j++){
+    var b2=LEVEL[j];
+    var c2=circleVsBox(player.x,player.y,PHYS.playerR,b2);
+    if(!c2)continue;
+    player.x+=c2.nx*c2.pen;
+    player.y+=c2.ny*c2.pen;
+    var vn2=player.vx*c2.nx+player.vy*c2.ny;
+    if(vn2<0){
+      player.vx-=c2.nx*vn2*(1.15);
+      player.vy-=c2.ny*vn2*(1.15);
+      if(c2.ny>0.5)player.onGround=true;
+      if(-vn2>4){playHit(Math.min(0.7,-vn2/20));}
     }
-  } else {
-    hinge.setMotorSpeed(0);
+    // Трение
+    var tanX=-c2.ny,tanY=c2.nx;
+    var vt=player.vx*tanX+player.vy*tanY;
+    player.vx-=tanX*vt*0.15;
+    player.vy-=tanY*vt*0.15;
   }
-  world.step(FIXED_TIMESTEP, 0, 1);
-  playerBody.position.z = 0;
-  playerBody.velocity.z = 0;
-  playerBody.angularVelocity.z *= 0.9;
-  hammerBody.position.z = 0;
-  hammerBody.velocity.z = 0;
-  hammerBody.angularVelocity.x = 0;
-  hammerBody.angularVelocity.y = 0;
-  if (playerBody.position.y < -6) {
-    playerBody.position.y = -6;
-    playerBody.velocity.y = 0;
+
+  // 6. Границы мира
+  if(player.y<-5){
+    player.y=-5;player.vy=0;player.vx*=0.5;
+    if(!saveData._fallen){saveData._fallen=true;saveData.falls++;playFall();}
+    if(settings.mode==='checkpoint'&&saveData.checkpoint){
+      player.x=saveData.checkpoint[0];player.y=saveData.checkpoint[1];
+      player.vx=0;player.vy=0;hammer.angVel=0;
+      saveData._fallen=false;
+    }else{
+      setTimeout(function(){saveData._fallen=false;},500);
+    }
   }
-}
+  if(player.x<-25){player.x=-25;player.vx=0;}
+  if(player.x>25){player.x=25;player.vx=0;}
 
-function syncVisuals() {
-  if (!playerGroup) return;
-  playerGroup.position.set(playerBody.position.x, playerBody.position.y, 0);
-  playerGroup.quaternion.identity();
-  hammerGroup.position.set(hammerBody.position.x, hammerBody.position.y, 0);
-  hammerGroup.quaternion.set(hammerBody.quaternion.x, hammerBody.quaternion.y, hammerBody.quaternion.z, hammerBody.quaternion.w);
-}
-
-function updateCamera(dt) {
-  const py = playerBody.position.y;
-  const px = playerBody.position.x;
-  const dist = 12 + Math.min(4, py * 0.08);
-  const targetY = py + 1.8;
-  camera.position.x += (px - camera.position.x) * 0.08;
-  camera.position.y += (targetY - camera.position.y) * 0.1;
-  camera.position.z = dist;
-  if (settings.screenshake && state.shakeTime > 0) {
-    const s = state.shakeMag * (state.shakeTime / 0.35);
-    camera.position.x += (Math.random() - 0.5) * s;
-    camera.position.y += (Math.random() - 0.5) * s;
-    state.shakeTime -= dt;
+  // 7. Частицы
+  for(var p=particles.length-1;p>=0;p--){
+    var pt=particles[p];
+    pt.life-=dt;
+    if(pt.life<=0){particles.splice(p,1);continue;}
+    pt.vy-=15*dt;
+    pt.x+=pt.vx*dt;pt.y+=pt.vy*dt;
   }
-  camera.lookAt(px, py + 1.2, 0);
-}
 
-function updateMenuCamera(now) {
-  const t = now * 0.00015;
-  const r = 18 + Math.sin(t * 0.7) * 3;
-  menuCamera.position.set(Math.cos(t) * r, 8 + Math.sin(t * 0.5) * 2, Math.sin(t) * r);
-  menuCamera.lookAt(0, 8, 0);
-}
-
-function updateHUD() {
-  if (state.phase === 'playing') {
-    state.elapsed = (performance.now() - state.startTime) / 1000;
-  }
-  const total = Math.floor(state.elapsed);
-  const mm = Math.floor(total / 60);
-  const ss = total % 60;
-  document.getElementById('hud-time').textContent = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
-  const h = Math.max(0, playerBody.position.y - 0.6);
-  document.getElementById('hud-height').textContent = h.toFixed(1) + ' м';
-
-  let newZone = 0;
-  for (let i = 0; i < ZONES.length; i++) if (playerBody.position.y >= ZONES[i].y) newZone = i;
-  if (newZone > state.zone) {
-    state.zone = newZone;
-    playZoneChime();
-    if (settings.mode === 'checkpoint') {
-      saveData.checkpoint = [playerBody.position.x, playerBody.position.y];
-      saveData.checkpointZone = newZone;
+  // 8. Зоны
+  var nz=0;
+  for(var zi=0;zi<ZONES.length;zi++)if(player.y>=ZONES[zi].y)nz=zi;
+  if(nz>state.zone){
+    state.zone=nz;
+    playZone();
+    showToast('Зона: '+ZONES[nz].name);
+    if(settings.mode==='checkpoint'){
+      saveData.checkpoint=[player.x,player.y];
+      saveData.checkpointZone=nz;
       saveGameLS();
     }
   }
 
-  if (playerBody.position.y > saveData.maxHeight) saveData.maxHeight = playerBody.position.y;
+  // 9. Максимальная высота
+  if(player.y>saveData.maxHeight)saveData.maxHeight=player.y;
 
-  if (playerBody.position.y > 22.5 && state.phase === 'playing') triggerVictory();
-
-  if (settings.mode === 'checkpoint' && state.phase === 'playing' && saveData.checkpoint && saveData.checkpointZone > 0) {
-    if (playerBody.position.y < ZONES[saveData.checkpointZone].y - 4) respawnAtCheckpoint();
-  }
-
-  saveData.elapsedTime = state.elapsed;
-}
-
-let saveTimer = 0;
-function periodicSave(dt) {
-  saveTimer += dt;
-  if (saveTimer > 4 && state.phase === 'playing') {
-    saveTimer = 0;
-    saveData.playerPos = [playerBody.position.x, playerBody.position.y];
-    saveData.hammerAngle = getHammerAngle();
-    saveData.hasSave = true;
-    saveGameLS();
+  // 10. Победа
+  if(player.y>24.5&&state.phase==='playing'){
+    triggerVictory();
   }
 }
 
-function respawnAtCheckpoint() {
-  if (!saveData.checkpoint) return;
-  playerBody.position.set(saveData.checkpoint[0], saveData.checkpoint[1], 0);
-  playerBody.velocity.set(0, 0, 0);
-  playerBody.angularVelocity.set(0, 0, 0);
-  hammerBody.position.set(saveData.checkpoint[0] + HAMMER_HALF, saveData.checkpoint[1], 0);
-  hammerBody.velocity.set(0, 0, 0);
-  hammerBody.angularVelocity.set(0, 0, 0);
-  hammerBody.quaternion.set(0, 0, 0, 1);
-  saveData.falls++;
-  state.shakeTime = 0.35;
-  state.shakeMag = 0.5;
-  saveGameLS();
-}
-
-function triggerVictory() {
-  state.phase = 'victory';
-  const total = Math.floor(state.elapsed);
-  const mm = Math.floor(total / 60);
-  const ss = total % 60;
-  document.getElementById('victory-time').textContent = `Время: ${mm}:${ss < 10 ? '0' : ''}${ss}`;
-  if (!saveData.bestTime || state.elapsed < saveData.bestTime) saveData.bestTime = state.elapsed;
-  saveData.hasSave = false;
+function triggerVictory(){
+  state.phase='victory';
+  var t=Math.floor(state.elapsed);
+  var mm=Math.floor(t/60),ss=t%60;
+  document.getElementById('vic-time').textContent='Время: '+mm+':'+(ss<10?'0':'')+ss;
+  if(!saveData.bestTime||state.elapsed<saveData.bestTime)saveData.bestTime=state.elapsed;
+  saveData.hasSave=false;
   saveGameLS();
   playVictory();
-  document.getElementById('hud').classList.remove('active');
-  document.getElementById('victory').classList.remove('hidden');
-  document.getElementById('stats').classList.remove('visible');
+  document.getElementById('hud').classList.remove('on');
+  document.getElementById('stats').classList.remove('on');
+  document.getElementById('vic').classList.remove('hidden');
 }
 
-function updateFPSMeter(dt) {
+/* ============================================================
+   КАМЕРА
+   ============================================================ */
+function updateCamera(dt){
+  var targetY=player.y+1.5;
+  var targetX=player.x;
+  // Адаптивный zoom — дальше отдаляем при подъёме
+  var targetZ=1-Math.min(0.25,Math.max(0,player.y)*0.008);
+  state.camX+=(targetX-state.camX)*Math.min(1,dt*6);
+  state.camY+=(targetY-state.camY)*Math.min(1,dt*5);
+  state.camZ+=(targetZ-state.camZ)*Math.min(1,dt*3);
+  if(settings.screenshake&&state.shakeTime>0){
+    state.shakeTime-=dt;
+    var s=state.shakeMag*(state.shakeTime/0.15);
+    state.camX+=(Math.random()-0.5)*s;
+    state.camY+=(Math.random()-0.5)*s;
+  }
+}
+
+/* ============================================================
+   РЕНДЕР
+   ============================================================ */
+function render(){
+  // Небо
+  var sky=ctx.createLinearGradient(0,0,0,H);
+  var skyTop='#6ba0d0',skyBot='#b8d4e8';
+  if(state.phase==='menu'){
+    skyTop='#3a5a80';skyBot='#8fb0c8';
+  }
+  sky.addColorStop(0,skyTop);sky.addColorStop(1,skyBot);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+
+  // Солнце
+  var sunX=W*0.78,sunY=H*0.15;
+  var sunG=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,140);
+  sunG.addColorStop(0,'rgba(255,240,200,0.9)');
+  sunG.addColorStop(0.3,'rgba(255,220,150,0.3)');
+  sunG.addColorStop(1,'rgba(255,220,150,0)');
+  ctx.fillStyle=sunG;ctx.beginPath();ctx.arc(sunX,sunY,140,0,Math.PI*2);ctx.fill();
+
+  // Параллакс-горы
+  drawMountains(0.15,'rgba(140,160,180,0.5)',H*0.7);
+  drawMountains(0.3,'rgba(100,120,150,0.6)',H*0.75);
+
+  // Облака
+  drawClouds();
+
+  // Декор в глубине
+  for(var d=0;d<DECOR.length;d++){
+    var dr=DECOR[d];
+    var sp=worldToScreen(dr.x,dr.y);
+    if(sp.x<-100||sp.x>W+100)continue;
+    var rr=dr.r*BASE_ZOOM*state.camZ*0.4;
+    ctx.fillStyle='rgba(80,90,110,0.35)';
+    ctx.beginPath();
+    for(var k=0;k<6;k++){
+      var a=dr.rot+k*Math.PI/3;
+      var px=sp.x+Math.cos(a)*rr;
+      var py=sp.y+Math.sin(a)*rr*0.7;
+      if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.closePath();ctx.fill();
+  }
+
+  // Уровень
+  for(var i=0;i<LEVEL.length;i++){
+    drawBox(LEVEL[i]);
+  }
+
+  // Финишный флаг
+  drawFlag(0,24.8);
+
+  // Частицы (за игроком)
+  drawParticles();
+
+  // Игрок и молот
+  drawPlayer();
+  drawHammer();
+
+  // Мини-индикатор высоты (справа)
+  if(state.phase==='playing'){
+    drawHeightBar();
+  }
+}
+
+function drawMountains(parallax,color,baseY){
+  var offX=-state.camX*BASE_ZOOM*parallax*0.15;
+  var offY=state.camY*BASE_ZOOM*parallax*0.08;
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(0,H);
+  var step=120;
+  var seed=Math.floor(parallax*1000);
+  for(var x=0;x<=W+step;x+=step){
+    var h=baseY+Math.sin((x+seed)*0.005)*60+Math.cos((x+seed)*0.013)*30;
+    ctx.lineTo(x+offX%step,h+offY);
+  }
+  ctx.lineTo(W,H);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawClouds(){
+  var t=performance.now()*0.00002;
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  for(var i=0;i<6;i++){
+    var x=((i*137+t*1000)%(W+200))-100;
+    var y=40+i*35+Math.sin(i+t)*10;
+    ctx.beginPath();
+    ctx.arc(x,y,25+i*3,0,Math.PI*2);
+    ctx.arc(x+25,y-8,20+i*2,0,Math.PI*2);
+    ctx.arc(x-25,y+4,18,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawBox(box){
+  var bl=worldToScreen(box.x-box.w/2,box.y+box.h/2);
+  var tr=worldToScreen(box.x+box.w/2,box.y-box.h/2);
+  var w=tr.x-bl.x;
+  var h=tr.y-bl.y;
+  if(w<1||h<1)return;
+  if(bl.x>W+50||tr.x<-50||bl.y>H+50||tr.y<-50)return;
+
+  var colors={
+    ground:{top:'#7a8f4a',face:'#5a6b3a',shadow:'#3a4a25'},
+    rock:{top:'#a8a8b0',face:'#8a8a92',shadow:'#5a5a62'},
+    wood:{top:'#a06838',face:'#7a4a1a',shadow:'#4a2a08'},
+    metal:{top:'#8890a0',face:'#5a6070',shadow:'#3a4050'}
+  };
+  var c=colors[box.type]||colors.rock;
+
+  // Основная заливка
+  var grad=ctx.createLinearGradient(bl.x,bl.y,bl.x,bl.y+h);
+  grad.addColorStop(0,c.face);
+  grad.addColorStop(1,c.shadow);
+  ctx.fillStyle=grad;
+  ctx.fillRect(bl.x,bl.y,w,h);
+
+  // Верхняя грань
+  ctx.fillStyle=c.top;
+  ctx.fillRect(bl.x,bl.y,w,Math.min(h*0.15,6));
+
+  // Блик
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.fillRect(bl.x,bl.y,w,2);
+
+  // Тень снизу
+  ctx.fillStyle='rgba(0,0,0,0.2)';
+  ctx.fillRect(bl.x,bl.y+h-2,w,2);
+
+  // Тень на землю (если верхний объект)
+  if(settings.shadows&&box.type!=='ground'){
+    ctx.fillStyle='rgba(0,0,0,0.1)';
+    ctx.beginPath();
+    ctx.ellipse(bl.x+w/2,bl.y+h+4,w*0.4,4,0,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawFlag(x,y){
+  var p=worldToScreen(x,y);
+  var z=BASE_ZOOM*state.camZ;
+  // Шест
+  ctx.strokeStyle='#666';ctx.lineWidth=3*state.camZ;
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y);
+  ctx.lineTo(p.x,p.y-z*1.5);
+  ctx.stroke();
+  // Флаг
+  ctx.fillStyle='#c9a961';
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y-z*1.5);
+  ctx.lineTo(p.x+z*0.8,p.y-z*1.2);
+  ctx.lineTo(p.x,p.y-z*0.9);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawPlayer(){
+  var p=worldToScreen(player.x,player.y);
+  var z=BASE_ZOOM*state.camZ;
+  var r=PHYS.playerR*z;
+
+  // Тень
+  if(settings.shadows){
+    ctx.fillStyle='rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(p.x,p.y+r*0.9,r*0.9,r*0.3,0,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // Котёл
+  var potGrad=ctx.createLinearGradient(p.x-r*0.8,p.y-r,p.x+r*0.8,p.y+r);
+  potGrad.addColorStop(0,'#3a3a45');
+  potGrad.addColorStop(0.5,'#22222c');
+  potGrad.addColorStop(1,'#111118');
+  ctx.fillStyle=potGrad;
+  ctx.beginPath();
+  ctx.moveTo(p.x-r*0.75,p.y-r*0.5);
+  ctx.lineTo(p.x-r*0.65,p.y+r*0.7);
+  ctx.quadraticCurveTo(p.x,p.y+r,r*0.65+p.x,p.y+r*0.7);
+  ctx.lineTo(p.x+r*0.75,p.y-r*0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Ободок
+  ctx.fillStyle='#555562';
+  ctx.beginPath();
+  ctx.ellipse(p.x,p.y-r*0.5,r*0.8,r*0.15,0,0,Math.PI*2);
+  ctx.fill();
+
+  // Голова
+  ctx.fillStyle='#d9b48c';
+  ctx.beginPath();
+  ctx.arc(p.x,p.y-r*0.75,r*0.42,0,Math.PI*2);
+  ctx.fill();
+
+  // Волосы
+  ctx.fillStyle='#3a2a1a';
+  ctx.beginPath();
+  ctx.arc(p.x,p.y-r*0.9,r*0.42,Math.PI,0);
+  ctx.fill();
+
+  // Глаз
+  ctx.fillStyle='#222';
+  ctx.beginPath();
+  ctx.arc(p.x+r*0.15,p.y-r*0.8,r*0.06,0,Math.PI*2);
+  ctx.fill();
+}
+
+function drawHammer(){
+  var p=worldToScreen(player.x,player.y);
+  var z=BASE_ZOOM*state.camZ;
+  var L=PHYS.hammerLen*z;
+  var ex=p.x+Math.cos(hammer.angle)*L;
+  var ey=p.y-Math.sin(hammer.angle)*L;
+
+  // Рукоятка
+  ctx.strokeStyle='#8b5a2b';
+  ctx.lineWidth=Math.max(4,0.18*z);
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y);
+  ctx.lineTo(ex,ey);
+  ctx.stroke();
+
+  // Обводка рукоятки (тень)
+  ctx.strokeStyle='rgba(0,0,0,0.3)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(p.x+1,p.y+1);
+  ctx.lineTo(ex+1,ey+1);
+  ctx.stroke();
+
+  // Головка молота
+  var hw=0.55*z*0.5;
+  var hh=0.4*z*0.5;
+  ctx.save();
+  ctx.translate(ex,ey);
+  ctx.rotate(-hammer.angle);
+  // Градиент металла
+  var mg=ctx.createLinearGradient(-hw,0,hw,0);
+  mg.addColorStop(0,'#5a5a68');
+  mg.addColorStop(0.4,'#8a8a98');
+  mg.addColorStop(0.6,'#6a6a78');
+  mg.addColorStop(1,'#3a3a48');
+  ctx.fillStyle=mg;
+  ctx.fillRect(-hw,-hh,hw*2,hh*2);
+  // Блик
+  ctx.fillStyle='rgba(255,255,255,0.25)';
+  ctx.fillRect(-hw+2,-hh+2,hw*2-4,2);
+  // Обводка
+  ctx.strokeStyle='rgba(0,0,0,0.5)';
+  ctx.lineWidth=1;
+  ctx.strokeRect(-hw,-hh,hw*2,hh*2);
+  ctx.restore();
+}
+
+function drawParticles(){
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    var sp=worldToScreen(p.x,p.y);
+    var alpha=p.life/p.max;
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=alpha;
+    ctx.beginPath();
+    ctx.arc(sp.x,sp.y,p.size*state.camZ,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawHeightBar(){
+  var barX=W-16,barY=80,barH=H-160;
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fillRect(barX-2,barY,4,barH);
+  var totalH=25;
+  var progress=clamp(player.y/totalH,0,1);
+  var markerY=barY+barH*(1-progress);
+  // Маркеры зон
+  for(var i=0;i<ZONES.length;i++){
+    var zy=barY+barH*(1-ZONES[i].y/totalH);
+    ctx.fillStyle='rgba(201,169,97,0.5)';
+    ctx.fillRect(barX-4,zy,8,1);
+  }
+  // Метка игрока
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(barX,markerY,4,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='#c9a961';
+  ctx.lineWidth=2;
+  ctx.stroke();
+}
+
+/* ============================================================
+   ИГРОВОЙ ЦИКЛ
+   ============================================================ */
+var FIXED_DT=1/60;
+var accumulator=0;
+var lastTime=performance.now();
+var lastRender=0;
+var frameCount=0,fpsAccum=0,measuredFPS=0,avgFPS=0;
+var fpsHistory=[],MAX_FPS_HISTORY=60;
+var lastFrameMs=0;
+
+var statsCv=document.getElementById('stats-cv');
+var statsCtx=statsCv.getContext('2d');
+
+function updateFPS(dt){
   frameCount++;
-  fpsAccum += dt;
-  if (fpsAccum >= 0.5) {
-    measuredFPS = Math.round(frameCount / fpsAccum);
+  fpsAccum+=dt;
+  if(fpsAccum>=0.5){
+    measuredFPS=Math.round(frameCount/fpsAccum);
     fpsHistory.push(measuredFPS);
-    if (fpsHistory.length > MAX_FPS_HISTORY) fpsHistory.shift();
-    avgFPS = Math.round(fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length);
-    frameCount = 0;
-    fpsAccum = 0;
-    if (settings.showStats) {
-      document.getElementById('stat-fps').textContent = measuredFPS;
-      document.getElementById('stat-avg').textContent = avgFPS;
-      document.getElementById('stat-frame').textContent = lastFrameMs.toFixed(1) + ' мс';
-      document.getElementById('stat-limit').textContent = settings.fpsLimit > 0 ? settings.fpsLimit : '∞';
-      document.getElementById('stat-quality').textContent = settings.quality;
-      document.getElementById('stat-objs').textContent = renderer.info.render.triangles || levelMeshes.length;
+    if(fpsHistory.length>MAX_FPS_HISTORY)fpsHistory.shift();
+    avgFPS=Math.round(fpsHistory.reduce(function(a,b){return a+b;},0)/fpsHistory.length);
+    frameCount=0;fpsAccum=0;
+    if(settings.showStats){
+      document.getElementById('s-fps').textContent=measuredFPS;
+      document.getElementById('s-avg').textContent=avgFPS;
+      document.getElementById('s-frame').textContent=lastFrameMs.toFixed(1)+' мс';
+      document.getElementById('s-limit').textContent=settings.fpsLimit>0?settings.fpsLimit:'∞';
+      document.getElementById('s-quality').textContent=settings.quality;
       drawFPSGraph();
     }
   }
 }
-
-function drawFPSGraph() {
-  const w = statsCanvas.width, h = statsCanvas.height;
-  statsCtx.clearRect(0, 0, w, h);
-  statsCtx.fillStyle = 'rgba(0,0,0,0.4)';
-  statsCtx.fillRect(0, 0, w, h);
-  statsCtx.strokeStyle = 'rgba(255,255,255,0.08)';
-  statsCtx.lineWidth = 1;
-  for (let i = 1; i < 4; i++) {
-    statsCtx.beginPath();
-    statsCtx.moveTo(0, h * i / 4);
-    statsCtx.lineTo(w, h * i / 4);
-    statsCtx.stroke();
-  }
-  if (fpsHistory.length < 2) return;
-  const maxVal = Math.max(60, ...fpsHistory, settings.fpsLimit || 60);
-  statsCtx.strokeStyle = '#c9a961';
-  statsCtx.lineWidth = 1.5;
+function drawFPSGraph(){
+  var w=statsCv.width,h=statsCv.height;
+  statsCtx.clearRect(0,0,w,h);
+  statsCtx.fillStyle='rgba(0,0,0,0.4)';statsCtx.fillRect(0,0,w,h);
+  statsCtx.strokeStyle='rgba(255,255,255,0.08)';statsCtx.lineWidth=1;
+  for(var i=1;i<4;i++){statsCtx.beginPath();statsCtx.moveTo(0,h*i/4);statsCtx.lineTo(w,h*i/4);statsCtx.stroke();}
+  if(fpsHistory.length<2)return;
+  var maxV=Math.max(60,settings.fpsLimit||60);
+  for(var k=0;k<fpsHistory.length;k++)if(fpsHistory[k]>maxV)maxV=fpsHistory[k];
+  statsCtx.strokeStyle='#c9a961';statsCtx.lineWidth=1.5;
   statsCtx.beginPath();
-  for (let i = 0; i < fpsHistory.length; i++) {
-    const x = (i / (MAX_FPS_HISTORY - 1)) * w;
-    const y = h - (fpsHistory[i] / maxVal) * h;
-    if (i === 0) statsCtx.moveTo(x, y); else statsCtx.lineTo(x, y);
+  for(var j=0;j<fpsHistory.length;j++){
+    var x=(j/(MAX_FPS_HISTORY-1))*w;
+    var y=h-(fpsHistory[j]/maxV)*h;
+    if(j===0)statsCtx.moveTo(x,y);else statsCtx.lineTo(x,y);
   }
   statsCtx.stroke();
 }
 
-function animate(now) {
-  requestAnimationFrame(animate);
-  if (!engineReady) return;
+function loop(now){
+  requestAnimationFrame(loop);
 
-  const interval = settings.fpsLimit > 0 ? 1000 / settings.fpsLimit : 0;
-  if (interval > 0 && now - lastRenderTime < interval - 1.5) return;
-  lastRenderTime = now;
+  var interval=settings.fpsLimit>0?1000/settings.fpsLimit:0;
+  if(interval>0&&now-lastRender<interval-1.5)return;
+  lastRender=now;
 
-  const dtReal = Math.min((now - lastFrameTime) / 1000, 0.1);
-  lastFrameTime = now;
-  lastFrameMs = dtReal * 1000;
+  var dt=Math.min((now-lastTime)/1000,0.1);
+  lastTime=now;
+  lastFrameMs=dt*1000;
 
-  if (state.phase === 'playing') {
-    physicsAccumulator += dtReal;
-    let steps = 0;
-    while (physicsAccumulator >= FIXED_TIMESTEP && steps < 4) {
-      physicsStep();
-      physicsAccumulator -= FIXED_TIMESTEP;
+  if(state.phase==='playing'){
+    state.elapsed=(performance.now()-state.startTime)/1000;
+    accumulator+=dt;
+    var steps=0;
+    while(accumulator>=FIXED_DT&&steps<5){
+      stepPhysics(FIXED_DT);
+      accumulator-=FIXED_DT;
       steps++;
     }
-    if (steps >= 4) physicsAccumulator = 0;
-    syncVisuals();
-    updateCamera(dtReal);
+    if(steps>=5)accumulator=0;
+    updateCamera(dt);
     updateHUD();
-    periodicSave(dtReal);
-    updateFPSMeter(dtReal);
-  } else if (state.phase === 'paused' || state.phase === 'victory') {
-    syncVisuals();
-    updateCamera(dtReal);
-    updateFPSMeter(dtReal);
+    periodicSave(dt);
+  }else if(state.phase==='paused'||state.phase==='victory'){
+    updateCamera(dt);
+  }else if(state.phase==='menu'){
+    // Камера меню медленно вращается
+    var t=now*0.00015;
+    state.camX=Math.cos(t)*5;
+    state.camY=6+Math.sin(t*0.5)*2;
+    state.camZ=1.6;
   }
 
-  if (state.phase === 'menu') {
-    updateMenuCamera(now);
-    renderer.render(scene, menuCamera);
-  } else {
-    renderer.render(scene, camera);
-  }
+  render();
+  updateFPS(dt);
 }
 
-/* =========================================================
-   UI: ОТКРЫТИЕ / ЗАКРЫТИЕ
-   ========================================================= */
-function showEl(id) { document.getElementById(id).classList.remove('hidden'); }
-function hideEl(id) { document.getElementById(id).classList.add('hidden'); }
-
-function hideAllOverlays() {
-  ['settings-screen', 'controls-screen', 'stats-screen', 'about-screen', 'mode-screen', 'pause-menu', 'victory'].forEach(hideEl);
+function updateHUD(){
+  var t=Math.floor(state.elapsed);
+  var mm=Math.floor(t/60),ss=t%60;
+  document.getElementById('h-time').textContent=mm+':'+(ss<10?'0':'')+ss;
+  document.getElementById('h-height').textContent=Math.max(0,player.y).toFixed(1)+' м';
+  document.getElementById('h-zone').textContent=ZONES[state.zone].name;
 }
 
-function applySettingsToUI() {
-  document.getElementById('s-fps-limit').value = String(settings.fpsLimit);
-  document.getElementById('s-quality').value = settings.quality;
-  document.getElementById('s-render-scale').value = settings.renderScale;
-  document.getElementById('s-far').value = settings.far;
-  document.getElementById('s-volume').value = settings.volume;
-  document.getElementById('s-sensitivity').value = settings.sensitivity;
-  setToggle('s-shadows', settings.shadows);
-  setToggle('s-show-stats', settings.showStats);
-  setToggle('s-screenshake', settings.screenshake);
-  setToggle('s-mute', settings.mute);
-  document.getElementById('stats').classList.toggle('visible', settings.showStats && state.phase === 'playing');
-}
-
-function setToggle(id, on) {
-  const el = document.getElementById(id);
-  if (el) el.classList.toggle('on', !!on);
-}
-
-function updateModeButtons() {
-  document.getElementById('mode-classic').classList.toggle('selected', settings.mode === 'classic');
-  document.getElementById('mode-checkpoint').classList.toggle('selected', settings.mode === 'checkpoint');
-}
-
-function updateContinueButton() {
-  const btn = document.getElementById('btn-continue');
-  if (!btn) return;
-  btn.disabled = !(saveData.hasSave && saveData.playerPos);
-}
-
-function showMainMenu() {
-  state.phase = 'menu';
-  hideAllOverlays();
-  showEl('main-menu');
-  document.getElementById('hud').classList.remove('active');
-  document.getElementById('stats').classList.remove('visible');
-  updateContinueButton();
-  updateModeButtons();
-}
-
-function startGame() {
-  if (!engineReady) {
-    showToast(engineError ? 'Движок не загружен. Обновите страницу.' : 'Загрузка движка, подождите...');
-    return;
-  }
-  initAudio();
-  state.phase = 'playing';
-  state.zone = 0;
-  state.elapsed = 0;
-  state.startTime = performance.now();
-
-  playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
-  playerBody.velocity.set(0, 0, 0);
-  playerBody.angularVelocity.set(0, 0, 0);
-  playerBody.quaternion.set(0, 0, 0, 1);
-  hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
-  hammerBody.velocity.set(0, 0, 0);
-  hammerBody.angularVelocity.set(0, 0, 0);
-  hammerBody.quaternion.set(0, 0, 0, 1);
-
-  saveData.checkpoint = null;
-  saveData.checkpointZone = 0;
-  saveData.playerPos = [PLAYER_START.x, PLAYER_START.y];
-
-  hideAllOverlays();
-  hideEl('main-menu');
-  document.getElementById('hud').classList.add('active');
-  document.getElementById('stats').classList.toggle('visible', settings.showStats);
-
-  pointerActive = false;
-  physicsAccumulator = 0;
-  lastFrameTime = performance.now();
-  lastRenderTime = 0;
-
-  if (audioCtx && !ambientOsc) {
-    try {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = 'sine'; o.frequency.value = 55;
-      g.gain.value = 0.015 * (settings.volume / 100);
-      o.connect(g).connect(audioCtx.destination);
-      o.start();
-      ambientOsc = { osc: o, gain: g };
-    } catch (e) {}
-  }
-  saveGameLS();
-}
-
-function resumeFromSave() {
-  if (!engineReady) { showToast('Загрузка движка, подождите...'); return; }
-  if (!saveData.playerPos) { showToast('Нет сохранения'); return; }
-  initAudio();
-  state.phase = 'playing';
-  state.elapsed = saveData.elapsedTime || 0;
-  state.startTime = performance.now() - state.elapsed * 1000;
-  state.zone = saveData.checkpointZone || 0;
-
-  const [x, y] = saveData.playerPos;
-  playerBody.position.set(x, y, 0);
-  playerBody.velocity.set(0, 0, 0);
-  playerBody.angularVelocity.set(0, 0, 0);
-  playerBody.quaternion.set(0, 0, 0, 1);
-  const ang = saveData.hammerAngle || 0;
-  hammerBody.position.set(x + Math.cos(ang) * HAMMER_HALF, y + Math.sin(ang) * HAMMER_HALF, 0);
-  hammerBody.velocity.set(0, 0, 0);
-  hammerBody.angularVelocity.set(0, 0, 0);
-  hammerBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), ang);
-
-  hideAllOverlays();
-  hideEl('main-menu');
-  document.getElementById('hud').classList.add('active');
-  document.getElementById('stats').classList.toggle('visible', settings.showStats);
-
-  pointerActive = false;
-  physicsAccumulator = 0;
-  lastFrameTime = performance.now();
-  lastRenderTime = 0;
-}
-
-function pauseGame() {
-  if (state.phase !== 'playing') return;
-  state.phase = 'paused';
-  hideAllOverlays();
-  showEl('pause-menu');
-  document.getElementById('hud').classList.remove('active');
-  document.getElementById('stats').classList.remove('visible');
-  touchIndicator.classList.remove('visible');
-  pointerActive = false;
-  if (engineReady) {
-    saveData.playerPos = [playerBody.position.x, playerBody.position.y];
-    saveData.hammerAngle = getHammerAngle();
-    saveData.hasSave = true;
+var saveTimer=0;
+function periodicSave(dt){
+  saveTimer+=dt;
+  if(saveTimer>4&&state.phase==='playing'){
+    saveTimer=0;
+    saveData.playerPos=[player.x,player.y];
+    saveData.hammerAngle=hammer.angle;
+    saveData.elapsedTime=state.elapsed;
+    saveData.hasSave=true;
     saveGameLS();
   }
 }
 
-function resumeGame() {
-  if (state.phase !== 'paused') return;
-  if (!engineReady) { showToast('Движок не загружен'); return; }
-  state.phase = 'playing';
+/* ============================================================
+   УПРАВЛЕНИЕ
+   ============================================================ */
+var touchIndicator=document.getElementById('ti');
+
+cv.addEventListener('mousedown',function(e){
+  if(state.phase!=='playing')return;
+  e.preventDefault();initAudio();
+  state.pointerDown=true;
+  state.pointerX=e.clientX;state.pointerY=e.clientY;
+  touchIndicator.style.left=e.clientX+'px';
+  touchIndicator.style.top=e.clientY+'px';
+  touchIndicator.classList.add('on');
+});
+cv.addEventListener('mousemove',function(e){
+  if(!state.pointerDown)return;
+  state.pointerX=e.clientX;state.pointerY=e.clientY;
+  touchIndicator.style.left=e.clientX+'px';
+  touchIndicator.style.top=e.clientY+'px';
+});
+cv.addEventListener('mouseup',function(){state.pointerDown=false;touchIndicator.classList.remove('on');});
+cv.addEventListener('mouseleave',function(){state.pointerDown=false;touchIndicator.classList.remove('on');});
+
+cv.addEventListener('touchstart',function(e){
+  if(state.phase!=='playing')return;
+  e.preventDefault();initAudio();
+  var t=e.touches[0];
+  state.pointerDown=true;
+  state.pointerX=t.clientX;state.pointerY=t.clientY;
+  touchIndicator.style.left=t.clientX+'px';
+  touchIndicator.style.top=t.clientY+'px';
+  touchIndicator.classList.add('on');
+},{passive:false});
+cv.addEventListener('touchmove',function(e){
+  if(!state.pointerDown)return;
+  e.preventDefault();
+  var t=e.touches[0];
+  state.pointerX=t.clientX;state.pointerY=t.clientY;
+  touchIndicator.style.left=t.clientX+'px';
+  touchIndicator.style.top=t.clientY+'px';
+},{passive:false});
+cv.addEventListener('touchend',function(e){
+  e.preventDefault();
+  state.pointerDown=false;
+  touchIndicator.classList.remove('on');
+},{passive:false});
+cv.addEventListener('touchcancel',function(){state.pointerDown=false;touchIndicator.classList.remove('on');});
+
+document.addEventListener('contextmenu',function(e){if(state.phase==='playing')e.preventDefault();});
+
+window.addEventListener('keydown',function(e){
+  if(e.key==='Escape'||e.key==='p'||e.key==='P'){
+    if(state.phase==='playing')pauseGame();
+    else if(state.phase==='paused')resumeGame();
+  }else if((e.key==='r'||e.key==='R')&&(state.phase==='playing'||state.phase==='paused')){
+    restartGame();
+  }
+});
+
+/* ============================================================
+   ПОЛНОЭКРАННЫЙ РЕЖИМ
+   ============================================================ */
+function toggleFS(){
+  try{
+    if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+      var el=document.documentElement;
+      var req=el.requestFullscreen||el.webkitRequestFullscreen;
+      if(req){var p=req.call(el);if(p&&p.catch)p.catch(function(){showToast('Недоступно');});}
+      else showToast('Недоступно');
+    }else{
+      var ex=document.exitFullscreen||document.webkitExitFullscreen;
+      if(ex)ex.call(document);
+    }
+  }catch(e){showToast('Недоступно');}
+}
+
+/* ============================================================
+   UI ЛОГИКА
+   ============================================================ */
+function showEl(id){document.getElementById(id).classList.remove('hidden');}
+function hideEl(id){document.getElementById(id).classList.add('hidden');}
+function hideAllOverlays(){
+  ['settings-screen','controls-screen','stats-screen','about-screen','mode-screen','pause-menu','vic'].forEach(hideEl);
+}
+function setTg(id,on){var el=document.getElementById(id);if(el)el.classList.toggle('on',!!on);}
+
+function applySettingsToUI(){
+  document.getElementById('s-fps-limit').value=String(settings.fpsLimit);
+  document.getElementById('s-quality').value=settings.quality;
+  document.getElementById('s-volume').value=settings.volume;
+  document.getElementById('s-sens').value=settings.sensitivity;
+  setTg('s-particles',settings.particles);
+  setTg('s-shadows',settings.shadows);
+  setTg('s-show-stats',settings.showStats);
+  setTg('s-screenshake',settings.screenshake);
+  setTg('s-hud-fps',settings.hudFps);
+  setTg('s-mute',settings.mute);
+  document.getElementById('stats').classList.toggle('on',settings.showStats&&state.phase==='playing');
+  document.getElementById('btn-continue').disabled=!(saveData.hasSave&&saveData.playerPos);
+}
+
+function updateModeButtons(){
+  document.getElementById('mode-classic').classList.toggle('sel',settings.mode==='classic');
+  document.getElementById('mode-checkpoint').classList.toggle('sel',settings.mode==='checkpoint');
+}
+
+function showMainMenu(){
+  state.phase='menu';
   hideAllOverlays();
-  document.getElementById('hud').classList.add('active');
-  document.getElementById('stats').classList.toggle('visible', settings.showStats);
-  physicsAccumulator = 0;
-  lastFrameTime = performance.now();
-  lastRenderTime = 0;
+  showEl('main-menu');
+  document.getElementById('hud').classList.remove('on');
+  document.getElementById('stats').classList.remove('on');
+  document.getElementById('btn-continue').disabled=!(saveData.hasSave&&saveData.playerPos);
+  updateModeButtons();
+  // Сброс камеры на дефолт для меню
+  state.camZ=1.6;
+  player.x=0;player.y=2.5;player.vx=0;player.vy=0;
+  hammer.angle=-Math.PI/4;hammer.angVel=0;
 }
 
-async function restartGame() {
-  const ok = await showConfirm('Начать заново? Текущий прогресс будет потерян.');
-  if (!ok) return;
-  saveData.checkpoint = null;
-  saveData.checkpointZone = 0;
-  saveData.elapsedTime = 0;
-  startGame();
+function startNewGame(){
+  initAudio();
+  state.phase='playing';
+  state.zone=0;
+  state.elapsed=0;
+  state.startTime=performance.now();
+
+  player.x=0;player.y=2.5;player.vx=0;player.vy=0;
+  hammer.angle=-Math.PI/4;hammer.angVel=0;
+  particles.length=0;
+
+  saveData.checkpoint=null;
+  saveData.checkpointZone=0;
+  saveData.playerPos=[0,2.5];
+  saveData._fallen=false;
+
+  hideAllOverlays();
+  hideEl('main-menu');
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('stats').classList.toggle('on',settings.showStats);
+
+  state.pointerDown=false;
+  accumulator=0;
+  lastTime=performance.now();
+  lastRender=0;
+
+  if(audioCtx)startAmbient();
+  saveGameLS();
 }
 
-function renderStatsScreen() {
-  const content = document.getElementById('stats-content');
-  const best = saveData.bestTime ? formatTime(saveData.bestTime) : '—';
-  const maxH = (saveData.maxHeight || 0).toFixed(1) + ' м';
-  const falls = saveData.falls || 0;
-  const totalT = saveData.totalPlayTime ? formatTime(saveData.totalPlayTime) : '0:00';
-  content.innerHTML = `
-    <div class="stat-line"><span>Лучшее время</span><span>${best}</span></div>
-    <div class="stat-line"><span>Максимальная высота</span><span>${maxH}</span></div>
-    <div class="stat-line"><span>Количество падений</span><span>${falls}</span></div>
-    <div class="stat-line"><span>Общее время в игре</span><span>${totalT}</span></div>
-    <div class="stat-line"><span>Текущий режим</span><span>${settings.mode === 'classic' ? 'Классический' : 'С чекпоинтами'}</span></div>
-  `;
+function resumeFromSave(){
+  if(!saveData.playerPos){startNewGame();return;}
+  initAudio();
+  state.phase='playing';
+  state.elapsed=saveData.elapsedTime||0;
+  state.startTime=performance.now()-state.elapsed*1000;
+  state.zone=saveData.checkpointZone||0;
+
+  player.x=saveData.playerPos[0];
+  player.y=saveData.playerPos[1];
+  player.vx=0;player.vy=0;
+  hammer.angle=saveData.hammerAngle||-Math.PI/4;
+  hammer.angVel=0;
+  particles.length=0;
+
+  hideAllOverlays();
+  hideEl('main-menu');
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('stats').classList.toggle('on',settings.showStats);
+
+  state.pointerDown=false;
+  accumulator=0;
+  lastTime=performance.now();
+  lastRender=0;
+
+  if(audioCtx)startAmbient();
 }
 
-function formatTime(sec) {
-  sec = Math.floor(sec);
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
+function pauseGame(){
+  if(state.phase!=='playing')return;
+  state.phase='paused';
+  showEl('pause-menu');
+  document.getElementById('hud').classList.remove('on');
+  document.getElementById('stats').classList.remove('on');
+  touchIndicator.classList.remove('on');
+  state.pointerDown=false;
+
+  saveData.playerPos=[player.x,player.y];
+  saveData.hammerAngle=hammer.angle;
+  saveData.elapsedTime=state.elapsed;
+  saveData.hasSave=true;
+  saveGameLS();
 }
 
-/* =========================================================
-   ОБРАБОТЧИК ВСЕХ КНОПОК
-   ========================================================= */
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const action = btn.dataset.action;
+function resumeGame(){
+  if(state.phase!=='paused')return;
+  state.phase='playing';
+  hideAllOverlays();
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('stats').classList.toggle('on',settings.showStats);
+  accumulator=0;
+  lastTime=performance.now();
+  lastRender=0;
+}
+
+function restartGame(){
+  showConfirm('Начать заново? Текущий прогресс будет потерян.').then(function(ok){
+    if(!ok)return;
+    saveData.checkpoint=null;
+    saveData.checkpointZone=0;
+    saveData.elapsedTime=0;
+    startNewGame();
+  });
+}
+
+function renderStatsScreen(){
+  var content=document.getElementById('stats-content');
+  var best=saveData.bestTime?formatTime(saveData.bestTime):'—';
+  var maxH=(saveData.maxHeight||0).toFixed(1)+' м';
+  var falls=saveData.falls||0;
+  var totalT=saveData.totalPlayTime?formatTime(saveData.totalPlayTime):'0:00';
+  content.innerHTML=
+    '<div class="st"><span>Лучшее время</span><span>'+best+'</span></div>'+
+    '<div class="st"><span>Максимальная высота</span><span>'+maxH+'</span></div>'+
+    '<div class="st"><span>Количество падений</span><span>'+falls+'</span></div>'+
+    '<div class="st"><span>Общее время в игре</span><span>'+totalT+'</span></div>'+
+    '<div class="st"><span>Текущий режим</span><span>'+(settings.mode==='classic'?'Классический':'С чекпоинтами')+'</span></div>';
+}
+
+/* Обработчик кнопок */
+document.addEventListener('click',function(e){
+  var btn=e.target.closest('[data-action]');
+  if(!btn)return;
+  var action=btn.dataset.action;
   initAudio();
 
-  switch (action) {
-    case 'play':
-      startGame();
-      break;
-    case 'continue':
-      resumeFromSave();
-      break;
-    case 'open-mode':
-      hideEl('main-menu');
-      showEl('mode-screen');
-      updateModeButtons();
-      break;
-    case 'close-mode':
-      hideEl('mode-screen');
-      showEl('main-menu');
-      break;
+  switch(action){
+    case 'play':startNewGame();break;
+    case 'continue':resumeFromSave();break;
+    case 'open-mode':hideEl('main-menu');showEl('mode-screen');updateModeButtons();break;
+    case 'close-mode':hideEl('mode-screen');showEl('main-menu');break;
     case 'open-settings':
-      hideEl('main-menu');
-      hideEl('pause-menu');
-      hideEl('mode-screen');
-      showEl('settings-screen');
-      applySettingsToUI();
-      break;
+      hideEl('main-menu');hideEl('pause-menu');hideEl('mode-screen');
+      showEl('settings-screen');applySettingsToUI();break;
     case 'close-settings':
       hideEl('settings-screen');
-      if (state.phase === 'paused') showEl('pause-menu');
-      else showEl('main-menu');
+      if(state.phase==='paused')showEl('pause-menu');else showEl('main-menu');
       break;
-    case 'open-controls':
-      hideEl('main-menu');
-      showEl('controls-screen');
-      break;
-    case 'close-controls':
-      hideEl('controls-screen');
-      showEl('main-menu');
-      break;
-    case 'open-stats':
-      hideEl('main-menu');
-      renderStatsScreen();
-      showEl('stats-screen');
-      break;
-    case 'close-stats':
-      hideEl('stats-screen');
-      showEl('main-menu');
-      break;
-    case 'open-about':
-      hideEl('main-menu');
-      showEl('about-screen');
-      break;
-    case 'close-about':
-      hideEl('about-screen');
-      showEl('main-menu');
-      break;
-    case 'resume':
-      resumeGame();
-      break;
-    case 'restart':
-      restartGame();
-      break;
-    case 'main-menu': {
-      if (state.phase === 'paused' || state.phase === 'playing') {
-        const ok = await showConfirm('Выйти в главное меню? Прогресс сохранится.');
-        if (!ok) return;
-        if (engineReady) {
-          saveData.playerPos = [playerBody.position.x, playerBody.position.y];
-          saveData.hammerAngle = getHammerAngle();
-          saveData.hasSave = true;
+    case 'open-controls':hideEl('main-menu');showEl('controls-screen');break;
+    case 'close-controls':hideEl('controls-screen');showEl('main-menu');break;
+    case 'open-stats':hideEl('main-menu');renderStatsScreen();showEl('stats-screen');break;
+    case 'close-stats':hideEl('stats-screen');showEl('main-menu');break;
+    case 'open-about':hideEl('main-menu');showEl('about-screen');break;
+    case 'close-about':hideEl('about-screen');showEl('main-menu');break;
+    case 'resume':resumeGame();break;
+    case 'restart':restartGame();break;
+    case 'main-menu':
+      showConfirm('Выйти в главное меню? Прогресс сохранится.').then(function(ok){
+        if(!ok)return;
+        if(state.phase==='paused'||state.phase==='playing'){
+          saveData.playerPos=[player.x,player.y];
+          saveData.hammerAngle=hammer.angle;
+          saveData.elapsedTime=state.elapsed;
+          saveData.hasSave=true;
           saveGameLS();
         }
-      }
-      showMainMenu();
+        showMainMenu();
+      });
       break;
-    }
     case 'reset-settings':
-      settings = { ...DEFAULT_SETTINGS };
-      saveSettingsLS();
-      if (engineReady) applyQuality(settings.quality);
-      applySettingsToUI();
-      showToast('Настройки сброшены');
+      for(var k in DEFAULT_SETTINGS)settings[k]=DEFAULT_SETTINGS[k];
+      saveSettingsLS();applySettingsToUI();
+      showToast('Настройки сброшены');break;
+    case 'autotune':runAutoTune();break;
+    case 'victory-restart':hideEl('vic');startNewGame();break;
+    case 'victory-menu':hideEl('vic');showMainMenu();break;
+    case 'reset-progress':
+      showConfirm('Сбросить всю статистику и сохранение?').then(function(ok){
+        if(!ok)return;
+        saveData={playerPos:null,hammerAngle:null,elapsedTime:0,bestTime:null,
+          maxHeight:0,falls:0,totalPlayTime:0,checkpoint:null,checkpointZone:0,hasSave:false};
+        try{localStorage.removeItem('hp_save_v2');}catch(e){}
+        showToast('Прогресс сброшен');
+        renderStatsScreen();
+        document.getElementById('btn-continue').disabled=true;
+      });
       break;
-    case 'autotune':
-      runAutoTune();
-      break;
-    case 'victory-restart':
-      hideEl('victory');
-      startGame();
-      break;
-    case 'victory-menu':
-      hideEl('victory');
-      showMainMenu();
-      break;
-    case 'reset-progress': {
-      const ok = await showConfirm('Сбросить всю статистику и сохранение?');
-      if (!ok) return;
-      saveData = {
-        playerPos: null, hammerAngle: null, elapsedTime: 0, bestTime: null,
-        maxHeight: 0, falls: 0, totalPlayTime: 0, checkpoint: null, checkpointZone: 0, hasSave: false
-      };
-      try { localStorage.removeItem('hammer_pot_save_v1'); } catch (e) {}
-      showToast('Прогресс сброшен');
-      renderStatsScreen();
-      updateContinueButton();
-      break;
-    }
   }
 });
 
 /* Кнопки режимов */
-document.getElementById('mode-classic').addEventListener('click', () => {
-  settings.mode = 'classic';
-  saveSettingsLS();
-  updateModeButtons();
+document.getElementById('mode-classic').addEventListener('click',function(){
+  settings.mode='classic';saveSettingsLS();updateModeButtons();
   showToast('Режим: Классический');
-  setTimeout(() => { hideEl('mode-screen'); showEl('main-menu'); }, 180);
+  setTimeout(function(){hideEl('mode-screen');showEl('main-menu');},180);
 });
-document.getElementById('mode-checkpoint').addEventListener('click', () => {
-  settings.mode = 'checkpoint';
-  saveSettingsLS();
-  updateModeButtons();
-  showToast('Режим: С контрольными точками');
-  setTimeout(() => { hideEl('mode-screen'); showEl('main-menu'); }, 180);
+document.getElementById('mode-checkpoint').addEventListener('click',function(){
+  settings.mode='checkpoint';saveSettingsLS();updateModeButtons();
+  showToast('Режим: С чекпоинтами');
+  setTimeout(function(){hideEl('mode-screen');showEl('main-menu');},180);
 });
 
-/* Кнопки HUD */
-document.getElementById('btn-pause').addEventListener('click', (e) => {
+/* HUD-кнопки */
+document.getElementById('btn-pause').addEventListener('click',function(e){
   e.stopPropagation();
-  if (state.phase === 'playing') pauseGame();
+  if(state.phase==='playing')pauseGame();
 });
-document.getElementById('btn-fullscreen').addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleFullscreen();
+document.getElementById('btn-fs').addEventListener('click',function(e){
+  e.stopPropagation();toggleFS();
 });
 
-/* Настройки: слушатели */
-document.getElementById('s-fps-limit').addEventListener('change', (e) => {
-  settings.fpsLimit = parseInt(e.target.value, 10);
-  saveSettingsLS();
-  lastRenderTime = 0;
-  showToast('Лимит FPS: ' + (settings.fpsLimit === 0 ? 'без ограничения' : settings.fpsLimit));
+/* Настройки — слушатели */
+document.getElementById('s-fps-limit').addEventListener('change',function(e){
+  settings.fpsLimit=parseInt(e.target.value,10);
+  saveSettingsLS();lastRender=0;
+  showToast('Лимит FPS: '+(settings.fpsLimit===0?'без ограничения':settings.fpsLimit));
 });
-document.getElementById('s-quality').addEventListener('change', (e) => {
-  applyQuality(e.target.value);
-  applySettingsToUI();
-  showToast('Качество: ' + e.target.value);
+document.getElementById('s-quality').addEventListener('change',function(e){
+  settings.quality=e.target.value;
+  saveSettingsLS();resizeCanvas();
+  showToast('Качество: '+e.target.value);
 });
-document.getElementById('s-render-scale').addEventListener('input', (e) => {
-  settings.renderScale = parseInt(e.target.value, 10);
-  if (engineReady) {
-    const dpr = Math.min(window.devicePixelRatio || 1, QUALITY_PRESETS[settings.quality].pixelRatioCap);
-    renderer.setPixelRatio(dpr * (settings.renderScale / 100));
-  }
-  saveSettingsLS();
+document.getElementById('s-volume').addEventListener('input',function(e){
+  settings.volume=parseInt(e.target.value,10);
+  updateAmbientVol();saveSettingsLS();
 });
-document.getElementById('s-far').addEventListener('input', (e) => {
-  settings.far = parseInt(e.target.value, 10);
-  if (engineReady) scene.fog.far = settings.far;
+document.getElementById('s-sens').addEventListener('input',function(e){
+  settings.sensitivity=parseInt(e.target.value,10);
   saveSettingsLS();
 });
-document.getElementById('s-volume').addEventListener('input', (e) => {
-  settings.volume = parseInt(e.target.value, 10);
-  if (ambientOsc) ambientOsc.gain.gain.value = 0.015 * (settings.volume / 100);
+document.getElementById('s-particles').addEventListener('click',function(){
+  settings.particles=!settings.particles;setTg('s-particles',settings.particles);saveSettingsLS();
+});
+document.getElementById('s-shadows').addEventListener('click',function(){
+  settings.shadows=!settings.shadows;setTg('s-shadows',settings.shadows);saveSettingsLS();
+  showToast('Тени: '+(settings.shadows?'вкл':'выкл'));
+});
+document.getElementById('s-show-stats').addEventListener('click',function(){
+  settings.showStats=!settings.showStats;setTg('s-show-stats',settings.showStats);
+  document.getElementById('stats').classList.toggle('on',settings.showStats&&state.phase==='playing');
   saveSettingsLS();
 });
-document.getElementById('s-sensitivity').addEventListener('input', (e) => {
-  settings.sensitivity = parseInt(e.target.value, 10);
-  saveSettingsLS();
+document.getElementById('s-screenshake').addEventListener('click',function(){
+  settings.screenshake=!settings.screenshake;setTg('s-screenshake',settings.screenshake);saveSettingsLS();
 });
-document.getElementById('s-shadows').addEventListener('click', () => {
-  settings.shadows = !settings.shadows;
-  setToggle('s-shadows', settings.shadows);
-  if (engineReady) {
-    renderer.shadowMap.enabled = settings.shadows;
-    sun.castShadow = settings.shadows;
-  }
-  saveSettingsLS();
-  showToast('Тени: ' + (settings.shadows ? 'вкл' : 'выкл'));
+document.getElementById('s-hud-fps').addEventListener('click',function(){
+  settings.hudFps=!settings.hudFps;setTg('s-hud-fps',settings.hudFps);saveSettingsLS();
 });
-document.getElementById('s-show-stats').addEventListener('click', () => {
-  settings.showStats = !settings.showStats;
-  setToggle('s-show-stats', settings.showStats);
-  document.getElementById('stats').classList.toggle('visible', settings.showStats && state.phase === 'playing');
-  saveSettingsLS();
-});
-document.getElementById('s-screenshake').addEventListener('click', () => {
-  settings.screenshake = !settings.screenshake;
-  setToggle('s-screenshake', settings.screenshake);
-  saveSettingsLS();
-});
-document.getElementById('s-mute').addEventListener('click', () => {
-  settings.mute = !settings.mute;
-  setToggle('s-mute', settings.mute);
-  if (ambientOsc) ambientOsc.gain.gain.value = settings.mute ? 0 : 0.015 * (settings.volume / 100);
-  saveSettingsLS();
-  showToast('Звук: ' + (settings.mute ? 'выкл' : 'вкл'));
+document.getElementById('s-mute').addEventListener('click',function(){
+  settings.mute=!settings.mute;setTg('s-mute',settings.mute);updateAmbientVol();saveSettingsLS();
+  showToast('Звук: '+(settings.mute?'выкл':'вкл'));
 });
 
 /* Автонастройка */
-let autoTuneRunning = false;
-function runAutoTune() {
-  if (!engineReady) { showToast('Движок не загружен'); return; }
-  if (autoTuneRunning) return;
-  autoTuneRunning = true;
-  showToast('Тестирование производительности...');
-  const origScale = settings.renderScale;
-  settings.renderScale = 100;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  let frames = 0;
-  const tStart = performance.now();
-  function sample(now) {
+var autoTuneRunning=false;
+function runAutoTune(){
+  if(autoTuneRunning)return;
+  autoTuneRunning=true;
+  showToast('Тестирование...');
+  var frames=0;
+  var tStart=performance.now();
+  function sample(now){
     frames++;
-    if (now - tStart > 2000) {
-      const fps = frames / ((now - tStart) / 1000);
-      autoTuneRunning = false;
-      let q = 'min';
-      if (fps >= 100) q = 'ultra';
-      else if (fps >= 55) q = 'high';
-      else if (fps >= 40) q = 'medium';
-      else if (fps >= 25) q = 'low';
-      applyQuality(q);
-      applySettingsToUI();
-      showToast('Автонастройка: качество «' + q + '» (~' + Math.round(fps) + ' FPS)');
+    if(now-tStart>2000){
+      var fps=frames/((now-tStart)/1000);
+      autoTuneRunning=false;
+      var q='min';
+      if(fps>=100)q='ultra';
+      else if(fps>=55)q='high';
+      else if(fps>=40)q='medium';
+      else if(fps>=25)q='low';
+      settings.quality=q;
+      settings.particles=(q==='high'||q==='ultra');
+      settings.shadows=(q!=='min'&&q!=='low');
+      saveSettingsLS();applySettingsToUI();resizeCanvas();
+      showToast('Автонастройка: '+q+' (~'+Math.round(fps)+' FPS)');
       return;
     }
     requestAnimationFrame(sample);
@@ -1835,35 +1525,19 @@ function runAutoTune() {
   requestAnimationFrame(sample);
 }
 
-/* Ресайз */
-function onResize() {
-  const w = window.innerWidth, h = window.innerHeight;
-  if (engineReady) {
-    camera.aspect = w / h; camera.updateProjectionMatrix();
-    menuCamera.aspect = w / h; menuCamera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
-  }
-  document.getElementById('rotate-hint').classList.toggle('show', w < h && w < 500);
-}
-window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
-
 /* Пауза при уходе в фон */
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && state.phase === 'playing') pauseGame();
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&state.phase==='playing')pauseGame();
 });
 
-/* =========================================================
-   ИНИЦИАЛИЗАЦИЯ UI
-   ========================================================= */
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+resizeCanvas();
 applySettingsToUI();
 updateModeButtons();
-updateContinueButton();
 showMainMenu();
-onResize();
-requestAnimationFrame(animate);
-
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
