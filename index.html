@@ -10,14 +10,9 @@
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; }
   #game-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; }
 
-  #loading { position: fixed; inset: 0; background: #0a0a0f; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 1000; }
-  #loading.hidden { display: none; }
-  #loading .spinner { width: 44px; height: 44px; border: 3px solid #222; border-top-color: #c9a961; border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loading p { margin-top: 20px; color: #888; font-size: 13px; text-align: center; max-width: 80%; line-height: 1.5; }
-
   .menu-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; background: rgba(8, 8, 14, 0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow-y: auto; padding: 20px; }
   .menu-screen.hidden { display: none; }
+  .menu-screen.engine-loading .menu-btn { opacity: 0.4; pointer-events: none; }
   .menu-content { width: 100%; max-width: 400px; padding: 20px; text-align: center; }
   .menu-title { font-size: 30px; font-weight: 800; letter-spacing: 3px; margin-bottom: 4px; background: linear-gradient(135deg, #f0e0b8, #c9a961, #8a6d3b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .menu-subtitle { font-size: 11px; color: #777; letter-spacing: 4px; margin-bottom: 26px; text-transform: uppercase; }
@@ -26,6 +21,7 @@
   .menu-btn:active { transform: scale(0.98); }
   .menu-btn.secondary { background: rgba(255,255,255,0.02); font-size: 13px; padding: 11px; letter-spacing: 1px; }
   .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  #engine-hint { font-size: 11px; color: #666; margin-top: 10px; min-height: 14px; line-height: 1.4; }
 
   #hud { position: fixed; top: 0; left: 0; right: 0; padding: 12px 14px; display: none; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none; }
   #hud.active { display: flex; }
@@ -91,12 +87,7 @@
 <body>
 <canvas id="game-canvas"></canvas>
 
-<div id="loading">
-  <div class="spinner"></div>
-  <p id="loading-text">Загрузка игрового мира...</p>
-</div>
-
-<div id="main-menu" class="menu-screen hidden">
+<div id="main-menu" class="menu-screen engine-loading">
   <div class="menu-content">
     <div class="menu-title">МОЛОТ И КОТЁЛ</div>
     <div class="menu-subtitle">3D Восхождение</div>
@@ -107,6 +98,7 @@
     <button class="menu-btn secondary" data-action="open-controls">Управление</button>
     <button class="menu-btn secondary" data-action="open-stats">Статистика</button>
     <button class="menu-btn secondary" data-action="open-about">Об игре</button>
+    <div id="engine-hint"></div>
   </div>
 </div>
 
@@ -299,6 +291,19 @@
 
 <div id="rotate-hint">Поверните устройство горизонтально для удобства</div>
 
+<script>
+  // Фолбэк: если движок не загрузился за 20 секунд — сообщаем под кнопками
+  setTimeout(function () {
+    if (!window.__engineReady) {
+      var hint = document.getElementById('engine-hint');
+      if (hint) {
+        hint.textContent = 'Не удалось загрузить 3D-движок. Проверьте интернет и обновите страницу.';
+        hint.style.color = '#e88';
+      }
+    }
+  }, 20000);
+</script>
+
 <script type="importmap">
 {
   "imports": {
@@ -309,14 +314,6 @@
 </script>
 
 <script type="module">
-window.__gameStarted = false;
-setTimeout(() => {
-  if (!window.__gameStarted) {
-    const l = document.getElementById('loading-text');
-    if (l) l.textContent = 'Не удалось загрузить игровой движок. Проверьте подключение к интернету и обновите страницу.';
-  }
-}, 12000);
-
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 
@@ -379,7 +376,8 @@ let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: settings.quality !== 'min' && settings.quality !== 'low', powerPreference: 'high-performance', alpha: false });
 } catch (e) {
-  document.getElementById('loading-text').textContent = 'WebGL не поддерживается вашим устройством.';
+  const hint = document.getElementById('engine-hint');
+  if (hint) { hint.textContent = 'WebGL не поддерживается вашим устройством.'; hint.style.color = '#e88'; }
   throw e;
 }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
@@ -509,46 +507,30 @@ function addBox(x, y, w, h, d, type) {
   return { body, mesh };
 }
 
-/* Проектирование уровня: [x, y, w, h, d, type] */
+/* Проектирование уровня */
 const LEVEL_LAYOUT = [
-  // Земля (старт)
   [0, -1.2, 14, 2.4, 3.5, 'ground'],
-  // Первые ступени
   [2.8, 1.1, 1.4, 1.8, 2.2, 'rock'],
   [-2.2, 2.2, 1.8, 0.5, 2.2, 'rock'],
   [1.6, 3.7, 1.6, 0.5, 2.2, 'rock'],
-  // Стена
   [3.6, 4.6, 0.7, 3.2, 2.2, 'rock'],
-  // Выступ над стеной
   [1.8, 6.3, 1.8, 0.5, 2.2, 'rock'],
-  // Дерево
   [-2.6, 5.2, 0.7, 3.4, 0.7, 'wood'],
   [-1.0, 8.0, 3.2, 0.35, 0.8, 'wood'],
-  // Уступ
   [2.6, 9.2, 1.6, 0.5, 2.2, 'rock'],
-  // Узкая балка
   [-1.2, 10.6, 3.2, 0.28, 0.6, 'wood'],
-  // Площадка
   [2.0, 12.2, 1.8, 0.55, 2.2, 'rock'],
-  // Высокая стена
   [-2.4, 12.6, 0.7, 4.2, 2.2, 'rock'],
-  // Промежуточный выступ
   [0.6, 14.9, 1.6, 0.45, 2.2, 'rock'],
-  // Металлическая балка
   [3.0, 16.4, 2.8, 0.32, 0.6, 'metal'],
-  // Площадка
   [-0.8, 17.9, 1.6, 0.45, 2.2, 'rock'],
-  // Финальный подъём
   [1.4, 19.4, 2.0, 0.5, 2.2, 'rock'],
-  // Вершина
   [0, 21.0, 4.5, 0.6, 2.4, 'metal'],
-  // Финальный столб
   [0, 23.2, 0.35, 2.8, 0.35, 'metal']
 ];
 
 for (const [x, y, w, h, d, t] of LEVEL_LAYOUT) addBox(x, y, w, h, d, t);
 
-/* Декор (визуальные скалы вокруг) */
 function addDecorRock(x, y, z, s) {
   const geo = new THREE.IcosahedronGeometry(s, 0);
   const mat = rockMat.clone();
@@ -566,7 +548,6 @@ for (let i = 0; i < 24; i++) {
   addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, 3 + Math.random() * 6, 0.8 + Math.random() * 1.8);
 }
 
-/* Финишная арка */
 const flagGeo = new THREE.ConeGeometry(0.35, 0.8, 4);
 const flagMat = new THREE.MeshStandardMaterial({ color: 0xd4b060, metalness: 0.6, roughness: 0.35 });
 const flag = new THREE.Mesh(flagGeo, flagMat);
@@ -736,9 +717,8 @@ playerBody.addEventListener('collide', (e) => {
    УПРАВЛЕНИЕ
    ========================================================= */
 let pointerActive = false;
-let pointerTargetX = 0; // screen normalized -1..1
+let pointerTargetX = 0;
 let pointerTargetY = 0;
-let lastPointerClient = { x: 0, y: 0 };
 
 function updatePointerFromClient(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
@@ -746,8 +726,6 @@ function updatePointerFromClient(clientX, clientY) {
   const ny = -(((clientY - rect.top) / rect.height) * 2 - 1);
   pointerTargetX = nx;
   pointerTargetY = ny;
-  lastPointerClient.x = clientX;
-  lastPointerClient.y = clientY;
 }
 
 const touchIndicator = document.getElementById('touch-indicator');
@@ -810,7 +788,7 @@ window.addEventListener('keydown', (e) => {
    СОСТОЯНИЕ ИГРЫ
    ========================================================= */
 const state = {
-  phase: 'menu', // 'menu' | 'playing' | 'paused' | 'victory'
+  phase: 'menu',
   pointerLocked: false,
   startTime: 0,
   elapsed: 0,
@@ -820,7 +798,6 @@ const state = {
   shakeMag: 0
 };
 
-/* Зоны */
 const ZONES = [
   { y: 0.0, name: 'Земля' },
   { y: 4.0, name: 'Скалы' },
@@ -875,7 +852,7 @@ function applyQuality(preset) {
 }
 
 /* =========================================================
-   ЗВУК ОКРУЖЕНИЯ (тихий ветер/фон)
+   ЗВУК ОКРУЖЕНИЯ
    ========================================================= */
 let ambientOsc = null;
 function startAmbient() {
@@ -911,19 +888,14 @@ const statsCanvas = document.getElementById('stats-canvas');
 const statsCtx = statsCanvas.getContext('2d');
 
 function getTargetAngle() {
-  // Направление от центра экрана (где игрок) к курсору/пальцу
-  if (Math.abs(pointerTargetX) < 0.02 && Math.abs(pointerTargetY) < 0.02) {
-    return null; // нет ввода — держим текущий угол
-  }
+  if (Math.abs(pointerTargetX) < 0.02 && Math.abs(pointerTargetY) < 0.02) return null;
   return Math.atan2(pointerTargetY, pointerTargetX);
 }
-
 function wrapAngle(a) {
   while (a > Math.PI) a -= Math.PI * 2;
   while (a < -Math.PI) a += Math.PI * 2;
   return a;
 }
-
 function getHammerAngle() {
   const dx = hammerBody.position.x - playerBody.position.x;
   const dy = hammerBody.position.y - playerBody.position.y;
@@ -931,7 +903,6 @@ function getHammerAngle() {
 }
 
 function physicsStep() {
-  // Управление молотом
   if (state.phase === 'playing') {
     const targetAngle = getTargetAngle();
     if (targetAngle !== null) {
@@ -949,7 +920,6 @@ function physicsStep() {
 
   world.step(FIXED_TIMESTEP, 0, 1);
 
-  // Ограничение на плоскость Z=0
   playerBody.position.z = 0;
   playerBody.velocity.z = 0;
   playerBody.angularVelocity.z *= 0.9;
@@ -959,7 +929,6 @@ function physicsStep() {
   hammerBody.angularVelocity.x = 0;
   hammerBody.angularVelocity.y = 0;
 
-  // Ограничение движения игрока по вертикали вверх при падении (не ниже -5)
   if (playerBody.position.y < -6) {
     playerBody.position.y = -6;
     playerBody.velocity.y = 0;
@@ -969,7 +938,6 @@ function physicsStep() {
 function syncVisuals() {
   playerGroup.position.set(playerBody.position.x, playerBody.position.y, 0);
   playerGroup.quaternion.identity();
-
   hammerGroup.position.set(hammerBody.position.x, hammerBody.position.y, 0);
   hammerGroup.quaternion.set(hammerBody.quaternion.x, hammerBody.quaternion.y, hammerBody.quaternion.z, hammerBody.quaternion.w);
 }
@@ -977,24 +945,18 @@ function syncVisuals() {
 function updateCamera(dt) {
   const py = playerBody.position.y;
   const px = playerBody.position.x;
-
-  // Отдаление с высотой
   const dist = 12 + Math.min(4, py * 0.08);
-
-  // Плавное следование
   const targetY = py + 1.8;
   camera.position.x += (px - camera.position.x) * 0.08;
   camera.position.y += (targetY - camera.position.y) * 0.1;
   camera.position.z = dist;
 
-  // Тряска
   if (settings.screenshake && state.shakeTime > 0) {
     const s = state.shakeMag * (state.shakeTime / 0.35);
     camera.position.x += (Math.random() - 0.5) * s;
     camera.position.y += (Math.random() - 0.5) * s;
     state.shakeTime -= dt;
   }
-
   const lookY = py + 1.2;
   camera.lookAt(px, lookY, 0);
 }
@@ -1013,13 +975,10 @@ function updateHUD() {
   const total = Math.floor(state.elapsed);
   const mm = Math.floor(total / 60);
   const ss = total % 60;
-  const timeStr = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
-  document.getElementById('hud-time').textContent = timeStr;
-
+  document.getElementById('hud-time').textContent = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
   const h = Math.max(0, playerBody.position.y - 0.6);
   document.getElementById('hud-height').textContent = h.toFixed(1) + ' м';
 
-  // Зоны и чекпоинты
   let newZone = 0;
   for (let i = 0; i < ZONES.length; i++) if (playerBody.position.y >= ZONES[i].y) newZone = i;
   if (newZone > state.zone) {
@@ -1034,12 +993,10 @@ function updateHUD() {
 
   if (playerBody.position.y > saveData.maxHeight) saveData.maxHeight = playerBody.position.y;
 
-  // Проверка победы
   if (playerBody.position.y > 22.5 && state.phase === 'playing') {
     triggerVictory();
   }
 
-  // Падение (режим с чекпоинтами)
   if (settings.mode === 'checkpoint' && state.phase === 'playing' && saveData.checkpoint && saveData.checkpointZone > 0) {
     if (playerBody.position.y < ZONES[saveData.checkpointZone].y - 4) {
       respawnAtCheckpoint();
@@ -1047,7 +1004,6 @@ function updateHUD() {
   }
 
   saveData.elapsedTime = state.elapsed;
-  saveData.totalPlayTime += 0; // обновляется реже
 }
 
 let saveTimer = 0;
@@ -1082,11 +1038,8 @@ function triggerVictory() {
   const total = Math.floor(state.elapsed);
   const mm = Math.floor(total / 60);
   const ss = total % 60;
-  const tstr = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
-  document.getElementById('victory-time').textContent = `Время: ${tstr}`;
-  if (!saveData.bestTime || state.elapsed < saveData.bestTime) {
-    saveData.bestTime = state.elapsed;
-  }
+  document.getElementById('victory-time').textContent = `Время: ${mm}:${ss < 10 ? '0' : ''}${ss}`;
+  if (!saveData.bestTime || state.elapsed < saveData.bestTime) saveData.bestTime = state.elapsed;
   saveData.hasSave = false;
   saveGameLS();
   playVictory();
@@ -1095,8 +1048,7 @@ function triggerVictory() {
   document.getElementById('stats').classList.remove('visible');
 }
 
-/* FPS измерение */
-function updateFPSMeter(dt, now) {
+function updateFPSMeter(dt) {
   frameCount++;
   fpsAccum += dt;
   if (fpsAccum >= 0.5) {
@@ -1110,7 +1062,7 @@ function updateFPSMeter(dt, now) {
     if (settings.showStats) {
       document.getElementById('stat-fps').textContent = measuredFPS;
       document.getElementById('stat-avg').textContent = avgFPS;
-      document.getElementById('stat-frame').textContent = (lastFrameMs).toFixed(1) + ' мс';
+      document.getElementById('stat-frame').textContent = lastFrameMs.toFixed(1) + ' мс';
       document.getElementById('stat-limit').textContent = settings.fpsLimit > 0 ? settings.fpsLimit : '∞';
       document.getElementById('stat-quality').textContent = settings.quality;
       document.getElementById('stat-objs').textContent = renderer.info.render.triangles || levelMeshes.length;
@@ -1124,7 +1076,6 @@ function drawFPSGraph() {
   statsCtx.clearRect(0, 0, w, h);
   statsCtx.fillStyle = 'rgba(0,0,0,0.4)';
   statsCtx.fillRect(0, 0, w, h);
-  // Сетка
   statsCtx.strokeStyle = 'rgba(255,255,255,0.08)';
   statsCtx.lineWidth = 1;
   for (let i = 1; i < 4; i++) {
@@ -1149,20 +1100,15 @@ function drawFPSGraph() {
 
 function animate(now) {
   requestAnimationFrame(animate);
-  if (!window.__gameStarted) window.__gameStarted = true;
 
-  // Ограничитель FPS
   const interval = settings.fpsLimit > 0 ? 1000 / settings.fpsLimit : 0;
-  if (interval > 0 && now - lastRenderTime < interval - 1.5) {
-    return;
-  }
+  if (interval > 0 && now - lastRenderTime < interval - 1.5) return;
   lastRenderTime = now;
 
   const dtReal = Math.min((now - lastFrameTime) / 1000, 0.1);
   lastFrameTime = now;
   lastFrameMs = dtReal * 1000;
 
-  // Физика — фиксированный шаг
   if (state.phase === 'playing') {
     physicsAccumulator += dtReal;
     let steps = 0;
@@ -1172,19 +1118,17 @@ function animate(now) {
       steps++;
     }
     if (steps >= 4) physicsAccumulator = 0;
-
     syncVisuals();
     updateCamera(dtReal);
     updateHUD();
     periodicSave(dtReal);
-    updateFPSMeter(dtReal, now);
+    updateFPSMeter(dtReal);
   } else if (state.phase === 'paused' || state.phase === 'victory') {
     syncVisuals();
     updateCamera(dtReal);
-    updateFPSMeter(dtReal, now);
+    updateFPSMeter(dtReal);
   }
 
-  // Рендер
   if (state.phase === 'menu') {
     updateMenuCamera(now);
     renderer.render(scene, menuCamera);
@@ -1226,7 +1170,6 @@ function getToggle(id) {
   return document.getElementById(id).classList.contains('on');
 }
 
-// Меню
 function showMainMenu() {
   state.phase = 'menu';
   hideAllOverlays();
@@ -1348,7 +1291,6 @@ function restartGame() {
   startNewGame();
 }
 
-/* Обработчик кнопок */
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
@@ -1356,64 +1298,34 @@ document.addEventListener('click', (e) => {
   initAudio();
 
   switch (action) {
-    case 'play':
-      startNewGame();
-      break;
-    case 'continue':
-      resumeFromSave();
-      break;
+    case 'play': startNewGame(); break;
+    case 'continue': resumeFromSave(); break;
     case 'open-mode':
-      hideEl('main-menu');
-      showEl('mode-screen');
-      updateModeButtons();
-      break;
+      hideEl('main-menu'); showEl('mode-screen'); updateModeButtons(); break;
     case 'close-mode':
-      hideEl('mode-screen');
-      showEl('main-menu');
-      break;
+      hideEl('mode-screen'); showEl('main-menu'); break;
     case 'open-settings':
-      hideEl('main-menu');
-      hideEl('pause-menu');
-      hideEl('mode-screen');
-      showEl('settings-screen');
-      applySettingsToUI();
-      break;
+      hideEl('main-menu'); hideEl('pause-menu'); hideEl('mode-screen');
+      showEl('settings-screen'); applySettingsToUI(); break;
     case 'close-settings':
       hideEl('settings-screen');
       if (state.phase === 'paused') showEl('pause-menu');
       else showEl('main-menu');
       break;
     case 'open-controls':
-      hideEl('main-menu');
-      showEl('controls-screen');
-      break;
+      hideEl('main-menu'); showEl('controls-screen'); break;
     case 'close-controls':
-      hideEl('controls-screen');
-      showEl('main-menu');
-      break;
+      hideEl('controls-screen'); showEl('main-menu'); break;
     case 'open-stats':
-      hideEl('main-menu');
-      renderStatsScreen();
-      showEl('stats-screen');
-      break;
+      hideEl('main-menu'); renderStatsScreen(); showEl('stats-screen'); break;
     case 'close-stats':
-      hideEl('stats-screen');
-      showEl('main-menu');
-      break;
+      hideEl('stats-screen'); showEl('main-menu'); break;
     case 'open-about':
-      hideEl('main-menu');
-      showEl('about-screen');
-      break;
+      hideEl('main-menu'); showEl('about-screen'); break;
     case 'close-about':
-      hideEl('about-screen');
-      showEl('main-menu');
-      break;
-    case 'resume':
-      resumeGame();
-      break;
-    case 'restart':
-      restartGame();
-      break;
+      hideEl('about-screen'); showEl('main-menu'); break;
+    case 'resume': resumeGame(); break;
+    case 'restart': restartGame(); break;
     case 'main-menu':
       if (state.phase === 'paused' || state.phase === 'playing') {
         if (!confirm('Выйти в главное меню? Прогресс сохранится.')) return;
@@ -1422,47 +1334,33 @@ document.addEventListener('click', (e) => {
         saveData.hasSave = true;
         saveGameLS();
       }
-      showMainMenu();
-      break;
+      showMainMenu(); break;
     case 'reset-settings':
       settings = { ...DEFAULT_SETTINGS };
       saveSettingsLS();
       applyQuality(settings.quality);
       applySettingsToUI();
       break;
-    case 'autotune':
-      runAutoTune();
-      break;
+    case 'autotune': runAutoTune(); break;
     case 'victory-restart':
-      hideEl('victory');
-      startNewGame();
-      break;
+      hideEl('victory'); startNewGame(); break;
     case 'victory-menu':
-      hideEl('victory');
-      showMainMenu();
-      break;
+      hideEl('victory'); showMainMenu(); break;
   }
 });
 
-/* Кнопки мод-выбора */
 document.getElementById('mode-classic').addEventListener('click', () => {
-  settings.mode = 'classic';
-  saveSettingsLS();
-  updateModeButtons();
+  settings.mode = 'classic'; saveSettingsLS(); updateModeButtons();
 });
 document.getElementById('mode-checkpoint').addEventListener('click', () => {
-  settings.mode = 'checkpoint';
-  saveSettingsLS();
-  updateModeButtons();
+  settings.mode = 'checkpoint'; saveSettingsLS(); updateModeButtons();
 });
 
-/* Пауза */
 document.getElementById('btn-pause').addEventListener('click', (e) => {
   e.stopPropagation();
   if (state.phase === 'playing') pauseGame();
 });
 
-/* Настройки */
 document.getElementById('s-fps-limit').addEventListener('change', (e) => {
   settings.fpsLimit = parseInt(e.target.value, 10);
   saveSettingsLS();
@@ -1516,20 +1414,16 @@ document.getElementById('s-mute').addEventListener('click', () => {
   saveSettingsLS();
 });
 
-/* Автонастройка */
 let autoTuneRunning = false;
 function runAutoTune() {
   if (autoTuneRunning) return;
   autoTuneRunning = true;
-  const origScale = settings.renderScale;
   settings.renderScale = 100;
-  const samples = [];
   let frames = 0;
   let tStart = performance.now();
   let last = tStart;
   function sample(now) {
     frames++;
-    const dt = now - last;
     last = now;
     if (now - tStart > 2000) {
       const fps = frames / ((now - tStart) / 1000);
@@ -1539,7 +1433,6 @@ function runAutoTune() {
       else if (fps >= 55) q = 'high';
       else if (fps >= 40) q = 'medium';
       else if (fps >= 25) q = 'low';
-      else q = 'min';
       applyQuality(q);
       applySettingsToUI();
       alert('Автонастройка: выбрано качество «' + q + '» (средний FPS ~' + Math.round(fps) + ')');
@@ -1550,7 +1443,6 @@ function runAutoTune() {
   requestAnimationFrame(sample);
 }
 
-/* Статистика */
 function renderStatsScreen() {
   const content = document.getElementById('stats-content');
   const best = saveData.bestTime ? formatTime(saveData.bestTime) : '—';
@@ -1573,9 +1465,6 @@ function formatTime(sec) {
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
-/* =========================================================
-   РАЗМЕР ЭКРАНА
-   ========================================================= */
 function onResize() {
   const w = window.innerWidth, h = window.innerHeight;
   camera.aspect = w / h;
@@ -1589,13 +1478,8 @@ function onResize() {
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
-/* =========================================================
-   ПАУЗА ПРИ УХОДЕ В ФОН
-   ========================================================= */
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && state.phase === 'playing') {
-    pauseGame();
-  }
+  if (document.hidden && state.phase === 'playing') pauseGame();
 });
 
 /* =========================================================
@@ -1606,12 +1490,15 @@ applySettingsToUI();
 onResize();
 showMainMenu();
 
-document.getElementById('loading').classList.add('hidden');
-window.__gameStarted = true;
+// Движок готов — разблокируем меню
+window.__engineReady = true;
+const menuEl = document.getElementById('main-menu');
+if (menuEl) menuEl.classList.remove('engine-loading');
+const hintEl = document.getElementById('engine-hint');
+if (hintEl) hintEl.textContent = '';
+document.querySelectorAll('#main-menu .menu-btn').forEach(b => b.disabled = false);
 
-// Небольшой стартовый импульс молоту (небольшая динамика)
 hammerBody.angularVelocity.set(0, 0, 1);
-
 requestAnimationFrame(animate);
 </script>
 </body>
