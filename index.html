@@ -2,413 +2,1617 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>3D-скан головы</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Молот и Котёл — 3D Восхождение</title>
 <style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; height: 100%; overflow: hidden; background: #000;
-    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
-    color: #dff6ff;
-  }
-  #stage { position: fixed; inset: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; }
+  #game-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; }
 
-  #video, #scan {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; transform: scaleX(-1);   /* зеркалим, как в селфи */
-  }
-  #scan { pointer-events: none; }
+  #loading { position: fixed; inset: 0; background: #0a0a0f; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 1000; }
+  #loading.hidden { display: none; }
+  #loading .spinner { width: 44px; height: 44px; border: 3px solid #222; border-top-color: #c9a961; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { margin-top: 20px; color: #888; font-size: 13px; text-align: center; max-width: 80%; line-height: 1.5; }
 
-  #viewer { position: absolute; inset: 0; display: none; background: #000; }
-  #viewer canvas { display: block; }
+  .menu-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; background: rgba(8, 8, 14, 0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow-y: auto; padding: 20px; }
+  .menu-screen.hidden { display: none; }
+  .menu-content { width: 100%; max-width: 400px; padding: 20px; text-align: center; }
+  .menu-title { font-size: 30px; font-weight: 800; letter-spacing: 3px; margin-bottom: 4px; background: linear-gradient(135deg, #f0e0b8, #c9a961, #8a6d3b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .menu-subtitle { font-size: 11px; color: #777; letter-spacing: 4px; margin-bottom: 26px; text-transform: uppercase; }
+  .menu-btn { display: block; width: 100%; padding: 14px; margin-bottom: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e8e8e8; font-size: 15px; letter-spacing: 1.5px; cursor: pointer; border-radius: 10px; transition: all 0.2s; font-family: inherit; text-align: center; }
+  .menu-btn:hover { background: rgba(201, 169, 97, 0.18); border-color: #c9a961; }
+  .menu-btn:active { transform: scale(0.98); }
+  .menu-btn.secondary { background: rgba(255,255,255,0.02); font-size: 13px; padding: 11px; letter-spacing: 1px; }
+  .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-  #ui {
-    position: absolute; left: 0; right: 0; bottom: 0;
-    padding: 22px 22px calc(22px + env(safe-area-inset-bottom));
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    z-index: 10; pointer-events: none;
-  }
-  #status {
-    font-size: 13px; letter-spacing: .04em; text-transform: uppercase;
-    opacity: .75; text-shadow: 0 0 12px #000;
-  }
-  button {
-    pointer-events: auto;
-    padding: 14px 34px; border-radius: 999px; border: 1px solid rgba(0,229,255,.55);
-    background: rgba(0, 40, 60, .55); backdrop-filter: blur(10px);
-    color: #bff4ff; font-size: 15px; font-weight: 600; letter-spacing: .06em;
-    text-transform: uppercase; cursor: pointer;
-    transition: background .2s, box-shadow .2s, opacity .2s;
-  }
-  button:hover:not(:disabled) { background: rgba(0,120,170,.55); box-shadow: 0 0 24px rgba(0,229,255,.35); }
-  button:disabled { opacity: .3; cursor: default; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; padding: 12px 14px; display: none; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none; }
+  #hud.active { display: flex; }
+  #hud .info { display: flex; flex-direction: column; gap: 6px; font-size: 13px; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+  #hud .info .label { color: #999; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; display: inline-block; margin-right: 6px; }
+  #hud .info .value { color: #fff; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+  #hud-right { display: flex; gap: 8px; pointer-events: auto; }
+  .hud-btn { width: 44px; height: 44px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .hud-btn:active { background: rgba(201, 169, 97, 0.35); }
 
-  #loader {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; letter-spacing: .1em; text-transform: uppercase; opacity: .7;
+  #stats { position: fixed; top: 70px; left: 14px; padding: 10px 12px; background: rgba(0,0,0,0.68); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 11px; color: #bbb; font-family: 'SF Mono', Consolas, monospace; z-index: 10; display: none; backdrop-filter: blur(6px); }
+  #stats.visible { display: block; }
+  #stats .row { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 3px; }
+  #stats .row span:last-child { color: #c9a961; font-weight: 600; }
+  #stats-canvas { display: block; margin-top: 8px; border-radius: 4px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(8, 8, 14, 0.94); z-index: 200; display: flex; flex-direction: column; padding: 16px; overflow-y: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .overlay.hidden { display: none; }
+  .overlay-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-shrink: 0; max-width: 500px; margin-left: auto; margin-right: auto; width: 100%; }
+  .overlay-title { font-size: 18px; font-weight: 700; color: #e8d5a8; letter-spacing: 1px; }
+  .close-btn { width: 40px; height: 40px; background: rgba(255,255,255,0.08); border: none; color: #fff; font-size: 18px; border-radius: 10px; cursor: pointer; }
+  .overlay-body { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; }
+
+  .setting-group { margin-bottom: 18px; }
+  .setting-group-title { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-row label { font-size: 14px; color: #ccc; flex: 1; padding-right: 12px; }
+  .setting-row .control { flex-shrink: 0; }
+  .setting-row select { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 7px 10px; border-radius: 8px; font-family: inherit; font-size: 13px; min-width: 130px; }
+  .setting-row input[type=range] { width: 130px; accent-color: #c9a961; }
+  .toggle { position: relative; width: 44px; height: 24px; background: rgba(255,255,255,0.14); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+  .toggle.on { background: #c9a961; }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+  .toggle.on::after { transform: translateX(20px); }
+
+  #touch-indicator { position: fixed; width: 54px; height: 54px; border: 2px solid rgba(201,169,97,0.7); border-radius: 50%; pointer-events: none; display: none; z-index: 6; transform: translate(-50%, -50%); box-shadow: 0 0 20px rgba(201,169,97,0.4); }
+  #touch-indicator.visible { display: block; }
+
+  .info-text { color: #aaa; font-size: 14px; line-height: 1.75; }
+  .info-text p { margin-bottom: 10px; }
+  .info-text strong { color: #c9a961; }
+  .info-text .stat-line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .info-text .stat-line span:first-child { color: #888; }
+  .info-text .stat-line span:last-child { color: #e8d5a8; font-weight: 600; }
+
+  #victory .victory-content { text-align: center; }
+  #victory .victory-title { font-size: 54px; margin-bottom: 8px; }
+  #victory .victory-time { font-size: 22px; color: #c9a961; margin-bottom: 24px; font-variant-numeric: tabular-nums; }
+  #victory .info-text { text-align: center; font-size: 15px; margin-bottom: 22px; }
+
+  #rotate-hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #ccc; padding: 8px 16px; border-radius: 8px; font-size: 11px; z-index: 50; display: none; border: 1px solid rgba(255,255,255,0.1); }
+  @media (orientation: portrait) and (max-width: 500px) {
+    #rotate-hint.show { display: block; }
   }
+
+  .mode-btn { display: block; width: 100%; padding: 16px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #e8e8e8; cursor: pointer; border-radius: 10px; font-family: inherit; text-align: left; transition: all 0.2s; }
+  .mode-btn:hover, .mode-btn.selected { background: rgba(201, 169, 97, 0.2); border-color: #c9a961; }
+  .mode-btn .mode-name { font-weight: 700; font-size: 15px; }
+  .mode-btn .mode-desc { font-size: 12px; color: #999; margin-top: 4px; }
 </style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-text">Загрузка игрового мира...</p>
+</div>
+
+<div id="main-menu" class="menu-screen hidden">
+  <div class="menu-content">
+    <div class="menu-title">МОЛОТ И КОТЁЛ</div>
+    <div class="menu-subtitle">3D Восхождение</div>
+    <button class="menu-btn" data-action="play">Играть</button>
+    <button class="menu-btn" data-action="continue" id="btn-continue">Продолжить</button>
+    <button class="menu-btn secondary" data-action="open-mode">Выбор режима</button>
+    <button class="menu-btn secondary" data-action="open-settings">Настройки</button>
+    <button class="menu-btn secondary" data-action="open-controls">Управление</button>
+    <button class="menu-btn secondary" data-action="open-stats">Статистика</button>
+    <button class="menu-btn secondary" data-action="open-about">Об игре</button>
+  </div>
+</div>
+
+<div id="hud">
+  <div class="info">
+    <div><span class="label">Время</span><span class="value" id="hud-time">0:00</span></div>
+    <div><span class="label">Высота</span><span class="value" id="hud-height">0.0 м</span></div>
+  </div>
+  <div id="hud-right">
+    <button class="hud-btn" id="btn-pause" title="Пауза">⏸</button>
+  </div>
+</div>
+
+<div id="stats">
+  <div class="row"><span>FPS:</span><span id="stat-fps">0</span></div>
+  <div class="row"><span>Средний:</span><span id="stat-avg">0</span></div>
+  <div class="row"><span>Кадр:</span><span id="stat-frame">0 мс</span></div>
+  <div class="row"><span>Лимит:</span><span id="stat-limit">60</span></div>
+  <div class="row"><span>Качество:</span><span id="stat-quality">высокое</span></div>
+  <div class="row"><span>Объектов:</span><span id="stat-objs">0</span></div>
+  <canvas id="stats-canvas" width="160" height="40"></canvas>
+</div>
+
+<div id="touch-indicator"></div>
+
+<div id="pause-menu" class="overlay hidden">
+  <div class="overlay-header"><div class="overlay-title">Пауза</div></div>
+  <div class="overlay-body">
+    <button class="menu-btn" data-action="resume">Продолжить</button>
+    <button class="menu-btn secondary" data-action="restart">Начать заново</button>
+    <button class="menu-btn secondary" data-action="open-settings">Настройки</button>
+    <button class="menu-btn secondary" data-action="main-menu">В главное меню</button>
+  </div>
+</div>
+
+<div id="settings-screen" class="overlay hidden">
+  <div class="overlay-header">
+    <div class="overlay-title">Настройки</div>
+    <button class="close-btn" data-action="close-settings">✕</button>
+  </div>
+  <div class="overlay-body">
+    <div class="setting-group">
+      <div class="setting-group-title">Частота кадров</div>
+      <div class="setting-row">
+        <label>Лимит FPS</label>
+        <div class="control">
+          <select id="s-fps-limit">
+            <option value="30">30</option>
+            <option value="45">45</option>
+            <option value="60">60</option>
+            <option value="90">90</option>
+            <option value="120">120</option>
+            <option value="0">Без ограничения</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>Показывать статистику</label>
+        <div class="control"><div class="toggle" id="s-show-stats"></div></div>
+      </div>
+    </div>
+    <div class="setting-group">
+      <div class="setting-group-title">Графика</div>
+      <div class="setting-row">
+        <label>Качество</label>
+        <div class="control">
+          <select id="s-quality">
+            <option value="min">Минимальное</option>
+            <option value="low">Низкое</option>
+            <option value="medium">Среднее</option>
+            <option value="high">Высокое</option>
+            <option value="ultra">Ультра</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>Тени</label>
+        <div class="control"><div class="toggle" id="s-shadows"></div></div>
+      </div>
+      <div class="setting-row">
+        <label>Масштаб рендеринга</label>
+        <div class="control"><input type="range" id="s-render-scale" min="50" max="100" step="5"></div>
+      </div>
+      <div class="setting-row">
+        <label>Дальность прорисовки</label>
+        <div class="control"><input type="range" id="s-far" min="30" max="200" step="5"></div>
+      </div>
+    </div>
+    <div class="setting-group">
+      <div class="setting-group-title">Отображение</div>
+      <div class="setting-row">
+        <label>Тряска экрана</label>
+        <div class="control"><div class="toggle" id="s-screenshake"></div></div>
+      </div>
+    </div>
+    <div class="setting-group">
+      <div class="setting-group-title">Звук</div>
+      <div class="setting-row">
+        <label>Громкость</label>
+        <div class="control"><input type="range" id="s-volume" min="0" max="100" step="5"></div>
+      </div>
+      <div class="setting-row">
+        <label>Отключить звук</label>
+        <div class="control"><div class="toggle" id="s-mute"></div></div>
+      </div>
+    </div>
+    <div class="setting-group">
+      <div class="setting-group-title">Управление</div>
+      <div class="setting-row">
+        <label>Чувствительность молота</label>
+        <div class="control"><input type="range" id="s-sensitivity" min="50" max="200" step="10"></div>
+      </div>
+    </div>
+    <button class="menu-btn secondary" data-action="autotune">Автонастройка</button>
+    <button class="menu-btn secondary" data-action="reset-settings">Сбросить настройки</button>
+  </div>
+</div>
+
+<div id="controls-screen" class="overlay hidden">
+  <div class="overlay-header">
+    <div class="overlay-title">Управление</div>
+    <button class="close-btn" data-action="close-controls">✕</button>
+  </div>
+  <div class="overlay-body">
+    <div class="info-text">
+      <p><strong>ПК:</strong></p>
+      <p>• Зажмите левую кнопку мыши и двигайте ей — молот следует в направлении курсора.</p>
+      <p>• ESC или P — пауза.</p>
+      <p>• R — начать заново.</p>
+      <p><br><strong>Мобильное устройство:</strong></p>
+      <p>• Коснитесь экрана и двигайте пальцем — молот направляется к пальцу.</p>
+      <p>• Кнопка ⏸ в верхнем правом углу — пауза.</p>
+      <p><br><strong>Цель:</strong></p>
+      <p>Используя молот, взберитесь на вершину башни. Не падайте!</p>
+    </div>
+  </div>
+</div>
+
+<div id="stats-screen" class="overlay hidden">
+  <div class="overlay-header">
+    <div class="overlay-title">Статистика</div>
+    <button class="close-btn" data-action="close-stats">✕</button>
+  </div>
+  <div class="overlay-body">
+    <div class="info-text" id="stats-content"></div>
+  </div>
+</div>
+
+<div id="about-screen" class="overlay hidden">
+  <div class="overlay-header">
+    <div class="overlay-title">Об игре</div>
+    <button class="close-btn" data-action="close-about">✕</button>
+  </div>
+  <div class="overlay-body">
+    <div class="info-text">
+      <p><strong>Молот и Котёл</strong> — 3D-игра о восхождении, вдохновлённая классикой жанра.</p>
+      <p>Вам предстоит, управляя лишь молотом, взобраться на вершину высокой башни. Используйте инерцию, цепляйтесь за выступы и не позволяйте себе упасть.</p>
+      <p>Вся физика, графика и звук созданы процедурно в браузере. Оригинальная игра не использовалась.</p>
+    </div>
+  </div>
+</div>
+
+<div id="mode-screen" class="overlay hidden">
+  <div class="overlay-header">
+    <div class="overlay-title">Режим игры</div>
+    <button class="close-btn" data-action="close-mode">✕</button>
+  </div>
+  <div class="overlay-body">
+    <button class="mode-btn" data-mode="classic" id="mode-classic">
+      <div class="mode-name">Классический</div>
+      <div class="mode-desc">Ошибка — и вы падаете вниз до самого основания.</div>
+    </button>
+    <button class="mode-btn" data-mode="checkpoint" id="mode-checkpoint">
+      <div class="mode-name">С контрольными точками</div>
+      <div class="mode-desc">При падении вы возвращаетесь к последней достигнутой зоне.</div>
+    </button>
+  </div>
+</div>
+
+<div id="victory" class="overlay hidden">
+  <div class="overlay-header"><div class="overlay-title">Победа!</div></div>
+  <div class="overlay-body victory-content">
+    <div class="victory-title">🏆</div>
+    <div class="info-text">Вы покорили вершину!</div>
+    <div class="victory-time" id="victory-time"></div>
+    <button class="menu-btn" data-action="victory-restart">Играть снова</button>
+    <button class="menu-btn secondary" data-action="victory-menu">В главное меню</button>
+  </div>
+</div>
+
+<div id="rotate-hint">Поверните устройство горизонтально для удобства</div>
 
 <script type="importmap">
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.module.js"
   }
 }
 </script>
-</head>
-
-<body>
-<div id="stage">
-  <video id="video" playsinline muted autoplay></video>
-  <canvas id="scan"></canvas>
-  <div id="viewer"></div>
-
-  <div id="loader">Загрузка модели…</div>
-
-  <div id="ui">
-    <div id="status">Ищу лицо…</div>
-    <button id="saveBtn" disabled>Сохранить</button>
-    <button id="resetBtn" style="display:none">Сканировать заново</button>
-  </div>
-</div>
 
 <script type="module">
+window.__gameStarted = false;
+setTimeout(() => {
+  if (!window.__gameStarted) {
+    const l = document.getElementById('loading-text');
+    if (l) l.textContent = 'Не удалось загрузить игровой движок. Проверьте подключение к интернету и обновите страницу.';
+  }
+}, 12000);
+
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { FaceLandmarker, FilesetResolver } from
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+import * as CANNON from 'cannon-es';
 
-/* ------------------------------------------------------------------ */
-/*  КОНСТАНТЫ                                                          */
-/* ------------------------------------------------------------------ */
-const WASM_PATH  = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
-const MODEL_PATH = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+/* =========================================================
+   НАСТРОЙКИ И СОХРАНЕНИЯ
+   ========================================================= */
+const DEFAULT_SETTINGS = {
+  fpsLimit: 60,
+  quality: 'high',
+  shadows: true,
+  renderScale: 100,
+  far: 120,
+  showStats: false,
+  screenshake: true,
+  volume: 60,
+  mute: false,
+  sensitivity: 100,
+  mode: 'classic'
+};
 
-// Каноническая топология лица: 468 вершин, 898 треугольников.
-// Скачай файл локально, если не хочешь зависеть от CDN.
-const OBJ_URL = 'https://cdn.jsdelivr.net/gh/google/mediapipe@master/mediapipe/modules/face_geometry/data/canonical_face_model.obj';
+let settings = { ...DEFAULT_SETTINGS };
 
-/* ------------------------------------------------------------------ */
-/*  DOM                                                                */
-/* ------------------------------------------------------------------ */
-const videoEl  = document.getElementById('video');
-const scanEl   = document.getElementById('scan');
-const scanCtx  = scanEl.getContext('2d');
-const viewerEl = document.getElementById('viewer');
-const statusEl = document.getElementById('status');
-const saveBtn  = document.getElementById('saveBtn');
-const resetBtn = document.getElementById('resetBtn');
-const loaderEl = document.getElementById('loader');
+let saveData = {
+  playerPos: null,
+  hammerAngle: null,
+  startTime: null,
+  elapsedTime: 0,
+  bestTime: null,
+  maxHeight: 0,
+  falls: 0,
+  totalPlayTime: 0,
+  checkpoint: null,
+  checkpointZone: 0,
+  hasSave: false
+};
 
-/* ------------------------------------------------------------------ */
-/*  СОСТОЯНИЕ                                                          */
-/* ------------------------------------------------------------------ */
-let faceLandmarker = null;
-let stream         = null;
-let triangles      = null;      // [[a,b,c], ...]
-let landmarks      = null;      // текущий кадр (468 точек)
-let scanning       = true;
-let lastVideoTime  = -1;
-
-/* ------------------------------------------------------------------ */
-/*  1. ТОПОЛОГИЯ ЛИЦА                                                  */
-/* ------------------------------------------------------------------ */
-async function loadTopology() {
-  const res  = await fetch(OBJ_URL);
-  const text = await res.text();
-  const tris = [];
-
-  for (const raw of text.split('\n')) {
-    const line = raw.trim();
-    if (line[0] !== 'f' || line[1] !== ' ') continue;
-    // "f 12/12/12 13/13/13 14/14/14"
-    const idx = line.split(/\s+/).slice(1).map(s => parseInt(s, 10) - 1);
-    for (let i = 1; i < idx.length - 1; i++) {
-      tris.push([idx[0], idx[i], idx[i + 1]]);
-    }
-  }
-  return tris;
-}
-
-/* ------------------------------------------------------------------ */
-/*  2. КАМЕРА + MEDIAPIPE                                              */
-/* ------------------------------------------------------------------ */
-async function startCamera() {
-  stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-    audio: false
-  });
-  videoEl.srcObject = stream;
-  await videoEl.play();
-
-  scanEl.width  = videoEl.videoWidth;
-  scanEl.height = videoEl.videoHeight;
-}
-
-async function startLandmarker() {
-  const fileset = await FilesetResolver.forVisionTasks(WASM_PATH);
-
-  const opts = {
-    baseOptions: { modelAssetPath: MODEL_PATH, delegate: 'GPU' },
-    runningMode: 'VIDEO',
-    numFaces: 1,
-    minFaceDetectionConfidence: 0.4,
-    minFacePresenceConfidence: 0.4,
-    minTrackingConfidence: 0.4
-  };
-
+function loadStorage() {
   try {
-    faceLandmarker = await FaceLandmarker.createFromOptions(fileset, opts);
-  } catch (e) {
-    // некоторые устройства/браузеры не тянут GPU-делегат
-    opts.baseOptions.delegate = 'CPU';
-    faceLandmarker = await FaceLandmarker.createFromOptions(fileset, opts);
-  }
+    const s = localStorage.getItem('hammer_pot_settings_v1');
+    if (s) Object.assign(settings, JSON.parse(s));
+  } catch (e) { console.warn('settings load failed', e); }
+  try {
+    const g = localStorage.getItem('hammer_pot_save_v1');
+    if (g) Object.assign(saveData, JSON.parse(g));
+  } catch (e) { console.warn('save load failed', e); }
 }
-
-/* ------------------------------------------------------------------ */
-/*  3. ЦИКЛ СКАНИРОВАНИЯ                                               */
-/* ------------------------------------------------------------------ */
-function loop() {
-  if (!scanning) return;
-  requestAnimationFrame(loop);
-
-  if (videoEl.readyState < 2) return;
-  if (videoEl.currentTime === lastVideoTime) return;
-  lastVideoTime = videoEl.currentTime;
-
-  const res = faceLandmarker.detectForVideo(videoEl, performance.now());
-
-  if (res.faceLandmarks && res.faceLandmarks.length > 0) {
-    landmarks = res.faceLandmarks[0];
-    statusEl.textContent = 'Лицо захвачено — держи голову ровно';
-    saveBtn.disabled = false;
-  } else {
-    landmarks = null;
-    statusEl.textContent = 'Ищу лицо…';
-    saveBtn.disabled = true;
-  }
-  drawOverlay();
+function saveSettingsLS() {
+  try { localStorage.setItem('hammer_pot_settings_v1', JSON.stringify(settings)); } catch (e) {}
 }
-
-function drawOverlay() {
-  const w = scanEl.width, h = scanEl.height;
-  scanCtx.clearRect(0, 0, w, h);
-  if (!landmarks) return;
-
-  // Сетка
-  scanCtx.lineWidth = Math.max(1, w / 900);
-  scanCtx.strokeStyle = 'rgba(0, 235, 255, 0.22)';
-  scanCtx.beginPath();
-  for (const t of triangles) {
-    const p0 = landmarks[t[0]], p1 = landmarks[t[1]], p2 = landmarks[t[2]];
-    scanCtx.moveTo(p0.x * w, p0.y * h);
-    scanCtx.lineTo(p1.x * w, p1.y * h);
-    scanCtx.lineTo(p2.x * w, p2.y * h);
-    scanCtx.lineTo(p0.x * w, p0.y * h);
-  }
-  scanCtx.stroke();
-
-  // Точки
-  scanCtx.fillStyle = 'rgba(150, 255, 245, 0.95)';
-  const r = Math.max(1.2, w / 1000);
-  for (const p of landmarks) {
-    scanCtx.beginPath();
-    scanCtx.arc(p.x * w, p.y * h, r, 0, Math.PI * 2);
-    scanCtx.fill();
-  }
-
-  // Бегущая «сканирующая» линия
-  const t   = (performance.now() % 2600) / 2600;
-  const y   = t * h;
-  const grd = scanCtx.createLinearGradient(0, y - 40, 0, y + 40);
-  grd.addColorStop(0,   'rgba(0,255,220,0)');
-  grd.addColorStop(0.5, 'rgba(0,255,220,0.35)');
-  grd.addColorStop(1,   'rgba(0,255,220,0)');
-  scanCtx.fillStyle = grd;
-  scanCtx.fillRect(0, y - 40, w, 80);
+function saveGameLS() {
+  try { localStorage.setItem('hammer_pot_save_v1', JSON.stringify(saveData)); } catch (e) {}
 }
+loadStorage();
 
-/* ------------------------------------------------------------------ */
-/*  4. ПОСТРОЕНИЕ 3D-МОДЕЛИ                                            */
-/* ------------------------------------------------------------------ */
-function buildHeadMesh(frameLandmarks) {
-  const aspect = videoEl.videoWidth / videoEl.videoHeight;
-  const n = frameLandmarks.length;
-
-  const positions = new Float32Array(n * 3);
-  const uvs       = new Float32Array(n * 2);
-
-  for (let i = 0; i < n; i++) {
-    const lm = frameLandmarks[i];
-
-    // x нормирован по ширине, y — по высоте, z — по ширине
-    positions[i * 3 + 0] =  (lm.x - 0.5);
-    positions[i * 3 + 1] = -(lm.y - 0.5) / aspect;
-    positions[i * 3 + 2] = -lm.z;
-
-    // экранные UV = «фотография» лица
-    uvs[i * 2 + 0] = lm.x;
-    uvs[i * 2 + 1] = 1 - lm.y;
-  }
-
-  const indices = new Uint16Array(triangles.length * 3);
-  for (let i = 0; i < triangles.length; i++) {
-    indices[i * 3 + 0] = triangles[i][0];
-    indices[i * 3 + 1] = triangles[i][1];
-    indices[i * 3 + 2] = triangles[i][2];
-  }
-
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geom.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2));
-  geom.setIndex(new THREE.BufferAttribute(indices, 1));
-
-  // Центрируем модель в начале координат
-  geom.computeBoundingBox();
-  const c = new THREE.Vector3();
-  geom.boundingBox.getCenter(c);
-  geom.translate(-c.x, -c.y, -c.z);
-
-  geom.computeVertexNormals();
-  geom.computeBoundingSphere();
-  return geom;
+/* =========================================================
+   THREE.JS
+   ========================================================= */
+const canvas = document.getElementById('game-canvas');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: settings.quality !== 'min' && settings.quality !== 'low', powerPreference: 'high-performance', alpha: false });
+} catch (e) {
+  document.getElementById('loading-text').textContent = 'WebGL не поддерживается вашим устройством.';
+  throw e;
 }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = settings.shadows;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 
-function grabFrameTexture() {
-  const fc = document.createElement('canvas');
-  fc.width  = videoEl.videoWidth;
-  fc.height = videoEl.videoHeight;
-  fc.getContext('2d').drawImage(videoEl, 0, 0);
+const scene = new THREE.Scene();
+const skyColor = new THREE.Color(0x8fb8d8);
+scene.background = skyColor;
+scene.fog = new THREE.Fog(0x8fb8d8, 30, settings.far);
 
-  const tex = new THREE.CanvasTexture(fc);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  tex.flipY = true;               // UV мы считаем как (x, 1-y) — совпадает
+const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(0, 3, 12);
+
+const menuCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+
+/* Освещение */
+const ambient = new THREE.AmbientLight(0xa9c4e0, 0.75);
+scene.add(ambient);
+const hemi = new THREE.HemisphereLight(0xd8ecff, 0x4a3a28, 0.55);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff0d8, 1.3);
+sun.position.set(14, 30, 12);
+sun.castShadow = settings.shadows;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -25;
+sun.shadow.camera.right = 25;
+sun.shadow.camera.top = 35;
+sun.shadow.camera.bottom = -8;
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 100;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+scene.add(sun.target);
+
+/* =========================================================
+   CANNON ФИЗИКА
+   ========================================================= */
+const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -20, 0) });
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.allowSleep = false;
+world.solver.iterations = 12;
+world.solver.tolerance = 0.001;
+world.defaultContactMaterial.friction = 0.65;
+world.defaultContactMaterial.restitution = 0.08;
+
+const matPlayer = new CANNON.Material('player');
+const matWorld = new CANNON.Material('world');
+const matHammer = new CANNON.Material('hammer');
+
+world.addContactMaterial(new CANNON.ContactMaterial(matPlayer, matWorld, {
+  friction: 0.85, restitution: 0.03,
+  contactEquationStiffness: 1e8, contactEquationRelaxation: 3
+}));
+world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matWorld, {
+  friction: 0.5, restitution: 0.15,
+  contactEquationStiffness: 1e8, contactEquationRelaxation: 3
+}));
+world.addContactMaterial(new CANNON.ContactMaterial(matHammer, matPlayer, {
+  friction: 0.3, restitution: 0.1
+}));
+
+/* =========================================================
+   МАТЕРИАЛЫ (процедурные текстуры)
+   ========================================================= */
+function makeNoiseTexture(base, variation, size = 64) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < size * size * 0.6; i++) {
+    const x = Math.random() * size, y = Math.random() * size;
+    const a = Math.random() * variation;
+    ctx.fillStyle = `rgba(0,0,0,${a})`;
+    ctx.fillRect(x, y, 1, 1);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
   return tex;
 }
 
-/* ------------------------------------------------------------------ */
-/*  5. ПЕРЕХОД В 3D-ПРОСМОТР                                           */
-/* ------------------------------------------------------------------ */
-function show3D() {
-  scanning = false;
-  saveBtn.style.display  = 'none';
-  resetBtn.style.display = '';
-  statusEl.textContent   = 'Вращай мышью · колесо — зум';
+const rockTex = makeNoiseTexture('#7a7a80', 0.5);
+const woodTex = makeNoiseTexture('#6b4a2b', 0.45);
+const metalTex = makeNoiseTexture('#4a4a55', 0.35);
+const groundTex = makeNoiseTexture('#5a6b3a', 0.5);
 
-  videoEl.style.display = 'none';
-  scanEl.style.display  = 'none';
-  viewerEl.style.display = 'block';
+const rockMat = new THREE.MeshStandardMaterial({ color: 0x96969e, map: rockTex, roughness: 0.92, metalness: 0.05 });
+const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.85, metalness: 0.05 });
+const metalMat = new THREE.MeshStandardMaterial({ color: 0x5a5a68, map: metalTex, roughness: 0.42, metalness: 0.75 });
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x6a7a4a, map: groundTex, roughness: 0.95, metalness: 0.02 });
 
-  const geom = buildHeadMesh(landmarks);
-  const tex  = grabFrameTexture();
+/* =========================================================
+   УРОВЕНЬ
+   ========================================================= */
+const levelMeshes = [];
+const levelBodies = [];
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  viewerEl.appendChild(renderer.domElement);
-
-  const scene  = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
-
-  const camera = new THREE.PerspectiveCamera(32, window.innerWidth / window.innerHeight, 0.001, 100);
-  const r = geom.boundingSphere.radius;
-  const dist = r / Math.sin(THREE.MathUtils.degToRad(32 / 2)) * 1.5;
-  camera.position.set(0, 0, dist);
-  camera.near = dist / 200;
-  camera.far  = dist * 20;
-  camera.updateProjectionMatrix();
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.minDistance = dist * 0.35;
-  controls.maxDistance = dist * 2.5;
-  controls.target.set(0, 0, 0);
-
-  // Свет: текстура уже содержит запечённое освещение, поэтому мягко
-  scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
-  key.position.set(0.6, 1.0, 1.8);
-  scene.add(key);
-  const rim = new THREE.DirectionalLight(0x66aaff, 0.7);
-  rim.position.set(-1.2, 0.4, -1.0);
-  scene.add(rim);
-
-  const mat = new THREE.MeshStandardMaterial({
-    map: tex,
-    roughness: 0.9,
-    metalness: 0.0,
-    side: THREE.DoubleSide   // мы инвертировали Y → меняется обход вершин
+function addBox(x, y, w, h, d, type) {
+  const body = new CANNON.Body({
+    mass: 0,
+    shape: new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2)),
+    position: new CANNON.Vec3(x, y, 0),
+    material: matWorld
   });
+  body.type = CANNON.Body.STATIC;
+  world.addBody(body);
+  levelBodies.push(body);
 
-  const head = new THREE.Mesh(geom, mat);
-  scene.add(head);
+  const geo = new THREE.BoxGeometry(w, h, d);
+  let mat = rockMat;
+  if (type === 'wood') mat = woodMat;
+  else if (type === 'metal') mat = metalMat;
+  else if (type === 'ground') mat = groundMat;
 
-  function onResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-  window.addEventListener('resize', onResize);
-
-  (function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  })();
-
-  // Легальный ре-скан
-  resetBtn.onclick = () => {
-    window.removeEventListener('resize', onResize);
-    renderer.dispose();
-    geom.dispose();
-    tex.dispose();
-    mat.dispose();
-    viewerEl.innerHTML = '';
-    viewerEl.style.display = 'none';
-    videoEl.style.display  = '';
-    scanEl.style.display   = '';
-    saveBtn.style.display  = '';
-    resetBtn.style.display = 'none';
-    scanning = true;
-    lastVideoTime = -1;
-    loop();
-  };
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, y, 0);
+  mesh.castShadow = settings.shadows;
+  mesh.receiveShadow = settings.shadows;
+  scene.add(mesh);
+  levelMeshes.push(mesh);
+  return { body, mesh };
 }
 
-/* ------------------------------------------------------------------ */
-/*  6. СТАРТ                                                           */
-/* ------------------------------------------------------------------ */
-(async function init() {
-  try {
-    // Топологию можно грузить параллельно с камерой
-    const [topo] = await Promise.all([ loadTopology(), startCamera() ]);
-    triangles = topo;
+/* Проектирование уровня: [x, y, w, h, d, type] */
+const LEVEL_LAYOUT = [
+  // Земля (старт)
+  [0, -1.2, 14, 2.4, 3.5, 'ground'],
+  // Первые ступени
+  [2.8, 1.1, 1.4, 1.8, 2.2, 'rock'],
+  [-2.2, 2.2, 1.8, 0.5, 2.2, 'rock'],
+  [1.6, 3.7, 1.6, 0.5, 2.2, 'rock'],
+  // Стена
+  [3.6, 4.6, 0.7, 3.2, 2.2, 'rock'],
+  // Выступ над стеной
+  [1.8, 6.3, 1.8, 0.5, 2.2, 'rock'],
+  // Дерево
+  [-2.6, 5.2, 0.7, 3.4, 0.7, 'wood'],
+  [-1.0, 8.0, 3.2, 0.35, 0.8, 'wood'],
+  // Уступ
+  [2.6, 9.2, 1.6, 0.5, 2.2, 'rock'],
+  // Узкая балка
+  [-1.2, 10.6, 3.2, 0.28, 0.6, 'wood'],
+  // Площадка
+  [2.0, 12.2, 1.8, 0.55, 2.2, 'rock'],
+  // Высокая стена
+  [-2.4, 12.6, 0.7, 4.2, 2.2, 'rock'],
+  // Промежуточный выступ
+  [0.6, 14.9, 1.6, 0.45, 2.2, 'rock'],
+  // Металлическая балка
+  [3.0, 16.4, 2.8, 0.32, 0.6, 'metal'],
+  // Площадка
+  [-0.8, 17.9, 1.6, 0.45, 2.2, 'rock'],
+  // Финальный подъём
+  [1.4, 19.4, 2.0, 0.5, 2.2, 'rock'],
+  // Вершина
+  [0, 21.0, 4.5, 0.6, 2.4, 'metal'],
+  // Финальный столб
+  [0, 23.2, 0.35, 2.8, 0.35, 'metal']
+];
 
-    await startLandmarker();
+for (const [x, y, w, h, d, t] of LEVEL_LAYOUT) addBox(x, y, w, h, d, t);
 
-    loaderEl.style.display = 'none';
-    statusEl.textContent = 'Ищу лицо…';
-    loop();
-  } catch (err) {
-    console.error(err);
-    loaderEl.textContent = 'Ошибка: ' + err.message +
-      ' (нужен HTTPS или localhost и доступ к камере)';
-  }
-})();
+/* Декор (визуальные скалы вокруг) */
+function addDecorRock(x, y, z, s) {
+  const geo = new THREE.IcosahedronGeometry(s, 0);
+  const mat = rockMat.clone();
+  mat.color.offsetHSL((Math.random() - 0.5) * 0.05, 0, (Math.random() - 0.5) * 0.15);
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  m.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+  m.castShadow = settings.shadows;
+  m.receiveShadow = settings.shadows;
+  scene.add(m);
+  levelMeshes.push(m);
+}
+for (let i = 0; i < 24; i++) {
+  addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, -3 - Math.random() * 6, 0.8 + Math.random() * 1.8);
+  addDecorRock(-12 + Math.random() * 24, -2 + Math.random() * 28, 3 + Math.random() * 6, 0.8 + Math.random() * 1.8);
+}
 
-saveBtn.addEventListener('click', () => {
-  if (!landmarks) return;
-  show3D();
+/* Финишная арка */
+const flagGeo = new THREE.ConeGeometry(0.35, 0.8, 4);
+const flagMat = new THREE.MeshStandardMaterial({ color: 0xd4b060, metalness: 0.6, roughness: 0.35 });
+const flag = new THREE.Mesh(flagGeo, flagMat);
+flag.position.set(0, 24.8, 0);
+scene.add(flag);
+
+/* =========================================================
+   ИГРОК И МОЛОТ
+   ========================================================= */
+const PLAYER_START = { x: 0, y: 0.6 };
+const PLAYER_RADIUS = 0.5;
+const HAMMER_LEN = 3.0;
+const HAMMER_HALF = HAMMER_LEN / 2;
+const HAMMER_RADIUS = 0.13;
+
+const playerBody = new CANNON.Body({
+  mass: 4,
+  shape: new CANNON.Sphere(PLAYER_RADIUS),
+  material: matPlayer,
+  linearDamping: 0.05,
+  angularDamping: 0.7
 });
+playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
+playerBody.fixedRotation = false;
+playerBody.updateMassProperties();
+world.addBody(playerBody);
+
+const hammerBody = new CANNON.Body({
+  mass: 0.9,
+  shape: new CANNON.Box(new CANNON.Vec3(HAMMER_HALF, HAMMER_RADIUS, HAMMER_RADIUS)),
+  material: matHammer,
+  linearDamping: 0.02,
+  angularDamping: 0.05
+});
+hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
+hammerBody.angularFactor.set(0, 0, 1);
+hammerBody.updateMassProperties();
+world.addBody(hammerBody);
+
+const hinge = new CANNON.HingeConstraint(playerBody, hammerBody, {
+  pivotA: new CANNON.Vec3(0, 0, 0),
+  axisA: new CANNON.Vec3(0, 0, 1),
+  pivotB: new CANNON.Vec3(-HAMMER_HALF, 0, 0),
+  axisB: new CANNON.Vec3(0, 0, 1),
+  collideConnected: false
+});
+hinge.enableMotor();
+hinge.setMotorSpeed(0);
+hinge.setMotorMaxForce(280);
+world.addConstraint(hinge);
+
+/* Визуальные модели */
+const playerGroup = new THREE.Group();
+const potGeo = new THREE.CylinderGeometry(0.55, 0.5, 0.85, 14);
+const potMat = new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.55, roughness: 0.55 });
+const potMesh = new THREE.Mesh(potGeo, potMat);
+potMesh.castShadow = settings.shadows;
+potMesh.receiveShadow = settings.shadows;
+playerGroup.add(potMesh);
+
+const rimGeo = new THREE.TorusGeometry(0.55, 0.06, 8, 18);
+const rimMesh = new THREE.Mesh(rimGeo, new THREE.MeshStandardMaterial({ color: 0x555562, metalness: 0.8, roughness: 0.3 }));
+rimMesh.rotation.x = Math.PI / 2;
+rimMesh.position.y = 0.42;
+rimMesh.castShadow = settings.shadows;
+playerGroup.add(rimMesh);
+
+const headGeo = new THREE.SphereGeometry(0.28, 16, 16);
+const headMat = new THREE.MeshStandardMaterial({ color: 0xd9b48c, roughness: 0.75 });
+const headMesh = new THREE.Mesh(headGeo, headMat);
+headMesh.position.y = 0.55;
+headMesh.castShadow = settings.shadows;
+playerGroup.add(headMesh);
+
+const hairGeo = new THREE.SphereGeometry(0.3, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+const hairMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 });
+const hairMesh = new THREE.Mesh(hairGeo, hairMat);
+hairMesh.position.y = 0.62;
+hairMesh.castShadow = settings.shadows;
+playerGroup.add(hairMesh);
+
+scene.add(playerGroup);
+
+const hammerGroup = new THREE.Group();
+const handleGeo = new THREE.CylinderGeometry(0.075, 0.09, HAMMER_LEN, 10);
+const handleMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, map: woodTex, roughness: 0.7, metalness: 0.05 });
+const handleMesh = new THREE.Mesh(handleGeo, handleMat);
+handleMesh.rotation.z = Math.PI / 2;
+handleMesh.castShadow = settings.shadows;
+hammerGroup.add(handleMesh);
+
+const hammerHeadGeo = new THREE.BoxGeometry(0.55, 0.4, 0.4);
+const hammerHeadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a45, metalness: 0.85, roughness: 0.35 });
+const hammerHeadMesh = new THREE.Mesh(hammerHeadGeo, hammerHeadMat);
+hammerHeadMesh.position.x = HAMMER_HALF - 0.1;
+hammerHeadMesh.castShadow = settings.shadows;
+hammerGroup.add(hammerHeadMesh);
+
+const hammerBackGeo = new THREE.BoxGeometry(0.2, 0.3, 0.3);
+const hammerBackMesh = new THREE.Mesh(hammerBackGeo, hammerHeadMat);
+hammerBackMesh.position.x = -HAMMER_HALF - 0.05;
+hammerBackMesh.castShadow = settings.shadows;
+hammerGroup.add(hammerBackMesh);
+
+scene.add(hammerGroup);
+
+/* =========================================================
+   АУДИО
+   ========================================================= */
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTone(freq, duration, type = 'sine', vol = 0.3, detune = 0) {
+  if (!audioCtx || settings.mute || settings.volume === 0) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+    const v = vol * (settings.volume / 100);
+    gain.gain.setValueAtTime(v, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0005, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+function playImpact(strength) {
+  const s = Math.max(0.1, Math.min(1, strength));
+  playTone(90 + Math.random() * 30, 0.14, 'square', 0.15 * s);
+  playTone(55 + Math.random() * 20, 0.2, 'sine', 0.22 * s);
+}
+function playSlide() {
+  playTone(220 + Math.random() * 60, 0.06, 'sawtooth', 0.03);
+}
+function playZoneChime() {
+  playTone(523, 0.35, 'sine', 0.15);
+  setTimeout(() => playTone(784, 0.35, 'sine', 0.15), 120);
+  setTimeout(() => playTone(1046, 0.5, 'sine', 0.15), 240);
+}
+function playVictory() {
+  const notes = [523, 659, 784, 1046, 1318];
+  notes.forEach((f, i) => setTimeout(() => playTone(f, 0.6, 'sine', 0.2), i * 130));
+}
+
+hammerBody.addEventListener('collide', (e) => {
+  try {
+    const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
+    if (v > 1.2) playImpact(Math.min(1, v / 12));
+    else if (v > 0.3) playSlide();
+  } catch (e) {}
+});
+playerBody.addEventListener('collide', (e) => {
+  try {
+    const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
+    if (v > 6) playImpact(Math.min(0.7, v / 20));
+  } catch (e) {}
+});
+
+/* =========================================================
+   УПРАВЛЕНИЕ
+   ========================================================= */
+let pointerActive = false;
+let pointerTargetX = 0; // screen normalized -1..1
+let pointerTargetY = 0;
+let lastPointerClient = { x: 0, y: 0 };
+
+function updatePointerFromClient(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
+  const ny = -(((clientY - rect.top) / rect.height) * 2 - 1);
+  pointerTargetX = nx;
+  pointerTargetY = ny;
+  lastPointerClient.x = clientX;
+  lastPointerClient.y = clientY;
+}
+
+const touchIndicator = document.getElementById('touch-indicator');
+
+canvas.addEventListener('mousedown', (e) => {
+  if (state.phase !== 'playing') return;
+  e.preventDefault();
+  initAudio();
+  pointerActive = true;
+  updatePointerFromClient(e.clientX, e.clientY);
+});
+canvas.addEventListener('mousemove', (e) => {
+  if (!pointerActive) return;
+  updatePointerFromClient(e.clientX, e.clientY);
+});
+canvas.addEventListener('mouseup', () => { pointerActive = false; });
+canvas.addEventListener('mouseleave', () => { pointerActive = false; });
+
+canvas.addEventListener('touchstart', (e) => {
+  if (state.phase !== 'playing') return;
+  e.preventDefault();
+  initAudio();
+  const t = e.touches[0];
+  pointerActive = true;
+  updatePointerFromClient(t.clientX, t.clientY);
+  touchIndicator.style.left = t.clientX + 'px';
+  touchIndicator.style.top = t.clientY + 'px';
+  touchIndicator.classList.add('visible');
+}, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+  if (!pointerActive) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  updatePointerFromClient(t.clientX, t.clientY);
+  touchIndicator.style.left = t.clientX + 'px';
+  touchIndicator.style.top = t.clientY + 'px';
+}, { passive: false });
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  pointerActive = false;
+  touchIndicator.classList.remove('visible');
+}, { passive: false });
+canvas.addEventListener('touchcancel', () => {
+  pointerActive = false;
+  touchIndicator.classList.remove('visible');
+});
+
+document.addEventListener('contextmenu', (e) => { if (state.phase === 'playing') e.preventDefault(); });
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+    if (state.phase === 'playing') pauseGame();
+    else if (state.phase === 'paused') resumeGame();
+  } else if ((e.key === 'r' || e.key === 'R') && (state.phase === 'playing' || state.phase === 'paused')) {
+    restartGame();
+  }
+});
+
+/* =========================================================
+   СОСТОЯНИЕ ИГРЫ
+   ========================================================= */
+const state = {
+  phase: 'menu', // 'menu' | 'playing' | 'paused' | 'victory'
+  pointerLocked: false,
+  startTime: 0,
+  elapsed: 0,
+  highestY: 0,
+  zone: 0,
+  shakeTime: 0,
+  shakeMag: 0
+};
+
+/* Зоны */
+const ZONES = [
+  { y: 0.0, name: 'Земля' },
+  { y: 4.0, name: 'Скалы' },
+  { y: 8.5, name: 'Деревья' },
+  { y: 12.5, name: 'Утёс' },
+  { y: 16.5, name: 'Небеса' },
+  { y: 20.5, name: 'Вершина' }
+];
+
+/* =========================================================
+   КАЧЕСТВО ГРАФИКИ
+   ========================================================= */
+const QUALITY_PRESETS = {
+  min:    { shadows: false, renderScale: 60, far: 60,  shadowSize: 512,  pixelRatioCap: 1 },
+  low:    { shadows: false, renderScale: 75, far: 80,  shadowSize: 512,  pixelRatioCap: 1.5 },
+  medium: { shadows: true,  renderScale: 85, far: 100, shadowSize: 1024, pixelRatioCap: 1.5 },
+  high:   { shadows: true,  renderScale: 100, far: 120, shadowSize: 1024, pixelRatioCap: 2 },
+  ultra:  { shadows: true,  renderScale: 100, far: 200, shadowSize: 2048, pixelRatioCap: 2 }
+};
+
+function applyQuality(preset) {
+  const p = QUALITY_PRESETS[preset] || QUALITY_PRESETS.high;
+  settings.quality = preset;
+  settings.shadows = p.shadows;
+  settings.renderScale = p.renderScale;
+  settings.far = p.far;
+
+  renderer.shadowMap.enabled = p.shadows;
+  sun.castShadow = p.shadows;
+  if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+  sun.shadow.mapSize.set(p.shadowSize, p.shadowSize);
+
+  scene.fog.far = p.far;
+  sun.shadow.camera.far = Math.max(80, p.far);
+
+  const dpr = Math.min(window.devicePixelRatio || 1, p.pixelRatioCap);
+  renderer.setPixelRatio(dpr * (settings.renderScale / 100));
+
+  for (const m of levelMeshes) {
+    m.castShadow = p.shadows;
+    m.receiveShadow = p.shadows;
+  }
+  potMesh.castShadow = p.shadows;
+  potMesh.receiveShadow = p.shadows;
+  hammerHeadMesh.castShadow = p.shadows;
+  handleMesh.castShadow = p.shadows;
+  headMesh.castShadow = p.shadows;
+  hairMesh.castShadow = p.shadows;
+  rimMesh.castShadow = p.shadows;
+
+  saveSettingsLS();
+}
+
+/* =========================================================
+   ЗВУК ОКРУЖЕНИЯ (тихий ветер/фон)
+   ========================================================= */
+let ambientOsc = null;
+function startAmbient() {
+  if (!audioCtx || ambientOsc) return;
+  try {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 55;
+    g.gain.value = 0.015 * (settings.volume / 100);
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    ambientOsc = { osc: o, gain: g };
+  } catch (e) {}
+}
+
+/* =========================================================
+   ИГРОВОЙ ЦИКЛ
+   ========================================================= */
+const FIXED_TIMESTEP = 1 / 60;
+let physicsAccumulator = 0;
+let lastFrameTime = performance.now();
+let lastRenderTime = 0;
+let frameCount = 0;
+let fpsAccum = 0;
+let measuredFPS = 0;
+let avgFPS = 0;
+let fpsHistory = [];
+const MAX_FPS_HISTORY = 60;
+let lastFrameMs = 0;
+
+const statsCanvas = document.getElementById('stats-canvas');
+const statsCtx = statsCanvas.getContext('2d');
+
+function getTargetAngle() {
+  // Направление от центра экрана (где игрок) к курсору/пальцу
+  if (Math.abs(pointerTargetX) < 0.02 && Math.abs(pointerTargetY) < 0.02) {
+    return null; // нет ввода — держим текущий угол
+  }
+  return Math.atan2(pointerTargetY, pointerTargetX);
+}
+
+function wrapAngle(a) {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
+}
+
+function getHammerAngle() {
+  const dx = hammerBody.position.x - playerBody.position.x;
+  const dy = hammerBody.position.y - playerBody.position.y;
+  return Math.atan2(dy, dx);
+}
+
+function physicsStep() {
+  // Управление молотом
+  if (state.phase === 'playing') {
+    const targetAngle = getTargetAngle();
+    if (targetAngle !== null) {
+      const currentAngle = getHammerAngle();
+      let err = wrapAngle(targetAngle - currentAngle);
+      const sens = settings.sensitivity / 100;
+      const motorSpeed = Math.max(-18, Math.min(18, err * 8 * sens));
+      hinge.setMotorSpeed(motorSpeed);
+    } else {
+      hinge.setMotorSpeed(0);
+    }
+  } else {
+    hinge.setMotorSpeed(0);
+  }
+
+  world.step(FIXED_TIMESTEP, 0, 1);
+
+  // Ограничение на плоскость Z=0
+  playerBody.position.z = 0;
+  playerBody.velocity.z = 0;
+  playerBody.angularVelocity.z *= 0.9;
+
+  hammerBody.position.z = 0;
+  hammerBody.velocity.z = 0;
+  hammerBody.angularVelocity.x = 0;
+  hammerBody.angularVelocity.y = 0;
+
+  // Ограничение движения игрока по вертикали вверх при падении (не ниже -5)
+  if (playerBody.position.y < -6) {
+    playerBody.position.y = -6;
+    playerBody.velocity.y = 0;
+  }
+}
+
+function syncVisuals() {
+  playerGroup.position.set(playerBody.position.x, playerBody.position.y, 0);
+  playerGroup.quaternion.identity();
+
+  hammerGroup.position.set(hammerBody.position.x, hammerBody.position.y, 0);
+  hammerGroup.quaternion.set(hammerBody.quaternion.x, hammerBody.quaternion.y, hammerBody.quaternion.z, hammerBody.quaternion.w);
+}
+
+function updateCamera(dt) {
+  const py = playerBody.position.y;
+  const px = playerBody.position.x;
+
+  // Отдаление с высотой
+  const dist = 12 + Math.min(4, py * 0.08);
+
+  // Плавное следование
+  const targetY = py + 1.8;
+  camera.position.x += (px - camera.position.x) * 0.08;
+  camera.position.y += (targetY - camera.position.y) * 0.1;
+  camera.position.z = dist;
+
+  // Тряска
+  if (settings.screenshake && state.shakeTime > 0) {
+    const s = state.shakeMag * (state.shakeTime / 0.35);
+    camera.position.x += (Math.random() - 0.5) * s;
+    camera.position.y += (Math.random() - 0.5) * s;
+    state.shakeTime -= dt;
+  }
+
+  const lookY = py + 1.2;
+  camera.lookAt(px, lookY, 0);
+}
+
+function updateMenuCamera(now) {
+  const t = now * 0.00015;
+  const r = 18 + Math.sin(t * 0.7) * 3;
+  menuCamera.position.set(Math.cos(t) * r, 8 + Math.sin(t * 0.5) * 2, Math.sin(t) * r);
+  menuCamera.lookAt(0, 8, 0);
+}
+
+function updateHUD() {
+  if (state.phase === 'playing') {
+    state.elapsed = (performance.now() - state.startTime) / 1000;
+  }
+  const total = Math.floor(state.elapsed);
+  const mm = Math.floor(total / 60);
+  const ss = total % 60;
+  const timeStr = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
+  document.getElementById('hud-time').textContent = timeStr;
+
+  const h = Math.max(0, playerBody.position.y - 0.6);
+  document.getElementById('hud-height').textContent = h.toFixed(1) + ' м';
+
+  // Зоны и чекпоинты
+  let newZone = 0;
+  for (let i = 0; i < ZONES.length; i++) if (playerBody.position.y >= ZONES[i].y) newZone = i;
+  if (newZone > state.zone) {
+    state.zone = newZone;
+    playZoneChime();
+    if (settings.mode === 'checkpoint') {
+      saveData.checkpoint = [playerBody.position.x, playerBody.position.y];
+      saveData.checkpointZone = newZone;
+      saveGameLS();
+    }
+  }
+
+  if (playerBody.position.y > saveData.maxHeight) saveData.maxHeight = playerBody.position.y;
+
+  // Проверка победы
+  if (playerBody.position.y > 22.5 && state.phase === 'playing') {
+    triggerVictory();
+  }
+
+  // Падение (режим с чекпоинтами)
+  if (settings.mode === 'checkpoint' && state.phase === 'playing' && saveData.checkpoint && saveData.checkpointZone > 0) {
+    if (playerBody.position.y < ZONES[saveData.checkpointZone].y - 4) {
+      respawnAtCheckpoint();
+    }
+  }
+
+  saveData.elapsedTime = state.elapsed;
+  saveData.totalPlayTime += 0; // обновляется реже
+}
+
+let saveTimer = 0;
+function periodicSave(dt) {
+  saveTimer += dt;
+  if (saveTimer > 4 && state.phase === 'playing') {
+    saveTimer = 0;
+    saveData.playerPos = [playerBody.position.x, playerBody.position.y];
+    saveData.hammerAngle = getHammerAngle();
+    saveData.hasSave = true;
+    saveGameLS();
+  }
+}
+
+function respawnAtCheckpoint() {
+  if (!saveData.checkpoint) return;
+  playerBody.position.set(saveData.checkpoint[0], saveData.checkpoint[1], 0);
+  playerBody.velocity.set(0, 0, 0);
+  playerBody.angularVelocity.set(0, 0, 0);
+  hammerBody.position.set(saveData.checkpoint[0] + HAMMER_HALF, saveData.checkpoint[1], 0);
+  hammerBody.velocity.set(0, 0, 0);
+  hammerBody.angularVelocity.set(0, 0, 0);
+  hammerBody.quaternion.set(0, 0, 0, 1);
+  saveData.falls++;
+  state.shakeTime = 0.35;
+  state.shakeMag = 0.5;
+  saveGameLS();
+}
+
+function triggerVictory() {
+  state.phase = 'victory';
+  const total = Math.floor(state.elapsed);
+  const mm = Math.floor(total / 60);
+  const ss = total % 60;
+  const tstr = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
+  document.getElementById('victory-time').textContent = `Время: ${tstr}`;
+  if (!saveData.bestTime || state.elapsed < saveData.bestTime) {
+    saveData.bestTime = state.elapsed;
+  }
+  saveData.hasSave = false;
+  saveGameLS();
+  playVictory();
+  document.getElementById('hud').classList.remove('active');
+  document.getElementById('victory').classList.remove('hidden');
+  document.getElementById('stats').classList.remove('visible');
+}
+
+/* FPS измерение */
+function updateFPSMeter(dt, now) {
+  frameCount++;
+  fpsAccum += dt;
+  if (fpsAccum >= 0.5) {
+    measuredFPS = Math.round(frameCount / fpsAccum);
+    fpsHistory.push(measuredFPS);
+    if (fpsHistory.length > MAX_FPS_HISTORY) fpsHistory.shift();
+    avgFPS = Math.round(fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length);
+    frameCount = 0;
+    fpsAccum = 0;
+
+    if (settings.showStats) {
+      document.getElementById('stat-fps').textContent = measuredFPS;
+      document.getElementById('stat-avg').textContent = avgFPS;
+      document.getElementById('stat-frame').textContent = (lastFrameMs).toFixed(1) + ' мс';
+      document.getElementById('stat-limit').textContent = settings.fpsLimit > 0 ? settings.fpsLimit : '∞';
+      document.getElementById('stat-quality').textContent = settings.quality;
+      document.getElementById('stat-objs').textContent = renderer.info.render.triangles || levelMeshes.length;
+      drawFPSGraph();
+    }
+  }
+}
+
+function drawFPSGraph() {
+  const w = statsCanvas.width, h = statsCanvas.height;
+  statsCtx.clearRect(0, 0, w, h);
+  statsCtx.fillStyle = 'rgba(0,0,0,0.4)';
+  statsCtx.fillRect(0, 0, w, h);
+  // Сетка
+  statsCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+  statsCtx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    statsCtx.beginPath();
+    statsCtx.moveTo(0, h * i / 4);
+    statsCtx.lineTo(w, h * i / 4);
+    statsCtx.stroke();
+  }
+  if (fpsHistory.length < 2) return;
+  const maxVal = Math.max(60, ...fpsHistory, settings.fpsLimit || 60);
+  statsCtx.strokeStyle = '#c9a961';
+  statsCtx.lineWidth = 1.5;
+  statsCtx.beginPath();
+  for (let i = 0; i < fpsHistory.length; i++) {
+    const x = (i / (MAX_FPS_HISTORY - 1)) * w;
+    const y = h - (fpsHistory[i] / maxVal) * h;
+    if (i === 0) statsCtx.moveTo(x, y);
+    else statsCtx.lineTo(x, y);
+  }
+  statsCtx.stroke();
+}
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  if (!window.__gameStarted) window.__gameStarted = true;
+
+  // Ограничитель FPS
+  const interval = settings.fpsLimit > 0 ? 1000 / settings.fpsLimit : 0;
+  if (interval > 0 && now - lastRenderTime < interval - 1.5) {
+    return;
+  }
+  lastRenderTime = now;
+
+  const dtReal = Math.min((now - lastFrameTime) / 1000, 0.1);
+  lastFrameTime = now;
+  lastFrameMs = dtReal * 1000;
+
+  // Физика — фиксированный шаг
+  if (state.phase === 'playing') {
+    physicsAccumulator += dtReal;
+    let steps = 0;
+    while (physicsAccumulator >= FIXED_TIMESTEP && steps < 4) {
+      physicsStep();
+      physicsAccumulator -= FIXED_TIMESTEP;
+      steps++;
+    }
+    if (steps >= 4) physicsAccumulator = 0;
+
+    syncVisuals();
+    updateCamera(dtReal);
+    updateHUD();
+    periodicSave(dtReal);
+    updateFPSMeter(dtReal, now);
+  } else if (state.phase === 'paused' || state.phase === 'victory') {
+    syncVisuals();
+    updateCamera(dtReal);
+    updateFPSMeter(dtReal, now);
+  }
+
+  // Рендер
+  if (state.phase === 'menu') {
+    updateMenuCamera(now);
+    renderer.render(scene, menuCamera);
+  } else {
+    renderer.render(scene, camera);
+  }
+}
+
+/* =========================================================
+   UI ЛОГИКА
+   ========================================================= */
+function showEl(id) { document.getElementById(id).classList.remove('hidden'); }
+function hideEl(id) { document.getElementById(id).classList.add('hidden'); }
+
+function hideAllOverlays() {
+  ['settings-screen', 'controls-screen', 'stats-screen', 'about-screen', 'mode-screen', 'pause-menu', 'victory'].forEach(hideEl);
+}
+
+function applySettingsToUI() {
+  document.getElementById('s-fps-limit').value = String(settings.fpsLimit);
+  document.getElementById('s-quality').value = settings.quality;
+  document.getElementById('s-render-scale').value = settings.renderScale;
+  document.getElementById('s-far').value = settings.far;
+  document.getElementById('s-volume').value = settings.volume;
+  document.getElementById('s-sensitivity').value = settings.sensitivity;
+  setToggle('s-shadows', settings.shadows);
+  setToggle('s-show-stats', settings.showStats);
+  setToggle('s-screenshake', settings.screenshake);
+  setToggle('s-mute', settings.mute);
+  document.getElementById('stats').classList.toggle('visible', settings.showStats);
+}
+
+function setToggle(id, on) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('on', !!on);
+}
+function getToggle(id) {
+  return document.getElementById(id).classList.contains('on');
+}
+
+// Меню
+function showMainMenu() {
+  state.phase = 'menu';
+  hideAllOverlays();
+  showEl('main-menu');
+  document.getElementById('hud').classList.remove('active');
+  document.getElementById('stats').classList.remove('visible');
+  const contBtn = document.getElementById('btn-continue');
+  contBtn.disabled = !saveData.hasSave || !saveData.playerPos;
+  updateModeButtons();
+}
+
+function updateModeButtons() {
+  document.getElementById('mode-classic').classList.toggle('selected', settings.mode === 'classic');
+  document.getElementById('mode-checkpoint').classList.toggle('selected', settings.mode === 'checkpoint');
+}
+
+function startNewGame() {
+  initAudio();
+  state.phase = 'playing';
+  state.zone = 0;
+  state.elapsed = 0;
+  state.startTime = performance.now();
+  state.highestY = 0;
+
+  playerBody.position.set(PLAYER_START.x, PLAYER_START.y, 0);
+  playerBody.velocity.set(0, 0, 0);
+  playerBody.angularVelocity.set(0, 0, 0);
+  playerBody.quaternion.set(0, 0, 0, 1);
+
+  hammerBody.position.set(PLAYER_START.x + HAMMER_HALF, PLAYER_START.y, 0);
+  hammerBody.velocity.set(0, 0, 0);
+  hammerBody.angularVelocity.set(0, 0, 0);
+  hammerBody.quaternion.set(0, 0, 0, 1);
+
+  saveData.checkpoint = null;
+  saveData.checkpointZone = 0;
+  saveData.playerPos = [PLAYER_START.x, PLAYER_START.y];
+
+  hideAllOverlays();
+  hideEl('main-menu');
+  document.getElementById('hud').classList.add('active');
+  document.getElementById('stats').classList.toggle('visible', settings.showStats);
+
+  pointerActive = false;
+  physicsAccumulator = 0;
+  lastFrameTime = performance.now();
+  lastRenderTime = 0;
+
+  if (audioCtx) startAmbient();
+  saveGameLS();
+}
+
+function resumeFromSave() {
+  if (!saveData.playerPos) { startNewGame(); return; }
+  initAudio();
+  state.phase = 'playing';
+  state.elapsed = saveData.elapsedTime || 0;
+  state.startTime = performance.now() - state.elapsed * 1000;
+  state.zone = saveData.checkpointZone || 0;
+  state.highestY = saveData.maxHeight || 0;
+
+  const [x, y] = saveData.playerPos;
+  playerBody.position.set(x, y, 0);
+  playerBody.velocity.set(0, 0, 0);
+  playerBody.angularVelocity.set(0, 0, 0);
+  playerBody.quaternion.set(0, 0, 0, 1);
+
+  const ang = saveData.hammerAngle || 0;
+  hammerBody.position.set(x + Math.cos(ang) * HAMMER_HALF, y + Math.sin(ang) * HAMMER_HALF, 0);
+  hammerBody.velocity.set(0, 0, 0);
+  hammerBody.angularVelocity.set(0, 0, 0);
+  hammerBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), ang);
+
+  hideAllOverlays();
+  hideEl('main-menu');
+  document.getElementById('hud').classList.add('active');
+  document.getElementById('stats').classList.toggle('visible', settings.showStats);
+
+  pointerActive = false;
+  physicsAccumulator = 0;
+  lastFrameTime = performance.now();
+  lastRenderTime = 0;
+
+  if (audioCtx) startAmbient();
+}
+
+function pauseGame() {
+  if (state.phase !== 'playing') return;
+  state.phase = 'paused';
+  showEl('pause-menu');
+  document.getElementById('hud').classList.remove('active');
+  document.getElementById('stats').classList.remove('visible');
+  touchIndicator.classList.remove('visible');
+  pointerActive = false;
+
+  saveData.playerPos = [playerBody.position.x, playerBody.position.y];
+  saveData.hammerAngle = getHammerAngle();
+  saveData.hasSave = true;
+  saveGameLS();
+}
+
+function resumeGame() {
+  if (state.phase !== 'paused') return;
+  state.phase = 'playing';
+  hideAllOverlays();
+  document.getElementById('hud').classList.add('active');
+  document.getElementById('stats').classList.toggle('visible', settings.showStats);
+  physicsAccumulator = 0;
+  lastFrameTime = performance.now();
+  lastRenderTime = 0;
+}
+
+function restartGame() {
+  const confirmed = confirm('Начать заново? Текущий прогресс будет потерян.');
+  if (!confirmed) return;
+  saveData.checkpoint = null;
+  saveData.checkpointZone = 0;
+  saveData.elapsedTime = 0;
+  startNewGame();
+}
+
+/* Обработчик кнопок */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  initAudio();
+
+  switch (action) {
+    case 'play':
+      startNewGame();
+      break;
+    case 'continue':
+      resumeFromSave();
+      break;
+    case 'open-mode':
+      hideEl('main-menu');
+      showEl('mode-screen');
+      updateModeButtons();
+      break;
+    case 'close-mode':
+      hideEl('mode-screen');
+      showEl('main-menu');
+      break;
+    case 'open-settings':
+      hideEl('main-menu');
+      hideEl('pause-menu');
+      hideEl('mode-screen');
+      showEl('settings-screen');
+      applySettingsToUI();
+      break;
+    case 'close-settings':
+      hideEl('settings-screen');
+      if (state.phase === 'paused') showEl('pause-menu');
+      else showEl('main-menu');
+      break;
+    case 'open-controls':
+      hideEl('main-menu');
+      showEl('controls-screen');
+      break;
+    case 'close-controls':
+      hideEl('controls-screen');
+      showEl('main-menu');
+      break;
+    case 'open-stats':
+      hideEl('main-menu');
+      renderStatsScreen();
+      showEl('stats-screen');
+      break;
+    case 'close-stats':
+      hideEl('stats-screen');
+      showEl('main-menu');
+      break;
+    case 'open-about':
+      hideEl('main-menu');
+      showEl('about-screen');
+      break;
+    case 'close-about':
+      hideEl('about-screen');
+      showEl('main-menu');
+      break;
+    case 'resume':
+      resumeGame();
+      break;
+    case 'restart':
+      restartGame();
+      break;
+    case 'main-menu':
+      if (state.phase === 'paused' || state.phase === 'playing') {
+        if (!confirm('Выйти в главное меню? Прогресс сохранится.')) return;
+        saveData.playerPos = [playerBody.position.x, playerBody.position.y];
+        saveData.hammerAngle = getHammerAngle();
+        saveData.hasSave = true;
+        saveGameLS();
+      }
+      showMainMenu();
+      break;
+    case 'reset-settings':
+      settings = { ...DEFAULT_SETTINGS };
+      saveSettingsLS();
+      applyQuality(settings.quality);
+      applySettingsToUI();
+      break;
+    case 'autotune':
+      runAutoTune();
+      break;
+    case 'victory-restart':
+      hideEl('victory');
+      startNewGame();
+      break;
+    case 'victory-menu':
+      hideEl('victory');
+      showMainMenu();
+      break;
+  }
+});
+
+/* Кнопки мод-выбора */
+document.getElementById('mode-classic').addEventListener('click', () => {
+  settings.mode = 'classic';
+  saveSettingsLS();
+  updateModeButtons();
+});
+document.getElementById('mode-checkpoint').addEventListener('click', () => {
+  settings.mode = 'checkpoint';
+  saveSettingsLS();
+  updateModeButtons();
+});
+
+/* Пауза */
+document.getElementById('btn-pause').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (state.phase === 'playing') pauseGame();
+});
+
+/* Настройки */
+document.getElementById('s-fps-limit').addEventListener('change', (e) => {
+  settings.fpsLimit = parseInt(e.target.value, 10);
+  saveSettingsLS();
+  lastRenderTime = 0;
+});
+document.getElementById('s-quality').addEventListener('change', (e) => {
+  applyQuality(e.target.value);
+  applySettingsToUI();
+});
+document.getElementById('s-render-scale').addEventListener('input', (e) => {
+  settings.renderScale = parseInt(e.target.value, 10);
+  const dpr = Math.min(window.devicePixelRatio || 1, QUALITY_PRESETS[settings.quality].pixelRatioCap);
+  renderer.setPixelRatio(dpr * (settings.renderScale / 100));
+  saveSettingsLS();
+});
+document.getElementById('s-far').addEventListener('input', (e) => {
+  settings.far = parseInt(e.target.value, 10);
+  scene.fog.far = settings.far;
+  saveSettingsLS();
+});
+document.getElementById('s-volume').addEventListener('input', (e) => {
+  settings.volume = parseInt(e.target.value, 10);
+  if (ambientOsc) ambientOsc.gain.gain.value = 0.015 * (settings.volume / 100);
+  saveSettingsLS();
+});
+document.getElementById('s-sensitivity').addEventListener('input', (e) => {
+  settings.sensitivity = parseInt(e.target.value, 10);
+  saveSettingsLS();
+});
+document.getElementById('s-shadows').addEventListener('click', () => {
+  settings.shadows = !settings.shadows;
+  setToggle('s-shadows', settings.shadows);
+  renderer.shadowMap.enabled = settings.shadows;
+  sun.castShadow = settings.shadows;
+  saveSettingsLS();
+});
+document.getElementById('s-show-stats').addEventListener('click', () => {
+  settings.showStats = !settings.showStats;
+  setToggle('s-show-stats', settings.showStats);
+  document.getElementById('stats').classList.toggle('visible', settings.showStats);
+  saveSettingsLS();
+});
+document.getElementById('s-screenshake').addEventListener('click', () => {
+  settings.screenshake = !settings.screenshake;
+  setToggle('s-screenshake', settings.screenshake);
+  saveSettingsLS();
+});
+document.getElementById('s-mute').addEventListener('click', () => {
+  settings.mute = !settings.mute;
+  setToggle('s-mute', settings.mute);
+  saveSettingsLS();
+});
+
+/* Автонастройка */
+let autoTuneRunning = false;
+function runAutoTune() {
+  if (autoTuneRunning) return;
+  autoTuneRunning = true;
+  const origScale = settings.renderScale;
+  settings.renderScale = 100;
+  const samples = [];
+  let frames = 0;
+  let tStart = performance.now();
+  let last = tStart;
+  function sample(now) {
+    frames++;
+    const dt = now - last;
+    last = now;
+    if (now - tStart > 2000) {
+      const fps = frames / ((now - tStart) / 1000);
+      autoTuneRunning = false;
+      let q = 'min';
+      if (fps >= 110) q = 'ultra';
+      else if (fps >= 55) q = 'high';
+      else if (fps >= 40) q = 'medium';
+      else if (fps >= 25) q = 'low';
+      else q = 'min';
+      applyQuality(q);
+      applySettingsToUI();
+      alert('Автонастройка: выбрано качество «' + q + '» (средний FPS ~' + Math.round(fps) + ')');
+      return;
+    }
+    requestAnimationFrame(sample);
+  }
+  requestAnimationFrame(sample);
+}
+
+/* Статистика */
+function renderStatsScreen() {
+  const content = document.getElementById('stats-content');
+  const best = saveData.bestTime ? formatTime(saveData.bestTime) : '—';
+  const maxH = (saveData.maxHeight || 0).toFixed(1) + ' м';
+  const falls = saveData.falls || 0;
+  const totalT = saveData.totalPlayTime ? formatTime(saveData.totalPlayTime) : '0:00';
+  content.innerHTML = `
+    <div class="stat-line"><span>Лучшее время</span><span>${best}</span></div>
+    <div class="stat-line"><span>Максимальная высота</span><span>${maxH}</span></div>
+    <div class="stat-line"><span>Количество падений</span><span>${falls}</span></div>
+    <div class="stat-line"><span>Общее время в игре</span><span>${totalT}</span></div>
+    <div class="stat-line"><span>Текущий режим</span><span>${settings.mode === 'classic' ? 'Классический' : 'С чекпоинтами'}</span></div>
+  `;
+}
+
+function formatTime(sec) {
+  sec = Math.floor(sec);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+/* =========================================================
+   РАЗМЕР ЭКРАНА
+   ========================================================= */
+function onResize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  menuCamera.aspect = w / h;
+  menuCamera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * (settings.renderScale / 100));
+  document.getElementById('rotate-hint').classList.toggle('show', w < h && w < 500);
+}
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
+
+/* =========================================================
+   ПАУЗА ПРИ УХОДЕ В ФОН
+   ========================================================= */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.phase === 'playing') {
+    pauseGame();
+  }
+});
+
+/* =========================================================
+   СТАРТ
+   ========================================================= */
+applyQuality(settings.quality);
+applySettingsToUI();
+onResize();
+showMainMenu();
+
+document.getElementById('loading').classList.add('hidden');
+window.__gameStarted = true;
+
+// Небольшой стартовый импульс молоту (небольшая динамика)
+hammerBody.angularVelocity.set(0, 0, 1);
+
+requestAnimationFrame(animate);
 </script>
 </body>
 </html>
