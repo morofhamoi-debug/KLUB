@@ -1,1543 +1,1279 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Молот и Котёл</title>
-<style>
-:root{
-  --gold:#c9a961;--gold-light:#f0e0b8;--bg:#0a0a12;--text:#e8e8e8;
-  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
-  --safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
-html,body{width:100%;height:100vh;height:100dvh;overflow:hidden;background:var(--bg);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text);
-  user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
-#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:#1a2a3a}
-.scr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;
-  background:rgba(6,8,14,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:calc(14px + var(--safe-top)) max(14px,var(--safe-right)) calc(14px + var(--safe-bottom)) max(14px,var(--safe-left))}
-.scr.hidden{display:none}
-.menu-c{width:100%;max-width:360px;text-align:center}
-.title{font-size:clamp(20px,5.5vw,28px);font-weight:800;letter-spacing:3px;margin-bottom:4px;
-  background:linear-gradient(135deg,#f0e0b8,#c9a961,#8a6d3b);-webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;background-clip:text}
-.subtitle{font-size:9px;color:#666;letter-spacing:4px;margin-bottom:20px;text-transform:uppercase}
-.btn{display:block;width:100%;padding:13px 14px;margin-bottom:8px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);
-  font-size:14px;letter-spacing:1.5px;font-weight:500;cursor:pointer;border-radius:10px;
-  transition:background .15s,border-color .15s,transform .1s;font-family:inherit;text-align:center;touch-action:manipulation}
-.btn:active{transform:scale(.97);background:rgba(201,169,97,.3);border-color:var(--gold)}
-.btn.sec{font-size:13px;padding:11px 14px;letter-spacing:1px;background:rgba(255,255,255,.03)}
-.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
-#hud{position:fixed;top:0;left:0;right:0;
-  padding:calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) 10px calc(12px + var(--safe-left));
-  display:none;justify-content:space-between;align-items:flex-start;z-index:10;pointer-events:none}
-#hud.on{display:flex}
-.hud-info{display:flex;flex-direction:column;gap:5px;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.95)}
-.hud-info .lbl{color:#8a8a90;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;display:inline-block;margin-right:5px}
-.hud-info .val{color:#fff;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
-#hud-r{display:flex;gap:8px;pointer-events:auto}
-.hbtn{width:42px;height:42px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);
-  border-radius:10px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;
-  justify-content:center;touch-action:manipulation;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.hbtn:active{background:rgba(201,169,97,.4);transform:scale(.94)}
-#stats{position:fixed;top:calc(62px + var(--safe-top));left:calc(12px + var(--safe-left));
-  padding:8px 10px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.08);
-  border-radius:8px;font-size:10px;color:#aaa;font-family:'SF Mono',Consolas,monospace;
-  z-index:10;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:none}
-#stats.on{display:block}
-#stats .r{display:flex;justify-content:space-between;gap:12px;margin-bottom:2px;line-height:1.4}
-#stats .r span:last-child{color:var(--gold);font-weight:600}
-#stats-cv{display:block;margin-top:6px;border-radius:3px;width:140px;height:32px}
-.ov{position:fixed;inset:0;background:rgba(6,8,14,.95);z-index:200;display:flex;flex-direction:column;
-  padding:calc(14px + var(--safe-top)) max(14px,var(--safe-right)) calc(14px + var(--safe-bottom)) max(14px,var(--safe-left));
-  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.ov.hidden{display:none}
-.ov-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;
-  max-width:460px;margin-left:auto;margin-right:auto;width:100%}
-.ov-t{font-size:17px;font-weight:700;color:#e8d5a8;letter-spacing:1px}
-.x{width:40px;height:40px;background:rgba(255,255,255,.08);border:none;color:#fff;font-size:18px;
-  border-radius:10px;cursor:pointer;touch-action:manipulation}
-.x:active{background:rgba(255,255,255,.2);transform:scale(.94)}
-.ov-b{flex:1;max-width:460px;margin:0 auto;width:100%}
-.grp{margin-bottom:12px}
-.grp-t{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;padding-left:2px}
-.row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;
-  border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);
-  border-radius:6px;margin-bottom:3px;min-height:42px}
-.row label{font-size:13px;color:#ccc;flex:1;padding-right:10px}
-.row .ctrl{flex-shrink:0;display:flex;align-items:center}
-.row select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;
-  padding:6px 8px;border-radius:7px;font-family:inherit;font-size:12px;min-width:120px;max-width:140px;touch-action:manipulation}
-.row input[type=range]{width:120px;accent-color:var(--gold);height:28px;touch-action:manipulation}
-.tg{position:relative;width:42px;height:24px;background:rgba(255,255,255,.14);border-radius:12px;
-  cursor:pointer;transition:background .2s;touch-action:manipulation}
-.tg.on{background:var(--gold)}
-.tg::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;
-  border-radius:50%;transition:transform .2s}
-.tg.on::after{transform:translateX(18px)}
-#ti{position:fixed;width:52px;height:52px;border:2px solid rgba(201,169,97,.8);border-radius:50%;
-  pointer-events:none;display:none;z-index:6;transform:translate(-50%,-50%);
-  box-shadow:0 0 24px rgba(201,169,97,.5);transition:opacity .15s}
-#ti.on{display:block}
-.txt{color:#b8b8b8;font-size:13px;line-height:1.7}
-.txt p{margin-bottom:10px}.txt strong{color:var(--gold)}
-.txt .st{display:flex;justify-content:space-between;padding:9px 10px;
-  border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
-.txt .st span:first-child{color:#888}.txt .st span:last-child{color:#e8d5a8;font-weight:600}
-#vic .vic-c{text-align:center;padding-top:40px}
-#vic .vic-t{font-size:60px;margin-bottom:10px;line-height:1}
-#vic .vic-time{font-size:22px;color:var(--gold);margin:16px 0 24px;font-variant-numeric:tabular-nums;font-weight:700}
-#vic .txt{text-align:center;font-size:15px;margin-bottom:20px}
-#rot{position:fixed;bottom:calc(12px + var(--safe-bottom));left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.85);color:#ccc;padding:6px 14px;border-radius:8px;font-size:10px;
-  z-index:50;display:none;border:1px solid rgba(255,255,255,.1);white-space:nowrap}
-@media(orientation:portrait) and (max-width:500px){#rot.on{display:block}}
-.mode-b{display:block;width:100%;padding:14px 16px;margin-bottom:10px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--text);
-  cursor:pointer;border-radius:10px;font-family:inherit;text-align:left;transition:all .15s;touch-action:manipulation}
-.mode-b:active{transform:scale(.98)}
-.mode-b.sel{background:rgba(201,169,97,.22);border-color:var(--gold)}
-.mode-b .mn{font-weight:700;font-size:14px}
-.mode-b .md{font-size:11px;color:#999;margin-top:4px;line-height:1.4}
-#toasts{position:fixed;bottom:calc(20px + var(--safe-bottom));left:50%;transform:translateX(-50%);
-  z-index:5000;display:flex;flex-direction:column;gap:8px;pointer-events:none;align-items:center;max-width:90vw}
-.toast{background:rgba(20,20,30,.96);color:#fff;padding:10px 18px;border-radius:10px;
-  font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.6);border:1px solid rgba(201,169,97,.4);
-  animation:tin .25s ease-out;max-width:320px;text-align:center;line-height:1.4;
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-@keyframes tin{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
-.toast.out{animation:tout .25s ease-in forwards}
-@keyframes tout{to{opacity:0;transform:translateY(14px) scale(.95)}}
-#conf{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;
-  justify-content:center;z-index:5000;padding:20px;
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-#conf.hidden{display:none}
-.conf-c{background:#1a1a24;border:1px solid rgba(201,169,97,.4);border-radius:14px;
-  padding:22px 20px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.8);
-  animation:tin .25s ease-out}
-.conf-m{color:#ddd;font-size:15px;margin-bottom:20px;text-align:center;line-height:1.5}
-.conf-b{display:flex;gap:10px}
-.conf-x{flex:1;padding:12px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);
-  color:#fff;border-radius:9px;font-size:14px;cursor:pointer;font-family:inherit;touch-action:manipulation}
-.conf-x:active{transform:scale(.97)}
-.conf-x.yes{background:rgba(201,169,97,.28);border-color:var(--gold);font-weight:600}
-@media(max-height:700px){
-  .title{font-size:22px}.subtitle{font-size:9px;margin-bottom:14px}
-  .btn{padding:10px 12px;font-size:13px;margin-bottom:7px}.btn.sec{padding:9px 12px;font-size:12px}
-  .row{padding:6px 8px;min-height:38px}.row label{font-size:12px}.ov-t{font-size:16px}
-}
-@media(max-width:360px){.row select{min-width:100px}.row input[type=range]{width:100px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>EARTH 3D ULTRA</title>
+  <style>
+    /* ========== БАЗОВЫЕ СТИЛИ ========== */
+    :root {
+      --bg: #03060c;
+      --panel: rgba(8, 16, 30, 0.82);
+      --panel-border: rgba(90, 170, 255, 0.18);
+      --accent: #4da6ff;
+      --accent-dim: #1a5a9a;
+      --text: #e8f0fa;
+      --text-dim: #8fa8c8;
+      --danger: #ff5566;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+    }
+    #app {
+      position: relative;
+      width: 100%; height: 100dvh;
+      overflow: hidden;
+    }
+    /* ========== 3D-ГЛОБУС ========== */
+    #globe-container {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    #globe-container canvas { display: block; }
+    /* ========== ЗАГРУЗКА ========== */
+    #loader {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, #0a1428 0%, #03060c 70%);
+      transition: opacity 0.6s ease;
+    }
+    #loader.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 64px; height: 64px;
+      border: 3px solid rgba(77, 166, 255, 0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loader-text {
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+    }
+    #loader-error {
+      display: none;
+      margin-top: 16px;
+      max-width: 80%;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--danger);
+    }
+    /* ========== ПАНЕЛИ ========== */
+    .panel {
+      position: absolute;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      z-index: 10;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    }
+    .panel.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* Верхняя панель поиска */
+    #search-bar {
+      top: calc(12px + var(--safe-top));
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(520px, calc(100% - 160px));
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      height: 46px;
+      gap: 10px;
+    }
+    #search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 15px;
+      font-family: var(--font);
+    }
+    #search-input::placeholder { color: var(--text-dim); }
+    .search-icon {
+      width: 18px; height: 18px;
+      fill: none; stroke: var(--text-dim); stroke-width: 2;
+      flex-shrink: 0;
+    }
+    #search-results {
+      top: calc(66px + var(--safe-top));
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(520px, calc(100% - 160px));
+      max-height: 300px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px;
+      display: none;
+    }
+    #search-results.active { display: block; }
+    .search-result-item {
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    .search-result-item:hover, .search-result-item:active {
+      background: rgba(77, 166, 255, 0.12);
+    }
+    .search-result-item .result-type {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-left: 8px;
+    }
+    /* Левая панель инструментов */
+    #toolbar {
+      left: calc(12px + var(--safe-left));
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tool-btn {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .tool-btn:hover, .tool-btn:active {
+      background: rgba(77, 166, 255, 0.12);
+      color: var(--accent);
+      border-color: var(--panel-border);
+    }
+    .tool-btn.active {
+      background: rgba(77, 166, 255, 0.18);
+      color: var(--accent);
+      border-color: var(--accent-dim);
+    }
+    .tool-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    /* Правая информационная панель */
+    #info-panel {
+      right: calc(12px + var(--safe-right));
+      top: calc(70px + var(--safe-top));
+      width: min(360px, calc(100% - 140px));
+      max-height: calc(100dvh - 140px - var(--safe-top) - var(--safe-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 20px;
+      display: none;
+    }
+    #info-panel.active { display: block; }
+    #info-panel .close-btn {
+      position: absolute;
+      top: 12px; right: 12px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #info-panel .close-btn:active { background: rgba(255, 255, 255, 0.15); }
+    #info-panel h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      padding-right: 32px;
+    }
+    #info-panel .subtitle {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+    }
+    .info-row .label { color: var(--text-dim); }
+    .info-row .value { color: var(--text); text-align: right; max-width: 60%; word-break: break-word; }
+    .flag-img {
+      width: 48px; height: 32px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    /* Нижняя панель управления */
+    #bottom-bar {
+      bottom: calc(12px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      padding: 6px;
+    }
+    #bottom-bar .tool-btn { width: 40px; height: 40px; }
+    /* Настройки */
+    #settings-panel {
+      right: calc(12px + var(--safe-right));
+      bottom: calc(70px + var(--safe-bottom));
+      width: 260px;
+      padding: 16px;
+      display: none;
+    }
+    #settings-panel.active { display: block; }
+    .setting-group {
+      margin-bottom: 14px;
+    }
+    .setting-group:last-child { margin-bottom: 0; }
+    .setting-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setting-group select, .setting-group input[type="range"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 8px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .setting-group input[type="range"] { padding: 0; height: 28px; }
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 42px; height: 24px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch.on { background: var(--accent-dim); }
+    .toggle-switch.on::after { transform: translateX(18px); }
+    /* Статистика */
+    #stats-panel {
+      left: calc(12px + var(--safe-left));
+      bottom: calc(12px + var(--safe-bottom));
+      padding: 12px 16px;
+      font-size: 11px;
+      color: var(--text-dim);
+      display: none;
+    }
+    #stats-panel.active { display: block; }
+    /* Адаптивность */
+    @media (max-aspect-ratio: 1/1) {
+      #search-bar, #search-results {
+        width: calc(100% - 120px);
+      }
+      #info-panel {
+        width: min(320px, calc(100% - 120px));
+      }
+      #toolbar {
+        gap: 4px;
+        padding: 6px;
+      }
+      .tool-btn { width: 40px; height: 40px; }
+    }
+    @media (max-width: 600px) {
+      #search-bar, #search-results { width: calc(100% - 96px); }
+      #info-panel { width: calc(100% - 96px); }
+      #bottom-bar .tool-btn { width: 36px; height: 36px; }
+    }
+    /* Скрытие скроллбара */
+    ::-webkit-scrollbar { width: 0; height: 0; }
+  </style>
 </head>
 <body>
-<canvas id="cv"></canvas>
+<div id="app">
+  <!-- 3D-глобус -->
+  <div id="globe-container"></div>
 
-<div id="main-menu" class="scr">
-  <div class="menu-c">
-    <div class="title">МОЛОТ И КОТЁЛ</div>
-    <div class="subtitle">Восхождение</div>
-    <button class="btn" data-action="play">Играть</button>
-    <button class="btn" data-action="continue" id="btn-continue">Продолжить</button>
-    <button class="btn sec" data-action="open-mode">Режим</button>
-    <button class="btn sec" data-action="open-settings">Настройки</button>
-    <button class="btn sec" data-action="open-controls">Управление</button>
-    <button class="btn sec" data-action="open-stats">Статистика</button>
-    <button class="btn sec" data-action="open-about">Об игре</button>
+  <!-- Загрузка -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-text">Загрузка Земли…</div>
+    <div id="loader-error"></div>
   </div>
-</div>
 
-<div id="hud">
-  <div class="hud-info">
-    <div><span class="lbl">Время</span><span class="val" id="h-time">0:00</span></div>
-    <div><span class="lbl">Высота</span><span class="val" id="h-height">0.0 м</span></div>
-    <div><span class="lbl">Зона</span><span class="val" id="h-zone">Земля</span></div>
+  <!-- Поиск -->
+  <div id="search-bar" class="panel">
+    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+    <input id="search-input" type="search" placeholder="Поиск стран и городов…" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>
-  <div id="hud-r">
-    <button class="hbtn" id="btn-fs" title="На весь экран">⛶</button>
-    <button class="hbtn" id="btn-pause" title="Пауза">⏸</button>
-  </div>
-</div>
+  <div id="search-results" class="panel"></div>
 
-<div id="stats">
-  <div class="r"><span>FPS:</span><span id="s-fps">0</span></div>
-  <div class="r"><span>Средний:</span><span id="s-avg">0</span></div>
-  <div class="r"><span>Кадр:</span><span id="s-frame">0 мс</span></div>
-  <div class="r"><span>Лимит:</span><span id="s-limit">60</span></div>
-  <div class="r"><span>Качество:</span><span id="s-quality">высокое</span></div>
-  <canvas id="stats-cv" width="140" height="32"></canvas>
-</div>
-
-<div id="ti"></div>
-
-<div id="pause-menu" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Пауза</div></div>
-  <div class="ov-b">
-    <button class="btn" data-action="resume">Продолжить</button>
-    <button class="btn sec" data-action="restart">Начать заново</button>
-    <button class="btn sec" data-action="open-settings">Настройки</button>
-    <button class="btn sec" data-action="main-menu">В главное меню</button>
-  </div>
-</div>
-
-<div id="settings-screen" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Настройки</div><button class="x" data-action="close-settings">✕</button></div>
-  <div class="ov-b">
-    <div class="grp">
-      <div class="grp-t">Частота кадров</div>
-      <div class="row"><label>Лимит FPS</label><div class="ctrl">
-        <select id="s-fps-limit">
-          <option value="30">30 FPS</option><option value="45">45 FPS</option>
-          <option value="60">60 FPS</option><option value="90">90 FPS</option>
-          <option value="120">120 FPS</option><option value="0">Без ограничения</option>
-        </select></div></div>
-      <div class="row"><label>Показывать статистику</label><div class="ctrl"><div class="tg" id="s-show-stats"></div></div></div>
-    </div>
-    <div class="grp">
-      <div class="grp-t">Графика</div>
-      <div class="row"><label>Качество</label><div class="ctrl">
-        <select id="s-quality">
-          <option value="min">Минимальное</option><option value="low">Низкое</option>
-          <option value="medium">Среднее</option><option value="high">Высокое</option>
-          <option value="ultra">Ультра</option>
-        </select></div></div>
-      <div class="row"><label>Частицы</label><div class="ctrl"><div class="tg" id="s-particles"></div></div></div>
-      <div class="row"><label>Тени</label><div class="ctrl"><div class="tg" id="s-shadows"></div></div></div>
-    </div>
-    <div class="grp">
-      <div class="grp-t">Отображение</div>
-      <div class="row"><label>Тряска экрана</label><div class="ctrl"><div class="tg" id="s-screenshake"></div></div></div>
-      <div class="row"><label>Показывать FPS в HUD</label><div class="ctrl"><div class="tg" id="s-hud-fps"></div></div></div>
-    </div>
-    <div class="grp">
-      <div class="grp-t">Звук</div>
-      <div class="row"><label>Громкость</label><div class="ctrl"><input type="range" id="s-volume" min="0" max="100" step="5"></div></div>
-      <div class="row"><label>Отключить звук</label><div class="ctrl"><div class="tg" id="s-mute"></div></div></div>
-    </div>
-    <div class="grp">
-      <div class="grp-t">Управление</div>
-      <div class="row"><label>Чувствительность</label><div class="ctrl"><input type="range" id="s-sens" min="30" max="200" step="10"></div></div>
-    </div>
-    <button class="btn sec" data-action="autotune">Автонастройка</button>
-    <button class="btn sec" data-action="reset-settings">Сбросить настройки</button>
-  </div>
-</div>
-
-<div id="controls-screen" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Управление</div><button class="x" data-action="close-controls">✕</button></div>
-  <div class="ov-b"><div class="txt">
-    <p><strong>ПК:</strong></p>
-    <p>• Зажмите левую кнопку мыши и двигайте — молот следует за курсором.</p>
-    <p>• ESC или P — пауза. R — рестарт.</p>
-    <p><br><strong>Телефон:</strong></p>
-    <p>• Коснитесь экрана и двигайте пальцем — молот идёт к пальцу.</p>
-    <p>• Кнопка ⏸ — пауза.</p>
-    <p><br><strong>Цель:</strong> молотом цепляйтесь за выступы и забирайтесь на вершину башни.</p>
-  </div></div>
-</div>
-
-<div id="stats-screen" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Статистика</div><button class="x" data-action="close-stats">✕</button></div>
-  <div class="ov-b">
-    <div class="txt" id="stats-content"></div>
-    <button class="btn sec" data-action="reset-progress" style="margin-top:16px">Сбросить прогресс</button>
-  </div>
-</div>
-
-<div id="about-screen" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Об игре</div><button class="x" data-action="close-about">✕</button></div>
-  <div class="ov-b"><div class="txt">
-    <p><strong>Молот и Котёл</strong> — игра о восхождении. Управляя лишь молотом, взберитесь на вершину башни. Используйте инерцию, цепляйтесь за выступы, не падайте.</p>
-    <p>Вся физика, графика и звук созданы процедурно в браузере, без внешних библиотек и без интернета.</p>
-    <p style="margin-top:16px;font-size:11px;color:#666">Версия 2.0 · Чистый Canvas</p>
-  </div></div>
-</div>
-
-<div id="mode-screen" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Режим</div><button class="x" data-action="close-mode">✕</button></div>
-  <div class="ov-b">
-    <button class="mode-b" data-mode="classic" id="mode-classic">
-      <div class="mn">Классический</div><div class="md">Ошибка — и вы падаете до основания.</div>
+  <!-- Левая панель инструментов -->
+  <div id="toolbar" class="panel">
+    <button class="tool-btn" id="btn-countries" title="Список стран">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
-    <button class="mode-b" data-mode="checkpoint" id="mode-checkpoint">
-      <div class="mn">С контрольными точками</div><div class="md">При падении возвращаетесь к последней зоне.</div>
+    <button class="tool-btn" id="btn-cities" title="Города">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>
+    </button>
+    <button class="tool-btn" id="btn-random" title="Случайная страна">
+      <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+    </button>
+    <button class="tool-btn" id="btn-settings" title="Настройки">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="tool-btn" id="btn-stats" title="О Земле">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+    </button>
+  </div>
+
+  <!-- Правая информационная панель -->
+  <div id="info-panel" class="panel">
+    <button class="close-btn" id="info-close">×</button>
+    <div id="info-content"></div>
+  </div>
+
+  <!-- Настройки -->
+  <div id="settings-panel" class="panel">
+    <div class="setting-group">
+      <label>Режим поверхности</label>
+      <select id="surface-mode">
+        <option value="realistic">Реалистичная</option>
+        <option value="political">Политическая</option>
+        <option value="physical">Физическая</option>
+        <option value="night">Ночные огни</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>Качество графики</label>
+      <select id="quality-mode">
+        <option value="low">Низкое</option>
+        <option value="medium" selected>Среднее</option>
+        <option value="high">Высокое</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>Скорость вращения</label>
+      <input type="range" id="rotation-speed" min="0" max="2" step="0.1" value="0.5">
+    </div>
+    <div class="toggle-row">
+      <span>Автоматическое вращение</span>
+      <div class="toggle-switch on" id="toggle-rotation" role="switch" aria-checked="true"></div>
+    </div>
+    <div class="toggle-row">
+      <span>Границы стран</span>
+      <div class="toggle-switch on" id="toggle-borders" role="switch" aria-checked="true"></div>
+    </div>
+    <div class="toggle-row">
+      <span>Столицы и города</span>
+      <div class="toggle-switch on" id="toggle-cities" role="switch" aria-checked="true"></div>
+    </div>
+    <div class="toggle-row">
+      <span>Звёздный фон</span>
+      <div class="toggle-switch on" id="toggle-stars" role="switch" aria-checked="true"></div>
+    </div>
+  </div>
+
+  <!-- Статистика -->
+  <div id="stats-panel" class="panel"></div>
+
+  <!-- Нижняя панель -->
+  <div id="bottom-bar" class="panel">
+    <button class="tool-btn" id="btn-reset" title="Сброс камеры">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+    <button class="tool-btn active" id="btn-rotate" title="Автоматическое вращение">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg>
+    </button>
+    <button class="tool-btn" id="btn-explore" title="Режим исследования">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
     </button>
   </div>
 </div>
 
-<div id="vic" class="ov hidden">
-  <div class="ov-h"><div class="ov-t">Победа!</div></div>
-  <div class="ov-b vic-c">
-    <div class="vic-t">🏆</div>
-    <div class="txt">Вы покорили вершину!</div>
-    <div class="vic-time" id="vic-time"></div>
-    <button class="btn" data-action="victory-restart">Играть снова</button>
-    <button class="btn sec" data-action="victory-menu">В главное меню</button>
-  </div>
-</div>
-
-<div id="rot">Поверните устройство горизонтально</div>
-<div id="toasts"></div>
-
-<div id="conf" class="hidden">
-  <div class="conf-c">
-    <div class="conf-m" id="conf-msg"></div>
-    <div class="conf-b">
-      <button class="conf-x" data-confirm="no">Отмена</button>
-      <button class="conf-x yes" data-confirm="yes">ОК</button>
-    </div>
-  </div>
-</div>
+<!-- ==================== БИБЛИОТЕКИ ==================== -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
 <script>
 'use strict';
 
 /* ============================================================
-   УТИЛИТЫ
+   EARTH 3D ULTRA — основной модуль
    ============================================================ */
-function clamp(v,a,b){return v<a?a:v>b?b:v;}
-function lerp(a,b,t){return a+(b-a)*t;}
-function normAng(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;}
-function dist2(x1,y1,x2,y2){var dx=x2-x1,dy=y2-y1;return dx*dx+dy*dy;}
-function formatTime(sec){sec=Math.floor(sec);var m=Math.floor(sec/60),s=sec%60;return m+':'+(s<10?'0':'')+s;}
 
-var toastContainer=document.getElementById('toasts');
-function showToast(msg,dur){dur=dur||2400;var t=document.createElement('div');t.className='toast';t.textContent=msg;
-  toastContainer.appendChild(t);setTimeout(function(){t.classList.add('out');setTimeout(function(){t.remove();},300);},dur);}
-
-var confirmDialog=document.getElementById('conf');
-var confirmMsgEl=document.getElementById('conf-msg');
-var confirmResolver=null;
-function showConfirm(msg){return new Promise(function(res){
-  confirmMsgEl.textContent=msg;confirmDialog.classList.remove('hidden');confirmResolver=res;});}
-confirmDialog.addEventListener('click',function(e){
-  var b=e.target.closest('[data-confirm]');if(!b)return;
-  confirmDialog.classList.add('hidden');
-  if(confirmResolver){confirmResolver(b.dataset.confirm==='yes');confirmResolver=null;}});
-
-/* ============================================================
-   НАСТРОЙКИ И СОХРАНЕНИЯ
-   ============================================================ */
-var DEFAULT_SETTINGS={
-  fpsLimit:60,quality:'high',particles:true,shadows:true,showStats:false,
-  screenshake:true,hudFps:false,volume:60,mute:false,sensitivity:100,mode:'classic'
-};
-var settings={};
-var saveData={
-  playerPos:null,hammerAngle:null,elapsedTime:0,bestTime:null,maxHeight:0,
-  falls:0,totalPlayTime:0,checkpoint:null,checkpointZone:0,hasSave:false
+// ---------- КОНФИГУРАЦИЯ ----------
+const CONFIG = {
+  textures: {
+    day: '//cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
+    bump: '//cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png',
+    night: '//cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
+    clouds: '//cdn.jsdelivr.net/npm/three-globe/example/img/clouds.png',
+    stars: '//cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png',
+  },
+  data: {
+    countriesTopo: 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
+    countriesApi: 'https://restcountries.com/v3.1/all?fields=name,translations,capital,region,subregion,population,area,languages,currencies,cca2,cca3,flags,borders,latlng,timezones,tld',
+    cities: 'https://raw.githubusercontent.com/Kerrick/cities15k.json/master/cities.json',
+  },
+  defaultRotationSpeed: 0.5,
+  maxSearchResults: 12,
 };
 
-function loadStorage(){
-  var k,v;
-  for(k in DEFAULT_SETTINGS)settings[k]=DEFAULT_SETTINGS[k];
-  try{var s=localStorage.getItem('hp_settings_v2');if(s){var o=JSON.parse(s);for(k in o)if(k in settings)settings[k]=o[k];}}catch(e){}
-  try{var g=localStorage.getItem('hp_save_v2');if(g){var p=JSON.parse(g);for(k in p)if(k in saveData)saveData[k]=p[k];}}catch(e){}
-}
-function saveSettingsLS(){try{localStorage.setItem('hp_settings_v2',JSON.stringify(settings));}catch(e){}}
-function saveGameLS(){try{localStorage.setItem('hp_save_v2',JSON.stringify(saveData));}catch(e){}}
-loadStorage();
+// ---------- СОСТОЯНИЕ ----------
+const State = {
+  globe: null,
+  countries: [],
+  countriesByIso: {},
+  countriesGeo: null,
+  cities: [],
+  cityMarkers: [],
+  selectedCountry: null,
+  selectedCity: null,
+  autoRotate: true,
+  rotationSpeed: CONFIG.defaultRotationSpeed,
+  showBorders: true,
+  showCities: true,
+  showStars: true,
+  surfaceMode: 'realistic',
+  quality: 'medium',
+  exploreMode: false,
+  searchTimeout: null,
+  settings: {},
+  statsOpen: false,
+  listOpen: false,
+};
 
-/* ============================================================
-   ЗВУК (Web Audio, процедурный)
-   ============================================================ */
-var audioCtx=null,ambient=null;
-function initAudio(){
-  if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}}
-  if(audioCtx.state==='suspended')audioCtx.resume();
-}
-function playTone(freq,dur,type,vol){
-  type=type||'sine';vol=vol||0.3;
-  if(!audioCtx||settings.mute||settings.volume===0)return;
-  try{
-    var osc=audioCtx.createOscillator(),g=audioCtx.createGain();
-    osc.type=type;osc.frequency.value=freq;
-    var v=vol*(settings.volume/100);
-    g.gain.setValueAtTime(v,audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0005,audioCtx.currentTime+dur);
-    osc.connect(g);g.connect(audioCtx.destination);
-    osc.start();osc.stop(audioCtx.currentTime+dur);
-  }catch(e){}
-}
-function playHit(strength){
-  var s=clamp(strength,0.1,1);
-  playTone(90+Math.random()*30,0.14,'square',0.12*s);
-  playTone(55+Math.random()*20,0.2,'sine',0.2*s);
-}
-function playSlide(){playTone(200+Math.random()*60,0.06,'sawtooth',0.03);}
-function playZone(){playTone(523,0.35,'sine',0.15);setTimeout(function(){playTone(784,0.35,'sine',0.15);},120);setTimeout(function(){playTone(1046,0.5,'sine',0.15);},240);}
-function playVictory(){[523,659,784,1046,1318].forEach(function(f,i){setTimeout(function(){playTone(f,0.6,'sine',0.2);},i*130);});}
-function playFall(){playTone(150,0.6,'sawtooth',0.15);}
-function startAmbient(){
-  if(!audioCtx||ambient)return;
-  try{
-    var o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type='sine';o.frequency.value=55;
-    g.gain.value=0.015*(settings.volume/100);
-    o.connect(g);g.connect(audioCtx.destination);o.start();
-    ambient={osc:o,gain:g};
-  }catch(e){}
-}
-function updateAmbientVol(){
-  if(ambient)ambient.gain.gain.value=settings.mute?0:0.015*(settings.volume/100);
+// ---------- DOM ----------
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+const dom = {
+  globeContainer: $('#globe-container'),
+  loader: $('#loader'),
+  loaderText: $('#loader-text'),
+  loaderError: $('#loader-error'),
+  searchBar: $('#search-bar'),
+  searchInput: $('#search-input'),
+  searchResults: $('#search-results'),
+  infoPanel: $('#info-panel'),
+  infoContent: $('#info-content'),
+  infoClose: $('#info-close'),
+  settingsPanel: $('#settings-panel'),
+  statsPanel: $('#stats-panel'),
+  toolbar: $('#toolbar'),
+  bottomBar: $('#bottom-bar'),
+};
+
+// ---------- УТИЛИТЫ ----------
+function safeStorage(key, val) {
+  try {
+    if (val === undefined) {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    }
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) { /* приватный режим Safari */ }
 }
 
-/* ============================================================
-   УРОВЕНЬ
-   ============================================================ */
-var ZONES=[
-  {y:0,name:'Земля'},{y:5,name:'Скалы'},{y:10,name:'Деревья'},
-  {y:15,name:'Утёс'},{y:20,name:'Небеса'},{y:24,name:'Вершина'}
-];
+function debounce(fn, ms) {
+  return function(...args) {
+    clearTimeout(State.searchTimeout);
+    State.searchTimeout = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
 
-// x, y (центр), w, h, type
-var LEVEL=[
-  // Земля
-  {x:0,y:0,w:40,h:2,type:'ground'},
-  // Правые ступени
-  {x:6,y:2,w:3,h:1,type:'rock'},
-  {x:9,y:4,w:3,h:0.6,type:'rock'},
-  {x:12,y:6,w:2,h:0.5,type:'wood'},
-  // Левые скалы
-  {x:-6,y:4,w:4,h:5,type:'rock'},
-  {x:-6,y:7,w:5,h:0.4,type:'wood'},
-  // Центральная стена
-  {x:1,y:5,w:1.2,h:5,type:'rock'},
-  {x:1.5,y:8,w:2.5,h:0.4,type:'metal'},
-  // Верхние платформы
-  {x:-4,y:10,w:2.5,h:0.5,type:'rock'},
-  {x:6,y:10,w:1.2,h:6,type:'metal'},
-  {x:6,y:13.5,w:2.5,h:0.4,type:'metal'},
-  // Середина
-  {x:0,y:12,w:2,h:0.5,type:'wood'},
-  {x:-3,y:14.5,w:2,h:0.4,type:'metal'},
-  // Верх
-  {x:3,y:16,w:1.5,h:0.4,type:'metal'},
-  {x:1,y:18,w:1,h:5,type:'rock'},
-  {x:1,y:21,w:3,h:0.5,type:'metal'},
-  // Финал
-  {x:0,y:23.5,w:4.5,h:0.6,type:'metal'}
-];
+function escapeHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
 
-// Декор (без коллизии)
-var DECOR=[];
-(function(){
-  for(var i=0;i<30;i++){
-    DECOR.push({
-      x:(Math.random()-0.5)*30,
-      y:Math.random()*28-2,
-      z:-3-Math.random()*8,
-      r:0.8+Math.random()*2,
-      rot:Math.random()*6.28
+function formatNumber(n) {
+  if (n == null || isNaN(n)) return 'Нет данных';
+  return Number(n).toLocaleString('ru-RU');
+}
+
+async function fetchWithTimeout(url, opts = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} для ${url}`);
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ---------- ИНИЦИАЛИЗАЦИЯ 3D-СЦЕНЫ ----------
+class GlobeEngine {
+  constructor(container) {
+    this.container = container;
+    this.globe = null;
+    this.rotationAnim = null;
+    this.init();
+  }
+
+  init() {
+    const el = this.container;
+    this.globe = new Globe(el)
+      .globeImageUrl(CONFIG.textures.day)
+      .bumpImageUrl(CONFIG.textures.bump)
+      .backgroundImageUrl(CONFIG.textures.stars)
+      .atmosphereColor('#4da6ff')
+      .atmosphereAltitude(0.22);
+
+    // Материал: блики океанов
+    const mat = this.globe.globeMaterial();
+    mat.bumpScale = 8;
+    mat.specular = new THREE.Color('grey');
+    mat.shininess = 12;
+
+    // Размеры и камера
+    this.globe.width(el.clientWidth || window.innerWidth);
+    this.globe.height(el.clientHeight || window.innerHeight);
+    this.globe.camera().position.set(0, 0, 280);
+    this.globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, 0);
+
+    // Сенсорное управление: Globe.gl уже поддерживает OrbitControls с touch.
+    // Настроим скорость и инерцию.
+    const controls = this.globe.controls();
+    if (controls) {
+      controls.autoRotate = false; // управляем вручную
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.9;
+      controls.zoomSpeed = 0.9;
+      controls.minDistance = 110;
+      controls.maxDistance = 600;
+    }
+
+    // Анимация вращения
+    this.startRotation();
+
+    window.addEventListener('resize', () => this.resize());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.resize(), 250);
     });
-  }
-})();
-
-/* ============================================================
-   СОСТОЯНИЕ ИГРЫ
-   ============================================================ */
-var state={
-  phase:'menu',startTime:0,elapsed:0,zone:0,
-  shakeTime:0,shakeMag:0,
-  pointerDown:false,pointerX:0,pointerY:0,
-  camX:0,camY:2,camZ:1
-};
-
-var PHYS={
-  gravity:32,
-  playerR:0.55,
-  playerMass:2.5,
-  hammerLen:3.2,
-  hammerR:0.16,
-  hammerMass:0.6,
-  controlOm:22,
-  controlZeta:0.92,
-  restitution:0.35,
-  angularDamp:0.9,
-  linearDamp:0.999,
-  maxVel:45,
-  maxAngVel:25
-};
-
-var player={x:0,y:2.5,vx:0,vy:0,onGround:false};
-var hammer={angle:-Math.PI/4,angVel:0};
-var particles=[];
-
-/* ============================================================
-   CANVAS
-   ============================================================ */
-var cv=document.getElementById('cv');
-var ctx=cv.getContext('2d',{alpha:false});
-var W=0,H=0,DPR=1;
-function resizeCanvas(){
-  DPR=Math.min(window.devicePixelRatio||1,2);
-  var scale=1;
-  if(settings.quality==='min')scale=0.6;
-  else if(settings.quality==='low')scale=0.75;
-  else if(settings.quality==='medium')scale=0.9;
-  W=window.innerWidth;H=window.innerHeight;
-  cv.width=Math.floor(W*DPR*scale);
-  cv.height=Math.floor(H*DPR*scale);
-  cv.style.width=W+'px';cv.style.height=H+'px';
-  ctx.setTransform(DPR*scale,0,0,DPR*scale,0,0);
-  document.getElementById('rot').classList.toggle('on',W<H&&W<500);
-}
-window.addEventListener('resize',resizeCanvas);
-window.addEventListener('orientationchange',function(){setTimeout(resizeCanvas,200);});
-
-/* ============================================================
-   КООРДИНАТЫ: МИР ↔ ЭКРАН
-   ============================================================ */
-var BASE_ZOOM=52; // пикселей на единицу мира
-function worldToScreen(wx,wy){
-  return {
-    x:W/2+(wx-state.camX)*BASE_ZOOM*state.camZ,
-    y:H/2-(wy-state.camY)*BASE_ZOOM*state.camZ
-  };
-}
-function screenToWorld(sx,sy){
-  return {
-    x:(sx-W/2)/(BASE_ZOOM*state.camZ)+state.camX,
-    y:state.camY-(sy-H/2)/(BASE_ZOOM*state.camZ)
-  };
-}
-
-/* ============================================================
-   ФИЗИКА
-   ============================================================ */
-function closestPointOnBox(px,py,box){
-  var l=box.x-box.w/2,r=box.x+box.w/2;
-  var b=box.y-box.h/2,t=box.y+box.h/2;
-  var cx=clamp(px,l,r);
-  var cy=clamp(py,b,t);
-  return {x:cx,y:cy,inside:px>l&&px<r&&py>b&&py<t};
-}
-
-function circleVsBox(cx,cy,radius,box){
-  var cp=closestPointOnBox(cx,cy,box);
-  if(cp.inside){
-    var l=box.x-box.w/2,r=box.x+box.w/2;
-    var b=box.y-box.h/2,t=box.y+box.h/2;
-    var dl=cx-l,dr=r-cx,db=cy-b,dt=t-cy;
-    var mn=Math.min(dl,dr,db,dt);
-    var nx=0,ny=0;
-    if(mn===dl){nx=-1;}
-    else if(mn===dr){nx=1;}
-    else if(mn===db){ny=-1;}
-    else{ny=1;}
-    return {nx:nx,ny:ny,pen:radius+mn};
-  }
-  var dx=cx-cp.x,dy=cy-cp.y;
-  var d2=dx*dx+dy*dy;
-  if(d2>radius*radius)return null;
-  var d=Math.sqrt(d2)||0.0001;
-  return {nx:dx/d,ny:dy/d,pen:radius-d};
-}
-
-function getHammerHead(){
-  return {
-    x:player.x+Math.cos(hammer.angle)*PHYS.hammerLen,
-    y:player.y+Math.sin(hammer.angle)*PHYS.hammerLen
-  };
-}
-
-function getHammerHeadVel(){
-  var perpX=-Math.sin(hammer.angle);
-  var perpY=Math.cos(hammer.angle);
-  return {
-    x:player.vx+perpX*PHYS.hammerLen*hammer.angVel,
-    y:player.vy+perpY*PHYS.hammerLen*hammer.angVel
-  };
-}
-
-function spawnParticles(x,y,n,color,spd){
-  if(!settings.particles)return;
-  n=n||6;spd=spd||4;
-  for(var i=0;i<n;i++){
-    var a=Math.random()*Math.PI*2,s=spd*(0.5+Math.random());
-    particles.push({
-      x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
-      life:0.5+Math.random()*0.3,max:0.8,
-      size:2+Math.random()*3,color:color||'#c9a961'
-    });
-  }
-}
-
-function stepPhysics(dt){
-  if(state.phase!=='playing')return;
-
-  // 1. Гравитация
-  player.vy-=PHYS.gravity*dt;
-  player.onGround=false;
-
-  // 2. Управление молотом
-  if(state.pointerDown){
-    var wm=screenToWorld(state.pointerX,state.pointerY);
-    var targetA=Math.atan2(wm.y-player.y,wm.x-player.x);
-    var err=normAng(targetA-hammer.angle);
-    var om=PHYS.controlOm;
-    var zeta=PHYS.controlZeta;
-    var sens=settings.sensitivity/100;
-    var accel=om*om*err*sens-2*zeta*om*hammer.angVel;
-    hammer.angVel+=accel*dt;
-  }else{
-    hammer.angVel*=PHYS.angularDamp;
-  }
-  hammer.angVel=clamp(hammer.angVel,-PHYS.maxAngVel,PHYS.maxAngVel);
-  hammer.angle+=hammer.angVel*dt;
-
-  // 3. Столкновение головки молота
-  var hh=getHammerHead();
-  var hhv=getHammerHeadVel();
-  var maxPen=0,hitNx=0,hitNy=0;
-  for(var i=0;i<LEVEL.length;i++){
-    var box=LEVEL[i];
-    var c=circleVsBox(hh.x,hh.y,PHYS.hammerR,box);
-    if(!c)continue;
-    // Коррекция позиции игрока
-    player.x+=c.nx*c.pen*0.85;
-    player.y+=c.ny*c.pen*0.85;
-    // Импульс от скорости головки
-    var vn=hhv.x*c.nx+hhv.y*c.ny;
-    if(vn<0){
-      var imp=-vn*(1+PHYS.restitution);
-      player.vx+=c.nx*imp*0.7;
-      player.vy+=c.ny*imp*0.7;
-      // Вращение молота
-      var perpX=-Math.sin(hammer.angle);
-      var perpY=Math.cos(hammer.angle);
-      var angComp=perpX*c.nx+perpY*c.ny;
-      hammer.angVel-=angComp*imp*0.5/PHYS.hammerLen;
-      // Звук и частицы
-      if(-vn>2){playHit(Math.min(1,-vn/12));spawnParticles(hh.x,hh.y,4,'#c9a961',3);}
-      else if(-vn>0.4){playSlide();}
-    }
-    if(c.pen>maxPen){maxPen=c.pen;hitNx=c.nx;hitNy=c.ny;}
-  }
-  if(maxPen>0.25&&state.shakeTime<=0&&settings.screenshake){
-    state.shakeTime=0.15;state.shakeMag=0.06;
+    this.resize();
   }
 
-  // 4. Обновление позиции игрока
-  player.vx*=PHYS.linearDamp;
-  player.vy*=PHYS.linearDamp;
-  var sp=Math.sqrt(player.vx*player.vx+player.vy*player.vy);
-  if(sp>PHYS.maxVel){player.vx*=PHYS.maxVel/sp;player.vy*=PHYS.maxVel/sp;}
-  player.x+=player.vx*dt;
-  player.y+=player.vy*dt;
-
-  // 5. Столкновение игрока
-  for(var j=0;j<LEVEL.length;j++){
-    var b2=LEVEL[j];
-    var c2=circleVsBox(player.x,player.y,PHYS.playerR,b2);
-    if(!c2)continue;
-    player.x+=c2.nx*c2.pen;
-    player.y+=c2.ny*c2.pen;
-    var vn2=player.vx*c2.nx+player.vy*c2.ny;
-    if(vn2<0){
-      player.vx-=c2.nx*vn2*(1.15);
-      player.vy-=c2.ny*vn2*(1.15);
-      if(c2.ny>0.5)player.onGround=true;
-      if(-vn2>4){playHit(Math.min(0.7,-vn2/20));}
-    }
-    // Трение
-    var tanX=-c2.ny,tanY=c2.nx;
-    var vt=player.vx*tanX+player.vy*tanY;
-    player.vx-=tanX*vt*0.15;
-    player.vy-=tanY*vt*0.15;
-  }
-
-  // 6. Границы мира
-  if(player.y<-5){
-    player.y=-5;player.vy=0;player.vx*=0.5;
-    if(!saveData._fallen){saveData._fallen=true;saveData.falls++;playFall();}
-    if(settings.mode==='checkpoint'&&saveData.checkpoint){
-      player.x=saveData.checkpoint[0];player.y=saveData.checkpoint[1];
-      player.vx=0;player.vy=0;hammer.angVel=0;
-      saveData._fallen=false;
-    }else{
-      setTimeout(function(){saveData._fallen=false;},500);
-    }
-  }
-  if(player.x<-25){player.x=-25;player.vx=0;}
-  if(player.x>25){player.x=25;player.vx=0;}
-
-  // 7. Частицы
-  for(var p=particles.length-1;p>=0;p--){
-    var pt=particles[p];
-    pt.life-=dt;
-    if(pt.life<=0){particles.splice(p,1);continue;}
-    pt.vy-=15*dt;
-    pt.x+=pt.vx*dt;pt.y+=pt.vy*dt;
-  }
-
-  // 8. Зоны
-  var nz=0;
-  for(var zi=0;zi<ZONES.length;zi++)if(player.y>=ZONES[zi].y)nz=zi;
-  if(nz>state.zone){
-    state.zone=nz;
-    playZone();
-    showToast('Зона: '+ZONES[nz].name);
-    if(settings.mode==='checkpoint'){
-      saveData.checkpoint=[player.x,player.y];
-      saveData.checkpointZone=nz;
-      saveGameLS();
+  resize() {
+    const w = this.container.clientWidth || window.innerWidth;
+    const h = this.container.clientHeight || window.innerHeight;
+    this.globe.width(w).height(h);
+    const cam = this.globe.camera();
+    if (cam) {
+      cam.aspect = w / h;
+      cam.updateProjectionMatrix();
     }
   }
 
-  // 9. Максимальная высота
-  if(player.y>saveData.maxHeight)saveData.maxHeight=player.y;
-
-  // 10. Победа
-  if(player.y>24.5&&state.phase==='playing'){
-    triggerVictory();
+  startRotation() {
+    if (this.rotationAnim) cancelAnimationFrame(this.rotationAnim);
+    const step = () => {
+      if (State.autoRotate && State.rotationSpeed > 0) {
+        const pov = this.globe.pointOfView();
+        const lng = (pov.lng || 0) + State.rotationSpeed * 0.15;
+        this.globe.pointOfView({ ...pov, lng }, 0);
+      }
+      this.rotationAnim = requestAnimationFrame(step);
+    };
+    step();
   }
-}
 
-function triggerVictory(){
-  state.phase='victory';
-  var t=Math.floor(state.elapsed);
-  var mm=Math.floor(t/60),ss=t%60;
-  document.getElementById('vic-time').textContent='Время: '+mm+':'+(ss<10?'0':'')+ss;
-  if(!saveData.bestTime||state.elapsed<saveData.bestTime)saveData.bestTime=state.elapsed;
-  saveData.hasSave=false;
-  saveGameLS();
-  playVictory();
-  document.getElementById('hud').classList.remove('on');
-  document.getElementById('stats').classList.remove('on');
-  document.getElementById('vic').classList.remove('hidden');
-}
-
-/* ============================================================
-   КАМЕРА
-   ============================================================ */
-function updateCamera(dt){
-  var targetY=player.y+1.5;
-  var targetX=player.x;
-  // Адаптивный zoom — дальше отдаляем при подъёме
-  var targetZ=1-Math.min(0.25,Math.max(0,player.y)*0.008);
-  state.camX+=(targetX-state.camX)*Math.min(1,dt*6);
-  state.camY+=(targetY-state.camY)*Math.min(1,dt*5);
-  state.camZ+=(targetZ-state.camZ)*Math.min(1,dt*3);
-  if(settings.screenshake&&state.shakeTime>0){
-    state.shakeTime-=dt;
-    var s=state.shakeMag*(state.shakeTime/0.15);
-    state.camX+=(Math.random()-0.5)*s;
-    state.camY+=(Math.random()-0.5)*s;
-  }
-}
-
-/* ============================================================
-   РЕНДЕР
-   ============================================================ */
-function render(){
-  // Небо
-  var sky=ctx.createLinearGradient(0,0,0,H);
-  var skyTop='#6ba0d0',skyBot='#b8d4e8';
-  if(state.phase==='menu'){
-    skyTop='#3a5a80';skyBot='#8fb0c8';
-  }
-  sky.addColorStop(0,skyTop);sky.addColorStop(1,skyBot);
-  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
-
-  // Солнце
-  var sunX=W*0.78,sunY=H*0.15;
-  var sunG=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,140);
-  sunG.addColorStop(0,'rgba(255,240,200,0.9)');
-  sunG.addColorStop(0.3,'rgba(255,220,150,0.3)');
-  sunG.addColorStop(1,'rgba(255,220,150,0)');
-  ctx.fillStyle=sunG;ctx.beginPath();ctx.arc(sunX,sunY,140,0,Math.PI*2);ctx.fill();
-
-  // Параллакс-горы
-  drawMountains(0.15,'rgba(140,160,180,0.5)',H*0.7);
-  drawMountains(0.3,'rgba(100,120,150,0.6)',H*0.75);
-
-  // Облака
-  drawClouds();
-
-  // Декор в глубине
-  for(var d=0;d<DECOR.length;d++){
-    var dr=DECOR[d];
-    var sp=worldToScreen(dr.x,dr.y);
-    if(sp.x<-100||sp.x>W+100)continue;
-    var rr=dr.r*BASE_ZOOM*state.camZ*0.4;
-    ctx.fillStyle='rgba(80,90,110,0.35)';
-    ctx.beginPath();
-    for(var k=0;k<6;k++){
-      var a=dr.rot+k*Math.PI/3;
-      var px=sp.x+Math.cos(a)*rr;
-      var py=sp.y+Math.sin(a)*rr*0.7;
-      if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+  stopRotation() {
+    if (this.rotationAnim) {
+      cancelAnimationFrame(this.rotationAnim);
+      this.rotationAnim = null;
     }
-    ctx.closePath();ctx.fill();
   }
 
-  // Уровень
-  for(var i=0;i<LEVEL.length;i++){
-    drawBox(LEVEL[i]);
+  flyTo(lat, lng, altitude = 0.6, duration = 1200) {
+    State.autoRotate = false;
+    this.globe.pointOfView({ lat, lng, altitude }, duration);
+    // Через duration снова включим, если нужно
+    setTimeout(() => {
+      if (State.autoRotate !== false) State.autoRotate = true;
+    }, duration + 100);
   }
 
-  // Финишный флаг
-  drawFlag(0,24.8);
-
-  // Частицы (за игроком)
-  drawParticles();
-
-  // Игрок и молот
-  drawPlayer();
-  drawHammer();
-
-  // Мини-индикатор высоты (справа)
-  if(state.phase==='playing'){
-    drawHeightBar();
-  }
-}
-
-function drawMountains(parallax,color,baseY){
-  var offX=-state.camX*BASE_ZOOM*parallax*0.15;
-  var offY=state.camY*BASE_ZOOM*parallax*0.08;
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(0,H);
-  var step=120;
-  var seed=Math.floor(parallax*1000);
-  for(var x=0;x<=W+step;x+=step){
-    var h=baseY+Math.sin((x+seed)*0.005)*60+Math.cos((x+seed)*0.013)*30;
-    ctx.lineTo(x+offX%step,h+offY);
-  }
-  ctx.lineTo(W,H);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawClouds(){
-  var t=performance.now()*0.00002;
-  ctx.fillStyle='rgba(255,255,255,0.35)';
-  for(var i=0;i<6;i++){
-    var x=((i*137+t*1000)%(W+200))-100;
-    var y=40+i*35+Math.sin(i+t)*10;
-    ctx.beginPath();
-    ctx.arc(x,y,25+i*3,0,Math.PI*2);
-    ctx.arc(x+25,y-8,20+i*2,0,Math.PI*2);
-    ctx.arc(x-25,y+4,18,0,Math.PI*2);
-    ctx.fill();
-  }
-}
-
-function drawBox(box){
-  var bl=worldToScreen(box.x-box.w/2,box.y+box.h/2);
-  var tr=worldToScreen(box.x+box.w/2,box.y-box.h/2);
-  var w=tr.x-bl.x;
-  var h=tr.y-bl.y;
-  if(w<1||h<1)return;
-  if(bl.x>W+50||tr.x<-50||bl.y>H+50||tr.y<-50)return;
-
-  var colors={
-    ground:{top:'#7a8f4a',face:'#5a6b3a',shadow:'#3a4a25'},
-    rock:{top:'#a8a8b0',face:'#8a8a92',shadow:'#5a5a62'},
-    wood:{top:'#a06838',face:'#7a4a1a',shadow:'#4a2a08'},
-    metal:{top:'#8890a0',face:'#5a6070',shadow:'#3a4050'}
-  };
-  var c=colors[box.type]||colors.rock;
-
-  // Основная заливка
-  var grad=ctx.createLinearGradient(bl.x,bl.y,bl.x,bl.y+h);
-  grad.addColorStop(0,c.face);
-  grad.addColorStop(1,c.shadow);
-  ctx.fillStyle=grad;
-  ctx.fillRect(bl.x,bl.y,w,h);
-
-  // Верхняя грань
-  ctx.fillStyle=c.top;
-  ctx.fillRect(bl.x,bl.y,w,Math.min(h*0.15,6));
-
-  // Блик
-  ctx.fillStyle='rgba(255,255,255,0.08)';
-  ctx.fillRect(bl.x,bl.y,w,2);
-
-  // Тень снизу
-  ctx.fillStyle='rgba(0,0,0,0.2)';
-  ctx.fillRect(bl.x,bl.y+h-2,w,2);
-
-  // Тень на землю (если верхний объект)
-  if(settings.shadows&&box.type!=='ground'){
-    ctx.fillStyle='rgba(0,0,0,0.1)';
-    ctx.beginPath();
-    ctx.ellipse(bl.x+w/2,bl.y+h+4,w*0.4,4,0,0,Math.PI*2);
-    ctx.fill();
-  }
-}
-
-function drawFlag(x,y){
-  var p=worldToScreen(x,y);
-  var z=BASE_ZOOM*state.camZ;
-  // Шест
-  ctx.strokeStyle='#666';ctx.lineWidth=3*state.camZ;
-  ctx.beginPath();
-  ctx.moveTo(p.x,p.y);
-  ctx.lineTo(p.x,p.y-z*1.5);
-  ctx.stroke();
-  // Флаг
-  ctx.fillStyle='#c9a961';
-  ctx.beginPath();
-  ctx.moveTo(p.x,p.y-z*1.5);
-  ctx.lineTo(p.x+z*0.8,p.y-z*1.2);
-  ctx.lineTo(p.x,p.y-z*0.9);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawPlayer(){
-  var p=worldToScreen(player.x,player.y);
-  var z=BASE_ZOOM*state.camZ;
-  var r=PHYS.playerR*z;
-
-  // Тень
-  if(settings.shadows){
-    ctx.fillStyle='rgba(0,0,0,0.25)';
-    ctx.beginPath();
-    ctx.ellipse(p.x,p.y+r*0.9,r*0.9,r*0.3,0,0,Math.PI*2);
-    ctx.fill();
+  setSurface(mode) {
+    switch (mode) {
+      case 'realistic':
+        this.globe.globeImageUrl(CONFIG.textures.day);
+        break;
+      case 'political':
+        // Политический режим: слегка приглушаем текстуру, границы остаются
+        this.globe.globeImageUrl(CONFIG.textures.day);
+        break;
+      case 'physical':
+        this.globe.globeImageUrl(CONFIG.textures.day);
+        break;
+      case 'night':
+        this.globe.globeImageUrl(CONFIG.textures.night);
+        break;
+    }
   }
 
-  // Котёл
-  var potGrad=ctx.createLinearGradient(p.x-r*0.8,p.y-r,p.x+r*0.8,p.y+r);
-  potGrad.addColorStop(0,'#3a3a45');
-  potGrad.addColorStop(0.5,'#22222c');
-  potGrad.addColorStop(1,'#111118');
-  ctx.fillStyle=potGrad;
-  ctx.beginPath();
-  ctx.moveTo(p.x-r*0.75,p.y-r*0.5);
-  ctx.lineTo(p.x-r*0.65,p.y+r*0.7);
-  ctx.quadraticCurveTo(p.x,p.y+r,r*0.65+p.x,p.y+r*0.7);
-  ctx.lineTo(p.x+r*0.75,p.y-r*0.5);
-  ctx.closePath();
-  ctx.fill();
-
-  // Ободок
-  ctx.fillStyle='#555562';
-  ctx.beginPath();
-  ctx.ellipse(p.x,p.y-r*0.5,r*0.8,r*0.15,0,0,Math.PI*2);
-  ctx.fill();
-
-  // Голова
-  ctx.fillStyle='#d9b48c';
-  ctx.beginPath();
-  ctx.arc(p.x,p.y-r*0.75,r*0.42,0,Math.PI*2);
-  ctx.fill();
-
-  // Волосы
-  ctx.fillStyle='#3a2a1a';
-  ctx.beginPath();
-  ctx.arc(p.x,p.y-r*0.9,r*0.42,Math.PI,0);
-  ctx.fill();
-
-  // Глаз
-  ctx.fillStyle='#222';
-  ctx.beginPath();
-  ctx.arc(p.x+r*0.15,p.y-r*0.8,r*0.06,0,Math.PI*2);
-  ctx.fill();
-}
-
-function drawHammer(){
-  var p=worldToScreen(player.x,player.y);
-  var z=BASE_ZOOM*state.camZ;
-  var L=PHYS.hammerLen*z;
-  var ex=p.x+Math.cos(hammer.angle)*L;
-  var ey=p.y-Math.sin(hammer.angle)*L;
-
-  // Рукоятка
-  ctx.strokeStyle='#8b5a2b';
-  ctx.lineWidth=Math.max(4,0.18*z);
-  ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.moveTo(p.x,p.y);
-  ctx.lineTo(ex,ey);
-  ctx.stroke();
-
-  // Обводка рукоятки (тень)
-  ctx.strokeStyle='rgba(0,0,0,0.3)';
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(p.x+1,p.y+1);
-  ctx.lineTo(ex+1,ey+1);
-  ctx.stroke();
-
-  // Головка молота
-  var hw=0.55*z*0.5;
-  var hh=0.4*z*0.5;
-  ctx.save();
-  ctx.translate(ex,ey);
-  ctx.rotate(-hammer.angle);
-  // Градиент металла
-  var mg=ctx.createLinearGradient(-hw,0,hw,0);
-  mg.addColorStop(0,'#5a5a68');
-  mg.addColorStop(0.4,'#8a8a98');
-  mg.addColorStop(0.6,'#6a6a78');
-  mg.addColorStop(1,'#3a3a48');
-  ctx.fillStyle=mg;
-  ctx.fillRect(-hw,-hh,hw*2,hh*2);
-  // Блик
-  ctx.fillStyle='rgba(255,255,255,0.25)';
-  ctx.fillRect(-hw+2,-hh+2,hw*2-4,2);
-  // Обводка
-  ctx.strokeStyle='rgba(0,0,0,0.5)';
-  ctx.lineWidth=1;
-  ctx.strokeRect(-hw,-hh,hw*2,hh*2);
-  ctx.restore();
-}
-
-function drawParticles(){
-  for(var i=0;i<particles.length;i++){
-    var p=particles[i];
-    var sp=worldToScreen(p.x,p.y);
-    var alpha=p.life/p.max;
-    ctx.fillStyle=p.color;
-    ctx.globalAlpha=alpha;
-    ctx.beginPath();
-    ctx.arc(sp.x,sp.y,p.size*state.camZ,0,Math.PI*2);
-    ctx.fill();
+  setQuality(q) {
+    const dpr = q === 'high' ? Math.min(3, window.devicePixelRatio) : q === 'low' ? 1 : Math.min(2, window.devicePixelRatio);
+    const renderer = this.globe.renderer();
+    if (renderer) renderer.setPixelRatio(dpr);
+    this.resize();
   }
-  ctx.globalAlpha=1;
-}
 
-function drawHeightBar(){
-  var barX=W-16,barY=80,barH=H-160;
-  ctx.fillStyle='rgba(0,0,0,0.3)';
-  ctx.fillRect(barX-2,barY,4,barH);
-  var totalH=25;
-  var progress=clamp(player.y/totalH,0,1);
-  var markerY=barY+barH*(1-progress);
-  // Маркеры зон
-  for(var i=0;i<ZONES.length;i++){
-    var zy=barY+barH*(1-ZONES[i].y/totalH);
-    ctx.fillStyle='rgba(201,169,97,0.5)';
-    ctx.fillRect(barX-4,zy,8,1);
-  }
-  // Метка игрока
-  ctx.fillStyle='#fff';
-  ctx.beginPath();
-  ctx.arc(barX,markerY,4,0,Math.PI*2);
-  ctx.fill();
-  ctx.strokeStyle='#c9a961';
-  ctx.lineWidth=2;
-  ctx.stroke();
-}
-
-/* ============================================================
-   ИГРОВОЙ ЦИКЛ
-   ============================================================ */
-var FIXED_DT=1/60;
-var accumulator=0;
-var lastTime=performance.now();
-var lastRender=0;
-var frameCount=0,fpsAccum=0,measuredFPS=0,avgFPS=0;
-var fpsHistory=[],MAX_FPS_HISTORY=60;
-var lastFrameMs=0;
-
-var statsCv=document.getElementById('stats-cv');
-var statsCtx=statsCv.getContext('2d');
-
-function updateFPS(dt){
-  frameCount++;
-  fpsAccum+=dt;
-  if(fpsAccum>=0.5){
-    measuredFPS=Math.round(frameCount/fpsAccum);
-    fpsHistory.push(measuredFPS);
-    if(fpsHistory.length>MAX_FPS_HISTORY)fpsHistory.shift();
-    avgFPS=Math.round(fpsHistory.reduce(function(a,b){return a+b;},0)/fpsHistory.length);
-    frameCount=0;fpsAccum=0;
-    if(settings.showStats){
-      document.getElementById('s-fps').textContent=measuredFPS;
-      document.getElementById('s-avg').textContent=avgFPS;
-      document.getElementById('s-frame').textContent=lastFrameMs.toFixed(1)+' мс';
-      document.getElementById('s-limit').textContent=settings.fpsLimit>0?settings.fpsLimit:'∞';
-      document.getElementById('s-quality').textContent=settings.quality;
-      drawFPSGraph();
+  dispose() {
+    this.stopRotation();
+    if (this.globe) {
+      // Globe.gl не предоставляет явного dispose, но мы можем очистить контейнер
+      this.container.innerHTML = '';
+      this.globe = null;
     }
   }
 }
-function drawFPSGraph(){
-  var w=statsCv.width,h=statsCv.height;
-  statsCtx.clearRect(0,0,w,h);
-  statsCtx.fillStyle='rgba(0,0,0,0.4)';statsCtx.fillRect(0,0,w,h);
-  statsCtx.strokeStyle='rgba(255,255,255,0.08)';statsCtx.lineWidth=1;
-  for(var i=1;i<4;i++){statsCtx.beginPath();statsCtx.moveTo(0,h*i/4);statsCtx.lineTo(w,h*i/4);statsCtx.stroke();}
-  if(fpsHistory.length<2)return;
-  var maxV=Math.max(60,settings.fpsLimit||60);
-  for(var k=0;k<fpsHistory.length;k++)if(fpsHistory[k]>maxV)maxV=fpsHistory[k];
-  statsCtx.strokeStyle='#c9a961';statsCtx.lineWidth=1.5;
-  statsCtx.beginPath();
-  for(var j=0;j<fpsHistory.length;j++){
-    var x=(j/(MAX_FPS_HISTORY-1))*w;
-    var y=h-(fpsHistory[j]/maxV)*h;
-    if(j===0)statsCtx.moveTo(x,y);else statsCtx.lineTo(x,y);
-  }
-  statsCtx.stroke();
-}
 
-function loop(now){
-  requestAnimationFrame(loop);
+// ---------- ЗАГРУЗКА ДАННЫХ ----------
+class DataLoader {
+  static async loadAll() {
+    const results = { countries: null, geo: null, cities: null };
+    try {
+      dom.loaderText.textContent = 'Загрузка границ стран…';
+      const topoRes = await fetchWithTimeout(CONFIG.data.countriesTopo);
+      const topo = await topoRes.json();
+      // Преобразуем TopoJSON в GeoJSON
+      const countriesGeo = topojson.feature(topo, topo.objects.countries);
+      results.geo = countriesGeo;
 
-  var interval=settings.fpsLimit>0?1000/settings.fpsLimit:0;
-  if(interval>0&&now-lastRender<interval-1.5)return;
-  lastRender=now;
+      dom.loaderText.textContent = 'Загрузка данных о странах…';
+      const apiRes = await fetchWithTimeout(CONFIG.data.countriesApi);
+      results.countries = await apiRes.json();
 
-  var dt=Math.min((now-lastTime)/1000,0.1);
-  lastTime=now;
-  lastFrameMs=dt*1000;
-
-  if(state.phase==='playing'){
-    state.elapsed=(performance.now()-state.startTime)/1000;
-    accumulator+=dt;
-    var steps=0;
-    while(accumulator>=FIXED_DT&&steps<5){
-      stepPhysics(FIXED_DT);
-      accumulator-=FIXED_DT;
-      steps++;
+      dom.loaderText.textContent = 'Загрузка городов…';
+      const citiesRes = await fetchWithTimeout(CONFIG.data.cities);
+      results.cities = await citiesRes.json();
+    } catch (err) {
+      console.error('Ошибка загрузки данных:', err);
+      dom.loaderError.style.display = 'block';
+      dom.loaderError.textContent =
+        'Не удалось загрузить часть данных. Проверьте интернет-соединение и обновите страницу.';
     }
-    if(steps>=5)accumulator=0;
-    updateCamera(dt);
-    updateHUD();
-    periodicSave(dt);
-  }else if(state.phase==='paused'||state.phase==='victory'){
-    updateCamera(dt);
-  }else if(state.phase==='menu'){
-    // Камера меню медленно вращается
-    var t=now*0.00015;
-    state.camX=Math.cos(t)*5;
-    state.camY=6+Math.sin(t*0.5)*2;
-    state.camZ=1.6;
-  }
-
-  render();
-  updateFPS(dt);
-}
-
-function updateHUD(){
-  var t=Math.floor(state.elapsed);
-  var mm=Math.floor(t/60),ss=t%60;
-  document.getElementById('h-time').textContent=mm+':'+(ss<10?'0':'')+ss;
-  document.getElementById('h-height').textContent=Math.max(0,player.y).toFixed(1)+' м';
-  document.getElementById('h-zone').textContent=ZONES[state.zone].name;
-}
-
-var saveTimer=0;
-function periodicSave(dt){
-  saveTimer+=dt;
-  if(saveTimer>4&&state.phase==='playing'){
-    saveTimer=0;
-    saveData.playerPos=[player.x,player.y];
-    saveData.hammerAngle=hammer.angle;
-    saveData.elapsedTime=state.elapsed;
-    saveData.hasSave=true;
-    saveGameLS();
+    return results;
   }
 }
 
-/* ============================================================
-   УПРАВЛЕНИЕ
-   ============================================================ */
-var touchIndicator=document.getElementById('ti');
+// ---------- ПОИСК ----------
+class SearchEngine {
+  static search(query) {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const results = [];
+    const seen = new Set();
 
-cv.addEventListener('mousedown',function(e){
-  if(state.phase!=='playing')return;
-  e.preventDefault();initAudio();
-  state.pointerDown=true;
-  state.pointerX=e.clientX;state.pointerY=e.clientY;
-  touchIndicator.style.left=e.clientX+'px';
-  touchIndicator.style.top=e.clientY+'px';
-  touchIndicator.classList.add('on');
-});
-cv.addEventListener('mousemove',function(e){
-  if(!state.pointerDown)return;
-  state.pointerX=e.clientX;state.pointerY=e.clientY;
-  touchIndicator.style.left=e.clientX+'px';
-  touchIndicator.style.top=e.clientY+'px';
-});
-cv.addEventListener('mouseup',function(){state.pointerDown=false;touchIndicator.classList.remove('on');});
-cv.addEventListener('mouseleave',function(){state.pointerDown=false;touchIndicator.classList.remove('on');});
-
-cv.addEventListener('touchstart',function(e){
-  if(state.phase!=='playing')return;
-  e.preventDefault();initAudio();
-  var t=e.touches[0];
-  state.pointerDown=true;
-  state.pointerX=t.clientX;state.pointerY=t.clientY;
-  touchIndicator.style.left=t.clientX+'px';
-  touchIndicator.style.top=t.clientY+'px';
-  touchIndicator.classList.add('on');
-},{passive:false});
-cv.addEventListener('touchmove',function(e){
-  if(!state.pointerDown)return;
-  e.preventDefault();
-  var t=e.touches[0];
-  state.pointerX=t.clientX;state.pointerY=t.clientY;
-  touchIndicator.style.left=t.clientX+'px';
-  touchIndicator.style.top=t.clientY+'px';
-},{passive:false});
-cv.addEventListener('touchend',function(e){
-  e.preventDefault();
-  state.pointerDown=false;
-  touchIndicator.classList.remove('on');
-},{passive:false});
-cv.addEventListener('touchcancel',function(){state.pointerDown=false;touchIndicator.classList.remove('on');});
-
-document.addEventListener('contextmenu',function(e){if(state.phase==='playing')e.preventDefault();});
-
-window.addEventListener('keydown',function(e){
-  if(e.key==='Escape'||e.key==='p'||e.key==='P'){
-    if(state.phase==='playing')pauseGame();
-    else if(state.phase==='paused')resumeGame();
-  }else if((e.key==='r'||e.key==='R')&&(state.phase==='playing'||state.phase==='paused')){
-    restartGame();
-  }
-});
-
-/* ============================================================
-   ПОЛНОЭКРАННЫЙ РЕЖИМ
-   ============================================================ */
-function toggleFS(){
-  try{
-    if(!document.fullscreenElement&&!document.webkitFullscreenElement){
-      var el=document.documentElement;
-      var req=el.requestFullscreen||el.webkitRequestFullscreen;
-      if(req){var p=req.call(el);if(p&&p.catch)p.catch(function(){showToast('Недоступно');});}
-      else showToast('Недоступно');
-    }else{
-      var ex=document.exitFullscreen||document.webkitExitFullscreen;
-      if(ex)ex.call(document);
-    }
-  }catch(e){showToast('Недоступно');}
-}
-
-/* ============================================================
-   UI ЛОГИКА
-   ============================================================ */
-function showEl(id){document.getElementById(id).classList.remove('hidden');}
-function hideEl(id){document.getElementById(id).classList.add('hidden');}
-function hideAllOverlays(){
-  ['settings-screen','controls-screen','stats-screen','about-screen','mode-screen','pause-menu','vic'].forEach(hideEl);
-}
-function setTg(id,on){var el=document.getElementById(id);if(el)el.classList.toggle('on',!!on);}
-
-function applySettingsToUI(){
-  document.getElementById('s-fps-limit').value=String(settings.fpsLimit);
-  document.getElementById('s-quality').value=settings.quality;
-  document.getElementById('s-volume').value=settings.volume;
-  document.getElementById('s-sens').value=settings.sensitivity;
-  setTg('s-particles',settings.particles);
-  setTg('s-shadows',settings.shadows);
-  setTg('s-show-stats',settings.showStats);
-  setTg('s-screenshake',settings.screenshake);
-  setTg('s-hud-fps',settings.hudFps);
-  setTg('s-mute',settings.mute);
-  document.getElementById('stats').classList.toggle('on',settings.showStats&&state.phase==='playing');
-  document.getElementById('btn-continue').disabled=!(saveData.hasSave&&saveData.playerPos);
-}
-
-function updateModeButtons(){
-  document.getElementById('mode-classic').classList.toggle('sel',settings.mode==='classic');
-  document.getElementById('mode-checkpoint').classList.toggle('sel',settings.mode==='checkpoint');
-}
-
-function showMainMenu(){
-  state.phase='menu';
-  hideAllOverlays();
-  showEl('main-menu');
-  document.getElementById('hud').classList.remove('on');
-  document.getElementById('stats').classList.remove('on');
-  document.getElementById('btn-continue').disabled=!(saveData.hasSave&&saveData.playerPos);
-  updateModeButtons();
-  // Сброс камеры на дефолт для меню
-  state.camZ=1.6;
-  player.x=0;player.y=2.5;player.vx=0;player.vy=0;
-  hammer.angle=-Math.PI/4;hammer.angVel=0;
-}
-
-function startNewGame(){
-  initAudio();
-  state.phase='playing';
-  state.zone=0;
-  state.elapsed=0;
-  state.startTime=performance.now();
-
-  player.x=0;player.y=2.5;player.vx=0;player.vy=0;
-  hammer.angle=-Math.PI/4;hammer.angVel=0;
-  particles.length=0;
-
-  saveData.checkpoint=null;
-  saveData.checkpointZone=0;
-  saveData.playerPos=[0,2.5];
-  saveData._fallen=false;
-
-  hideAllOverlays();
-  hideEl('main-menu');
-  document.getElementById('hud').classList.add('on');
-  document.getElementById('stats').classList.toggle('on',settings.showStats);
-
-  state.pointerDown=false;
-  accumulator=0;
-  lastTime=performance.now();
-  lastRender=0;
-
-  if(audioCtx)startAmbient();
-  saveGameLS();
-}
-
-function resumeFromSave(){
-  if(!saveData.playerPos){startNewGame();return;}
-  initAudio();
-  state.phase='playing';
-  state.elapsed=saveData.elapsedTime||0;
-  state.startTime=performance.now()-state.elapsed*1000;
-  state.zone=saveData.checkpointZone||0;
-
-  player.x=saveData.playerPos[0];
-  player.y=saveData.playerPos[1];
-  player.vx=0;player.vy=0;
-  hammer.angle=saveData.hammerAngle||-Math.PI/4;
-  hammer.angVel=0;
-  particles.length=0;
-
-  hideAllOverlays();
-  hideEl('main-menu');
-  document.getElementById('hud').classList.add('on');
-  document.getElementById('stats').classList.toggle('on',settings.showStats);
-
-  state.pointerDown=false;
-  accumulator=0;
-  lastTime=performance.now();
-  lastRender=0;
-
-  if(audioCtx)startAmbient();
-}
-
-function pauseGame(){
-  if(state.phase!=='playing')return;
-  state.phase='paused';
-  showEl('pause-menu');
-  document.getElementById('hud').classList.remove('on');
-  document.getElementById('stats').classList.remove('on');
-  touchIndicator.classList.remove('on');
-  state.pointerDown=false;
-
-  saveData.playerPos=[player.x,player.y];
-  saveData.hammerAngle=hammer.angle;
-  saveData.elapsedTime=state.elapsed;
-  saveData.hasSave=true;
-  saveGameLS();
-}
-
-function resumeGame(){
-  if(state.phase!=='paused')return;
-  state.phase='playing';
-  hideAllOverlays();
-  document.getElementById('hud').classList.add('on');
-  document.getElementById('stats').classList.toggle('on',settings.showStats);
-  accumulator=0;
-  lastTime=performance.now();
-  lastRender=0;
-}
-
-function restartGame(){
-  showConfirm('Начать заново? Текущий прогресс будет потерян.').then(function(ok){
-    if(!ok)return;
-    saveData.checkpoint=null;
-    saveData.checkpointZone=0;
-    saveData.elapsedTime=0;
-    startNewGame();
-  });
-}
-
-function renderStatsScreen(){
-  var content=document.getElementById('stats-content');
-  var best=saveData.bestTime?formatTime(saveData.bestTime):'—';
-  var maxH=(saveData.maxHeight||0).toFixed(1)+' м';
-  var falls=saveData.falls||0;
-  var totalT=saveData.totalPlayTime?formatTime(saveData.totalPlayTime):'0:00';
-  content.innerHTML=
-    '<div class="st"><span>Лучшее время</span><span>'+best+'</span></div>'+
-    '<div class="st"><span>Максимальная высота</span><span>'+maxH+'</span></div>'+
-    '<div class="st"><span>Количество падений</span><span>'+falls+'</span></div>'+
-    '<div class="st"><span>Общее время в игре</span><span>'+totalT+'</span></div>'+
-    '<div class="st"><span>Текущий режим</span><span>'+(settings.mode==='classic'?'Классический':'С чекпоинтами')+'</span></div>';
-}
-
-/* Обработчик кнопок */
-document.addEventListener('click',function(e){
-  var btn=e.target.closest('[data-action]');
-  if(!btn)return;
-  var action=btn.dataset.action;
-  initAudio();
-
-  switch(action){
-    case 'play':startNewGame();break;
-    case 'continue':resumeFromSave();break;
-    case 'open-mode':hideEl('main-menu');showEl('mode-screen');updateModeButtons();break;
-    case 'close-mode':hideEl('mode-screen');showEl('main-menu');break;
-    case 'open-settings':
-      hideEl('main-menu');hideEl('pause-menu');hideEl('mode-screen');
-      showEl('settings-screen');applySettingsToUI();break;
-    case 'close-settings':
-      hideEl('settings-screen');
-      if(state.phase==='paused')showEl('pause-menu');else showEl('main-menu');
-      break;
-    case 'open-controls':hideEl('main-menu');showEl('controls-screen');break;
-    case 'close-controls':hideEl('controls-screen');showEl('main-menu');break;
-    case 'open-stats':hideEl('main-menu');renderStatsScreen();showEl('stats-screen');break;
-    case 'close-stats':hideEl('stats-screen');showEl('main-menu');break;
-    case 'open-about':hideEl('main-menu');showEl('about-screen');break;
-    case 'close-about':hideEl('about-screen');showEl('main-menu');break;
-    case 'resume':resumeGame();break;
-    case 'restart':restartGame();break;
-    case 'main-menu':
-      showConfirm('Выйти в главное меню? Прогресс сохранится.').then(function(ok){
-        if(!ok)return;
-        if(state.phase==='paused'||state.phase==='playing'){
-          saveData.playerPos=[player.x,player.y];
-          saveData.hammerAngle=hammer.angle;
-          saveData.elapsedTime=state.elapsed;
-          saveData.hasSave=true;
-          saveGameLS();
+    // Страны
+    for (const c of State.countries) {
+      const names = [
+        c.name?.common,
+        c.name?.official,
+        c.translations?.rus?.common,
+        c.translations?.rus?.official,
+      ].filter(Boolean);
+      for (const n of names) {
+        if (n.toLowerCase().includes(q) && !seen.has('c:' + c.cca2)) {
+          seen.add('c:' + c.cca2);
+          results.push({
+            type: 'country',
+            label: c.translations?.rus?.common || c.name?.common || c.cca2,
+            sub: c.name?.common !== (c.translations?.rus?.common) ? c.name?.common : '',
+            country: c,
+          });
+          break;
         }
-        showMainMenu();
-      });
-      break;
-    case 'reset-settings':
-      for(var k in DEFAULT_SETTINGS)settings[k]=DEFAULT_SETTINGS[k];
-      saveSettingsLS();applySettingsToUI();
-      showToast('Настройки сброшены');break;
-    case 'autotune':runAutoTune();break;
-    case 'victory-restart':hideEl('vic');startNewGame();break;
-    case 'victory-menu':hideEl('vic');showMainMenu();break;
-    case 'reset-progress':
-      showConfirm('Сбросить всю статистику и сохранение?').then(function(ok){
-        if(!ok)return;
-        saveData={playerPos:null,hammerAngle:null,elapsedTime:0,bestTime:null,
-          maxHeight:0,falls:0,totalPlayTime:0,checkpoint:null,checkpointZone:0,hasSave:false};
-        try{localStorage.removeItem('hp_save_v2');}catch(e){}
-        showToast('Прогресс сброшен');
-        renderStatsScreen();
-        document.getElementById('btn-continue').disabled=true;
-      });
-      break;
+      }
+    }
+
+    // Города
+    for (const city of State.cities) {
+      if (city.name.toLowerCase().includes(q)) {
+        const key = 'city:' + city.name + ':' + city.lat + ':' + city.lng;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({
+            type: 'city',
+            label: city.name,
+            sub: city.country,
+            city,
+          });
+        }
+      }
+      if (results.length > 200) break;
+    }
+
+    return results.slice(0, CONFIG.maxSearchResults);
   }
-});
+}
 
-/* Кнопки режимов */
-document.getElementById('mode-classic').addEventListener('click',function(){
-  settings.mode='classic';saveSettingsLS();updateModeButtons();
-  showToast('Режим: Классический');
-  setTimeout(function(){hideEl('mode-screen');showEl('main-menu');},180);
-});
-document.getElementById('mode-checkpoint').addEventListener('click',function(){
-  settings.mode='checkpoint';saveSettingsLS();updateModeButtons();
-  showToast('Режим: С чекпоинтами');
-  setTimeout(function(){hideEl('mode-screen');showEl('main-menu');},180);
-});
+// ---------- UI ----------
+class UI {
+  static showLoaderError(msg) {
+    dom.loaderError.style.display = 'block';
+    dom.loaderError.textContent = msg;
+  }
 
-/* HUD-кнопки */
-document.getElementById('btn-pause').addEventListener('click',function(e){
-  e.stopPropagation();
-  if(state.phase==='playing')pauseGame();
-});
-document.getElementById('btn-fs').addEventListener('click',function(e){
-  e.stopPropagation();toggleFS();
-});
+  static hideLoader() {
+    dom.loader.classList.add('hidden');
+  }
 
-/* Настройки — слушатели */
-document.getElementById('s-fps-limit').addEventListener('change',function(e){
-  settings.fpsLimit=parseInt(e.target.value,10);
-  saveSettingsLS();lastRender=0;
-  showToast('Лимит FPS: '+(settings.fpsLimit===0?'без ограничения':settings.fpsLimit));
-});
-document.getElementById('s-quality').addEventListener('change',function(e){
-  settings.quality=e.target.value;
-  saveSettingsLS();resizeCanvas();
-  showToast('Качество: '+e.target.value);
-});
-document.getElementById('s-volume').addEventListener('input',function(e){
-  settings.volume=parseInt(e.target.value,10);
-  updateAmbientVol();saveSettingsLS();
-});
-document.getElementById('s-sens').addEventListener('input',function(e){
-  settings.sensitivity=parseInt(e.target.value,10);
-  saveSettingsLS();
-});
-document.getElementById('s-particles').addEventListener('click',function(){
-  settings.particles=!settings.particles;setTg('s-particles',settings.particles);saveSettingsLS();
-});
-document.getElementById('s-shadows').addEventListener('click',function(){
-  settings.shadows=!settings.shadows;setTg('s-shadows',settings.shadows);saveSettingsLS();
-  showToast('Тени: '+(settings.shadows?'вкл':'выкл'));
-});
-document.getElementById('s-show-stats').addEventListener('click',function(){
-  settings.showStats=!settings.showStats;setTg('s-show-stats',settings.showStats);
-  document.getElementById('stats').classList.toggle('on',settings.showStats&&state.phase==='playing');
-  saveSettingsLS();
-});
-document.getElementById('s-screenshake').addEventListener('click',function(){
-  settings.screenshake=!settings.screenshake;setTg('s-screenshake',settings.screenshake);saveSettingsLS();
-});
-document.getElementById('s-hud-fps').addEventListener('click',function(){
-  settings.hudFps=!settings.hudFps;setTg('s-hud-fps',settings.hudFps);saveSettingsLS();
-});
-document.getElementById('s-mute').addEventListener('click',function(){
-  settings.mute=!settings.mute;setTg('s-mute',settings.mute);updateAmbientVol();saveSettingsLS();
-  showToast('Звук: '+(settings.mute?'выкл':'вкл'));
-});
-
-/* Автонастройка */
-var autoTuneRunning=false;
-function runAutoTune(){
-  if(autoTuneRunning)return;
-  autoTuneRunning=true;
-  showToast('Тестирование...');
-  var frames=0;
-  var tStart=performance.now();
-  function sample(now){
-    frames++;
-    if(now-tStart>2000){
-      var fps=frames/((now-tStart)/1000);
-      autoTuneRunning=false;
-      var q='min';
-      if(fps>=100)q='ultra';
-      else if(fps>=55)q='high';
-      else if(fps>=40)q='medium';
-      else if(fps>=25)q='low';
-      settings.quality=q;
-      settings.particles=(q==='high'||q==='ultra');
-      settings.shadows=(q!=='min'&&q!=='low');
-      saveSettingsLS();applySettingsToUI();resizeCanvas();
-      showToast('Автонастройка: '+q+' (~'+Math.round(fps)+' FPS)');
+  static renderSearchResults(results) {
+    const el = dom.searchResults;
+    if (!results.length) {
+      el.innerHTML = '<div class="search-result-item">Ничего не найдено</div>';
+      el.classList.add('active');
       return;
     }
-    requestAnimationFrame(sample);
+    el.innerHTML = results.map((r, i) => `
+      <div class="search-result-item" data-idx="${i}">
+        ${escapeHtml(r.label)}
+        <span class="result-type">${r.type === 'country' ? 'страна' : 'город'}</span>
+        ${r.sub ? `<span class="result-type">${escapeHtml(r.sub)}</span>` : ''}
+      </div>
+    `).join('');
+    el.classList.add('active');
+
+    el.querySelectorAll('.search-result-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const idx = Number(item.dataset.idx);
+        const r = results[idx];
+        if (!r) return;
+        el.classList.remove('active');
+        dom.searchInput.value = '';
+        if (r.type === 'country') {
+          App.selectCountry(r.country, true);
+        } else if (r.type === 'city') {
+          App.selectCity(r.city, true);
+        }
+      });
+    });
   }
-  requestAnimationFrame(sample);
+
+  static renderInfoCountry(country) {
+    const c = country;
+    const flag = c.flags?.svg || c.flags?.png || '';
+    const capital = c.capital?.[0] || 'Нет данных';
+    const languages = c.languages ? Object.values(c.languages).join(', ') : 'Нет данных';
+    const currencies = c.currencies
+      ? Object.values(c.currencies).map((cur) => `${cur.name} (${cur.symbol || ''})`).join(', ')
+      : 'Нет данных';
+    const borders = c.borders?.length ? c.borders.join(', ') : 'Нет данных';
+    const tld = c.tld?.join(', ') || 'Нет данных';
+    const region = c.region || 'Нет данных';
+    const subregion = c.subregion || '';
+
+    dom.infoContent.innerHTML = `
+      ${flag ? `<img class="flag-img" src="${flag}" alt="Флаг" onerror="this.style.display='none'">` : ''}
+      <h2>${escapeHtml(c.translations?.rus?.common || c.name?.common || 'Неизвестно')}</h2>
+      <div class="subtitle">${escapeHtml(c.name?.official || '')}</div>
+      <div class="info-row"><span class="label">Столица</span><span class="value">${escapeHtml(capital)}</span></div>
+      <div class="info-row"><span class="label">Регион</span><span class="value">${escapeHtml(region)}${subregion ? ' / ' + escapeHtml(subregion) : ''}</span></div>
+      <div class="info-row"><span class="label">Население</span><span class="value">${formatNumber(c.population)}</span></div>
+      <div class="info-row"><span class="label">Площадь</span><span class="value">${formatNumber(c.area)} км²</span></div>
+      <div class="info-row"><span class="label">Языки</span><span class="value">${escapeHtml(languages)}</span></div>
+      <div class="info-row"><span class="label">Валюта</span><span class="value">${escapeHtml(currencies)}</span></div>
+      <div class="info-row"><span class="label">Код</span><span class="value">${escapeHtml(c.cca2 || '')} / ${escapeHtml(c.cca3 || '')}</span></div>
+      <div class="info-row"><span class="label">Домен</span><span class="value">${escapeHtml(tld)}</span></div>
+      <div class="info-row"><span class="label">Границы</span><span class="value">${escapeHtml(borders)}</span></div>
+    `;
+    dom.infoPanel.classList.add('active');
+  }
+
+  static renderInfoCity(city) {
+    const country = State.countriesByIso[city.country] || {};
+    dom.infoContent.innerHTML = `
+      <h2>${escapeHtml(city.name)}</h2>
+      <div class="subtitle">${escapeHtml(country.translations?.rus?.common || country.name?.common || city.country || '')}</div>
+      <div class="info-row"><span class="label">Координаты</span><span class="value">${city.lat.toFixed(4)}, ${city.lng.toFixed(4)}</span></div>
+      ${country.capital ? `<div class="info-row"><span class="label">Столица страны</span><span class="value">${escapeHtml(country.capital[0] || '')}</span></div>` : ''}
+      ${country.population ? `<div class="info-row"><span class="label">Население страны</span><span class="value">${formatNumber(country.population)}</span></div>` : ''}
+    `;
+    dom.infoPanel.classList.add('active');
+  }
+
+  static renderStats() {
+    const totalArea = 510072000; // км², справочное значение
+    const landArea = 148940000;
+    const waterPct = ((totalArea - landArea) / totalArea * 100).toFixed(1);
+    const countryCount = State.countries.length;
+
+    dom.statsPanel.innerHTML = `
+      <strong>О Земле</strong><br>
+      Средний радиус: 6 371 км<br>
+      Экваториальный диаметр: 12 742 км<br>
+      Площадь поверхности: ${formatNumber(totalArea)} км²<br>
+      Вода: ~${waterPct}% поверхности<br>
+      Материков: 6 (модель)<br>
+      Государств в наборе: ${countryCount}
+    `;
+    dom.statsPanel.classList.add('active');
+  }
+
+  static toggleSettings(force) {
+    const isActive = dom.settingsPanel.classList.contains('active');
+    if (force === undefined) {
+      dom.settingsPanel.classList.toggle('active');
+    } else {
+      dom.settingsPanel.classList.toggle('active', force);
+    }
+  }
+
+  static toggleStats() {
+    State.statsOpen = !State.statsOpen;
+    if (State.statsOpen) {
+      UI.renderStats();
+    } else {
+      dom.statsPanel.classList.remove('active');
+    }
+  }
+
+  static closeInfo() {
+    dom.infoPanel.classList.remove('active');
+    State.selectedCountry = null;
+    State.selectedCity = null;
+    // Убираем выделение
+    if (State.globe) {
+      State.globe.polygonsData([]);
+    }
+  }
+
+  static setToggle(el, on) {
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-checked', String(on));
+  }
 }
 
-/* Пауза при уходе в фон */
-document.addEventListener('visibilitychange',function(){
-  if(document.hidden&&state.phase==='playing')pauseGame();
+// ---------- ОСНОВНОЙ КЛАСС ПРИЛОЖЕНИЯ ----------
+class App {
+  static engine = null;
+
+  static async init() {
+    // Загрузка настроек
+    App.loadSettings();
+
+    // 3D-сцена
+    try {
+      App.engine = new GlobeEngine(dom.globeContainer);
+      State.globe = App.engine.globe;
+    } catch (e) {
+      console.error('Не удалось создать 3D-сцену:', e);
+      UI.showLoaderError('WebGL не поддерживается или произошла ошибка инициализации 3D.');
+      return;
+    }
+
+    // Данные
+    const data = await DataLoader.loadAll();
+    if (data.geo) {
+      State.countriesGeo = data.geo;
+      App.buildCountriesLayer(data.geo);
+    }
+    if (data.countries) {
+      State.countries = data.countries.filter((c) => c.cca2 && c.name?.common);
+      State.countries.forEach((c) => { State.countriesByIso[c.cca2] = c; });
+    }
+    if (data.cities) {
+      State.cities = data.cities.filter((c) => c.lat && c.lng && c.name);
+      App.buildCitiesLayer();
+    }
+
+    // Настройки UI
+    App.applySettingsToUI();
+    App.bindEvents();
+
+    UI.hideLoader();
+    setTimeout(() => UI.renderStats(), 500);
+  }
+
+  // ---------- СЛОИ ----------
+  static buildCountriesLayer(geo) {
+    if (!State.globe) return;
+    const polygons = geo.features
+      .filter((f) => f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'))
+      .map((f) => ({
+        type: 'Feature',
+        properties: f.properties,
+        geometry: f.geometry,
+      }));
+
+    State.globe
+      .polygonsData(polygons)
+      .polygonCapColor(() => 'rgba(77,166,255,0.04)')
+      .polygonSideColor(() => 'rgba(77,166,255,0.02)')
+      .polygonStrokeColor(() => 'rgba(77,166,255,0.35)')
+      .polygonAltitude(0.004)
+      .onPolygonClick((polygon) => {
+        if (!State.exploreMode && !State.selectedCountry) return;
+        const iso = polygon.properties?.ISO_A2 || polygon.properties?.iso_a2;
+        if (iso && State.countriesByIso[iso]) {
+          App.selectCountry(State.countriesByIso[iso], true);
+        }
+      });
+  }
+
+  static buildCitiesLayer() {
+    if (!State.globe) return;
+    // Показываем только крупные города, чтобы не перегружать
+    const majorCities = State.cities
+      .filter((c) => c.population && c.population > 500000)
+      .slice(0, 800)
+      .map((c) => ({
+        lat: c.lat,
+        lng: c.lng,
+        name: c.name,
+        country: c.country,
+        population: c.population,
+      }));
+
+    State.globe
+      .pointsData(majorCities)
+      .pointLat('lat')
+      .pointLng('lng')
+      .pointRadius(0.15)
+      .pointAltitude(0.01)
+      .pointColor(() => '#4da6ff')
+      .pointLabel((d) => `<div style="font-size:12px;padding:4px 8px;background:rgba(0,0,0,0.7);border-radius:6px">${d.name}</div>`)
+      .onPointClick((point) => {
+        App.selectCity(point, true);
+      });
+
+    State.cityMarkers = majorCities;
+  }
+
+  // ---------- ВЫБОР ----------
+  static selectCountry(country, fly = false) {
+    State.selectedCountry = country;
+    State.selectedCity = null;
+    UI.renderInfoCountry(country);
+
+    if (fly && country.latlng) {
+      App.engine.flyTo(country.latlng[0], country.latlng[1], 0.8);
+    }
+
+    // Визуальное выделение: подсветим границы
+    if (State.globe) {
+      const iso = country.cca2;
+      // Можно выделить через фильтр полигонов
+      const features = State.countriesGeo?.features || [];
+      const target = features.filter((f) => {
+        const code = f.properties?.ISO_A2 || f.properties?.iso_a2;
+        return code === iso;
+      });
+      if (target.length) {
+        State.globe.polygonsData(target)
+          .polygonCapColor(() => 'rgba(77,166,255,0.18)')
+          .polygonStrokeColor(() => '#4da6ff')
+          .polygonAltitude(0.008);
+      }
+    }
+  }
+
+  static selectCity(city, fly = false) {
+    State.selectedCity = city;
+    State.selectedCountry = null;
+    UI.renderInfoCity(city);
+    if (fly) {
+      App.engine.flyTo(city.lat, city.lng, 0.4);
+    }
+  }
+
+  // ---------- СЛУЧАЙНАЯ СТРАНА ----------
+  static randomCountry() {
+    if (!State.countries.length) return;
+    const idx = Math.floor(Math.random() * State.countries.length);
+    const c = State.countries[idx];
+    App.selectCountry(c, true);
+  }
+
+  // ---------- НАСТРОЙКИ ----------
+  static loadSettings() {
+    const saved = safeStorage('earth3d_settings');
+    if (saved) {
+      State.autoRotate = saved.autoRotate !== undefined ? saved.autoRotate : true;
+      State.rotationSpeed = saved.rotationSpeed !== undefined ? saved.rotationSpeed : CONFIG.defaultRotationSpeed;
+      State.showBorders = saved.showBorders !== undefined ? saved.showBorders : true;
+      State.showCities = saved.showCities !== undefined ? saved.showCities : true;
+      State.showStars = saved.showStars !== undefined ? saved.showStars : true;
+      State.surfaceMode = saved.surfaceMode || 'realistic';
+      State.quality = saved.quality || 'medium';
+    }
+  }
+
+  static saveSettings() {
+    safeStorage('earth3d_settings', {
+      autoRotate: State.autoRotate,
+      rotationSpeed: State.rotationSpeed,
+      showBorders: State.showBorders,
+      showCities: State.showCities,
+      showStars: State.showStars,
+      surfaceMode: State.surfaceMode,
+      quality: State.quality,
+    });
+  }
+
+  static applySettingsToUI() {
+    // Режим поверхности
+    const selSurface = $('#surface-mode');
+    if (selSurface) selSurface.value = State.surfaceMode;
+
+    // Качество
+    const selQuality = $('#quality-mode');
+    if (selQuality) selQuality.value = State.quality;
+
+    // Скорость
+    const rangeSpeed = $('#rotation-speed');
+    if (rangeSpeed) rangeSpeed.value = State.rotationSpeed;
+
+    // Переключатели
+    const tRot = $('#toggle-rotation');
+    if (tRot) UI.setToggle(tRot, State.autoRotate);
+    const tBorders = $('#toggle-borders');
+    if (tBorders) UI.setToggle(tBorders, State.showBorders);
+    const tCities = $('#toggle-cities');
+    if (tCities) UI.setToggle(tCities, State.showCities);
+    const tStars = $('#toggle-stars');
+    if (tStars) UI.setToggle(tStars, State.showStars);
+
+    // Применяем
+    if (App.engine) {
+      App.engine.setSurface(State.surfaceMode);
+      App.engine.setQuality(State.quality);
+    }
+    if (State.globe) {
+      State.globe.showAtmosphere(State.showStars);
+      // Границы: если скрыты, убираем обводку
+      if (!State.showBorders) {
+        State.globe.polygonStrokeColor(() => 'rgba(77,166,255,0)');
+      } else {
+        State.globe.polygonStrokeColor(() => 'rgba(77,166,255,0.35)');
+      }
+    }
+  }
+
+  // ---------- СОБЫТИЯ ----------
+  static bindEvents() {
+    // Поиск
+    const doSearch = debounce(() => {
+      const q = dom.searchInput.value;
+      if (q.trim().length < 2) {
+        dom.searchResults.classList.remove('active');
+        return;
+      }
+      const results = SearchEngine.search(q);
+      UI.renderSearchResults(results);
+    }, 300);
+
+    dom.searchInput.addEventListener('input', doSearch);
+    dom.searchInput.addEventListener('focus', () => {
+      if (dom.searchInput.value.trim().length >= 2) doSearch();
+    });
+
+    // Закрыть результаты при клике вне
+    document.addEventListener('click', (e) => {
+      if (!dom.searchBar.contains(e.target) && !dom.searchResults.contains(e.target)) {
+        dom.searchResults.classList.remove('active');
+      }
+    });
+
+    // Информационная панель
+    dom.infoClose.addEventListener('click', UI.closeInfo);
+
+    // Инструменты
+    $('#btn-countries').addEventListener('click', () => App.toggleCountryList());
+    $('#btn-cities').addEventListener('click', () => App.toggleCities());
+    $('#btn-random').addEventListener('click', () => App.randomCountry());
+    $('#btn-settings').addEventListener('click', () => UI.toggleSettings());
+    $('#btn-stats').addEventListener('click', () => UI.toggleStats());
+
+    // Нижняя панель
+    $('#btn-reset').addEventListener('click', () => {
+      State.autoRotate = true;
+      App.engine.flyTo(20, 0, 2.2, 1000);
+    });
+    $('#btn-rotate').addEventListener('click', () => {
+      State.autoRotate = !State.autoRotate;
+      $('#btn-rotate').classList.toggle('active', State.autoRotate);
+      UI.setToggle($('#toggle-rotation'), State.autoRotate);
+      App.saveSettings();
+    });
+    $('#btn-explore').addEventListener('click', () => {
+      State.exploreMode = !State.exploreMode;
+      $('#btn-explore').classList.toggle('active', State.exploreMode);
+    });
+
+    // Настройки
+    $('#surface-mode').addEventListener('change', (e) => {
+      State.surfaceMode = e.target.value;
+      App.engine.setSurface(State.surfaceMode);
+      App.saveSettings();
+    });
+    $('#quality-mode').addEventListener('change', (e) => {
+      State.quality = e.target.value;
+      App.engine.setQuality(State.quality);
+      App.saveSettings();
+    });
+    $('#rotation-speed').addEventListener('input', (e) => {
+      State.rotationSpeed = Number(e.target.value);
+      App.saveSettings();
+    });
+
+    // Переключатели
+    App.bindToggle('#toggle-rotation', (on) => {
+      State.autoRotate = on;
+      $('#btn-rotate').classList.toggle('active', on);
+      App.saveSettings();
+    });
+    App.bindToggle('#toggle-borders', (on) => {
+      State.showBorders = on;
+      if (State.globe) {
+        State.globe.polygonStrokeColor(() => on ? 'rgba(77,166,255,0.35)' : 'rgba(77,166,255,0)');
+      }
+      App.saveSettings();
+    });
+    App.bindToggle('#toggle-cities', (on) => {
+      State.showCities = on;
+      if (State.globe) {
+        State.globe.pointsData(on ? State.cityMarkers : []);
+      }
+      App.saveSettings();
+    });
+    App.bindToggle('#toggle-stars', (on) => {
+      State.showStars = on;
+      if (State.globe) State.globe.showAtmosphere(on);
+      App.saveSettings();
+    });
+
+    // Сброс поиска
+    dom.searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        dom.searchInput.value = '';
+        dom.searchResults.classList.remove('active');
+        dom.searchInput.blur();
+      }
+    });
+  }
+
+  static bindToggle(selector, onChange) {
+    const el = $(selector);
+    if (!el) return;
+    el.addEventListener('click', () => {
+      const on = !el.classList.contains('on');
+      UI.setToggle(el, on);
+      onChange(on);
+    });
+  }
+
+  static toggleCountryList() {
+    // Простой список стран в информационной панели
+    if (!State.countries.length) return;
+    State.listOpen = !State.listOpen;
+    if (State.listOpen) {
+      const items = State.countries
+        .sort((a, b) => (a.translations?.rus?.common || a.name.common).localeCompare(b.translations?.rus?.common || b.name.common))
+        .map((c) => `<div class="info-row" data-iso="${c.cca2}" style="cursor:pointer">
+          <span class="label">${escapeHtml(c.translations?.rus?.common || c.name.common)}</span>
+          <span class="value">${escapeHtml(c.cca2)}</span>
+        </div>`)
+        .join('');
+      dom.infoContent.innerHTML = `<h2>Страны (${State.countries.length})</h2>${items}`;
+      dom.infoPanel.classList.add('active');
+      dom.infoContent.querySelectorAll('[data-iso]').forEach((row) => {
+        row.addEventListener('click', () => {
+          const c = State.countriesByIso[row.dataset.iso];
+          if (c) App.selectCountry(c, true);
+        });
+      });
+    } else {
+      UI.closeInfo();
+    }
+  }
+
+  static toggleCities() {
+    State.showCities = !State.showCities;
+    if (State.globe) {
+      State.globe.pointsData(State.showCities ? State.cityMarkers : []);
+    }
+    UI.setToggle($('#toggle-cities'), State.showCities);
+    App.saveSettings();
+  }
+}
+
+// ---------- ЗАПУСК ----------
+document.addEventListener('DOMContentLoaded', () => {
+  App.init().catch((err) => {
+    console.error('Критическая ошибка инициализации:', err);
+    UI.showLoaderError('Не удалось запустить приложение. Проверьте подключение к интернету и обновите страницу.');
+  });
 });
 
-/* ============================================================
-   СТАРТ
-   ============================================================ */
-resizeCanvas();
-applySettingsToUI();
-updateModeButtons();
-showMainMenu();
-requestAnimationFrame(loop);
+// Предупреждение при потере WebGL-контекста
+document.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  UI.showLoaderError('WebGL-контекст потерян. Перезагрузите страницу.');
+}, false);
 </script>
 </body>
 </html>
