@@ -1,1279 +1,1449 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>EARTH 3D ULTRA</title>
-  <style>
-    /* ========== БАЗОВЫЕ СТИЛИ ========== */
-    :root {
-      --bg: #03060c;
-      --panel: rgba(8, 16, 30, 0.82);
-      --panel-border: rgba(90, 170, 255, 0.18);
-      --accent: #4da6ff;
-      --accent-dim: #1a5a9a;
-      --text: #e8f0fa;
-      --text-dim: #8fa8c8;
-      --danger: #ff5566;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      -webkit-user-select: none; user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: none;
-    }
-    #app {
-      position: relative;
-      width: 100%; height: 100dvh;
-      overflow: hidden;
-    }
-    /* ========== 3D-ГЛОБУС ========== */
-    #globe-container {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-    }
-    #globe-container canvas { display: block; }
-    /* ========== ЗАГРУЗКА ========== */
-    #loader {
-      position: absolute;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(ellipse at center, #0a1428 0%, #03060c 70%);
-      transition: opacity 0.6s ease;
-    }
-    #loader.hidden { opacity: 0; pointer-events: none; }
-    .spinner {
-      width: 64px; height: 64px;
-      border: 3px solid rgba(77, 166, 255, 0.15);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #loader-text {
-      margin-top: 20px;
-      font-size: 14px;
-      color: var(--text-dim);
-      letter-spacing: 0.5px;
-    }
-    #loader-error {
-      display: none;
-      margin-top: 16px;
-      max-width: 80%;
-      text-align: center;
-      font-size: 13px;
-      line-height: 1.5;
-      color: var(--danger);
-    }
-    /* ========== ПАНЕЛИ ========== */
-    .panel {
-      position: absolute;
-      background: var(--panel);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      z-index: 10;
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-    }
-    .panel.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    /* Верхняя панель поиска */
-    #search-bar {
-      top: calc(12px + var(--safe-top));
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(520px, calc(100% - 160px));
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      height: 46px;
-      gap: 10px;
-    }
-    #search-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-size: 15px;
-      font-family: var(--font);
-    }
-    #search-input::placeholder { color: var(--text-dim); }
-    .search-icon {
-      width: 18px; height: 18px;
-      fill: none; stroke: var(--text-dim); stroke-width: 2;
-      flex-shrink: 0;
-    }
-    #search-results {
-      top: calc(66px + var(--safe-top));
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(520px, calc(100% - 160px));
-      max-height: 300px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 6px;
-      display: none;
-    }
-    #search-results.active { display: block; }
-    .search-result-item {
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.15s;
-    }
-    .search-result-item:hover, .search-result-item:active {
-      background: rgba(77, 166, 255, 0.12);
-    }
-    .search-result-item .result-type {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin-left: 8px;
-    }
-    /* Левая панель инструментов */
-    #toolbar {
-      left: calc(12px + var(--safe-left));
-      top: 50%;
-      transform: translateY(-50%);
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .tool-btn {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-dim);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-    .tool-btn:hover, .tool-btn:active {
-      background: rgba(77, 166, 255, 0.12);
-      color: var(--accent);
-      border-color: var(--panel-border);
-    }
-    .tool-btn.active {
-      background: rgba(77, 166, 255, 0.18);
-      color: var(--accent);
-      border-color: var(--accent-dim);
-    }
-    .tool-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    /* Правая информационная панель */
-    #info-panel {
-      right: calc(12px + var(--safe-right));
-      top: calc(70px + var(--safe-top));
-      width: min(360px, calc(100% - 140px));
-      max-height: calc(100dvh - 140px - var(--safe-top) - var(--safe-bottom));
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 20px;
-      display: none;
-    }
-    #info-panel.active { display: block; }
-    #info-panel .close-btn {
-      position: absolute;
-      top: 12px; right: 12px;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.06);
-      border: none;
-      color: var(--text-dim);
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #info-panel .close-btn:active { background: rgba(255, 255, 255, 0.15); }
-    #info-panel h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      padding-right: 32px;
-    }
-    #info-panel .subtitle {
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-bottom: 14px;
-    }
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 7px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 13px;
-    }
-    .info-row .label { color: var(--text-dim); }
-    .info-row .value { color: var(--text); text-align: right; max-width: 60%; word-break: break-word; }
-    .flag-img {
-      width: 48px; height: 32px;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    /* Нижняя панель управления */
-    #bottom-bar {
-      bottom: calc(12px + var(--safe-bottom));
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 4px;
-      padding: 6px;
-    }
-    #bottom-bar .tool-btn { width: 40px; height: 40px; }
-    /* Настройки */
-    #settings-panel {
-      right: calc(12px + var(--safe-right));
-      bottom: calc(70px + var(--safe-bottom));
-      width: 260px;
-      padding: 16px;
-      display: none;
-    }
-    #settings-panel.active { display: block; }
-    .setting-group {
-      margin-bottom: 14px;
-    }
-    .setting-group:last-child { margin-bottom: 0; }
-    .setting-group label {
-      display: block;
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .setting-group select, .setting-group input[type="range"] {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 13px;
-      padding: 8px;
-      outline: none;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    .setting-group input[type="range"] { padding: 0; height: 28px; }
-    .toggle-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      font-size: 13px;
-    }
-    .toggle-switch {
-      position: relative;
-      width: 42px; height: 24px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      top: 3px; left: 3px;
-      width: 18px; height: 18px;
-      background: #fff;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-    .toggle-switch.on { background: var(--accent-dim); }
-    .toggle-switch.on::after { transform: translateX(18px); }
-    /* Статистика */
-    #stats-panel {
-      left: calc(12px + var(--safe-left));
-      bottom: calc(12px + var(--safe-bottom));
-      padding: 12px 16px;
-      font-size: 11px;
-      color: var(--text-dim);
-      display: none;
-    }
-    #stats-panel.active { display: block; }
-    /* Адаптивность */
-    @media (max-aspect-ratio: 1/1) {
-      #search-bar, #search-results {
-        width: calc(100% - 120px);
-      }
-      #info-panel {
-        width: min(320px, calc(100% - 120px));
-      }
-      #toolbar {
-        gap: 4px;
-        padding: 6px;
-      }
-      .tool-btn { width: 40px; height: 40px; }
-    }
-    @media (max-width: 600px) {
-      #search-bar, #search-results { width: calc(100% - 96px); }
-      #info-panel { width: calc(100% - 96px); }
-      #bottom-bar .tool-btn { width: 36px; height: 36px; }
-    }
-    /* Скрытие скроллбара */
-    ::-webkit-scrollbar { width: 0; height: 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultra Ambience TV</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #000; color: #fff;
+    font-family: 'Segoe UI', 'Roboto', -apple-system, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #app { position: fixed; inset: 0; overflow: hidden; background: #000; }
+  canvas.scene {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block;
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+  .hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 3.5vh 4vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 100;
+    transition: opacity 0.8s ease;
+  }
+  .hud.hidden { opacity: 0; }
+  .clock { text-align: right; text-shadow: 0 2px 14px rgba(0,0,0,0.95); }
+  .time {
+    font-size: 4.2vh;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .date {
+    font-size: 1.6vh;
+    opacity: 0.72;
+    margin-top: 0.5vh;
+    letter-spacing: 0.02em;
+  }
+  .scene-info { text-align: left; text-shadow: 0 2px 14px rgba(0,0,0,0.95); }
+  .scene-name {
+    font-size: 2.2vh;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.92;
+  }
+  .scene-counter {
+    font-size: 1.4vh;
+    opacity: 0.6;
+    margin-top: 0.5vh;
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+  }
+  .audio-badge {
+    display: inline-block;
+    margin-left: 1vh;
+    font-size: 1.3vh;
+    opacity: 0.5;
+    letter-spacing: 0.08em;
+  }
+  .hint {
+    position: absolute;
+    bottom: 3.5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.4vh;
+    opacity: 0.42;
+    text-align: center;
+    pointer-events: none;
+    letter-spacing: 0.14em;
+    transition: opacity 1.2s ease;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    white-space: nowrap;
+  }
+  .hint.hidden { opacity: 0; }
+  .fallback {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #000; color: #fff; font-size: 3vh; text-align: center; padding: 4vw;
+  }
+</style>
 </head>
 <body>
 <div id="app">
-  <!-- 3D-глобус -->
-  <div id="globe-container"></div>
+  <canvas id="canvasA" class="scene"></canvas>
+  <canvas id="canvasB" class="scene"></canvas>
 
-  <!-- Загрузка -->
-  <div id="loader">
-    <div class="spinner"></div>
-    <div id="loader-text">Загрузка Земли…</div>
-    <div id="loader-error"></div>
-  </div>
-
-  <!-- Поиск -->
-  <div id="search-bar" class="panel">
-    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
-    <input id="search-input" type="search" placeholder="Поиск стран и городов…" autocomplete="off" autocorrect="off" spellcheck="false">
-  </div>
-  <div id="search-results" class="panel"></div>
-
-  <!-- Левая панель инструментов -->
-  <div id="toolbar" class="panel">
-    <button class="tool-btn" id="btn-countries" title="Список стран">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-    </button>
-    <button class="tool-btn" id="btn-cities" title="Города">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>
-    </button>
-    <button class="tool-btn" id="btn-random" title="Случайная страна">
-      <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-    </button>
-    <button class="tool-btn" id="btn-settings" title="Настройки">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
-    <button class="tool-btn" id="btn-stats" title="О Земле">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-    </button>
-  </div>
-
-  <!-- Правая информационная панель -->
-  <div id="info-panel" class="panel">
-    <button class="close-btn" id="info-close">×</button>
-    <div id="info-content"></div>
-  </div>
-
-  <!-- Настройки -->
-  <div id="settings-panel" class="panel">
-    <div class="setting-group">
-      <label>Режим поверхности</label>
-      <select id="surface-mode">
-        <option value="realistic">Реалистичная</option>
-        <option value="political">Политическая</option>
-        <option value="physical">Физическая</option>
-        <option value="night">Ночные огни</option>
-      </select>
+  <div class="hud" id="hud">
+    <div class="scene-info">
+      <div class="scene-name" id="sceneName">Камин</div>
+      <div class="scene-counter">
+        <span id="sceneCounter">1 / 7</span>
+        <span class="audio-badge" id="audioBadge">· звук выкл</span>
+      </div>
     </div>
-    <div class="setting-group">
-      <label>Качество графики</label>
-      <select id="quality-mode">
-        <option value="low">Низкое</option>
-        <option value="medium" selected>Среднее</option>
-        <option value="high">Высокое</option>
-      </select>
-    </div>
-    <div class="setting-group">
-      <label>Скорость вращения</label>
-      <input type="range" id="rotation-speed" min="0" max="2" step="0.1" value="0.5">
-    </div>
-    <div class="toggle-row">
-      <span>Автоматическое вращение</span>
-      <div class="toggle-switch on" id="toggle-rotation" role="switch" aria-checked="true"></div>
-    </div>
-    <div class="toggle-row">
-      <span>Границы стран</span>
-      <div class="toggle-switch on" id="toggle-borders" role="switch" aria-checked="true"></div>
-    </div>
-    <div class="toggle-row">
-      <span>Столицы и города</span>
-      <div class="toggle-switch on" id="toggle-cities" role="switch" aria-checked="true"></div>
-    </div>
-    <div class="toggle-row">
-      <span>Звёздный фон</span>
-      <div class="toggle-switch on" id="toggle-stars" role="switch" aria-checked="true"></div>
+    <div class="clock">
+      <div class="time" id="clockTime">--:--:--</div>
+      <div class="date" id="clockDate">—</div>
     </div>
   </div>
 
-  <!-- Статистика -->
-  <div id="stats-panel" class="panel"></div>
-
-  <!-- Нижняя панель -->
-  <div id="bottom-bar" class="panel">
-    <button class="tool-btn" id="btn-reset" title="Сброс камеры">
-      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-    </button>
-    <button class="tool-btn active" id="btn-rotate" title="Автоматическое вращение">
-      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg>
-    </button>
-    <button class="tool-btn" id="btn-explore" title="Режим исследования">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
-    </button>
-  </div>
+  <div class="hint" id="hint">← → сцены · ↑ ↓ переходы · M звук</div>
 </div>
 
-<!-- ==================== БИБЛИОТЕКИ ==================== -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
-
 <script>
-'use strict';
+(function () {
+  'use strict';
 
-/* ============================================================
-   EARTH 3D ULTRA — основной модуль
-   ============================================================ */
+  // ============================================================
+  // 1. SHADER SOURCE
+  // ============================================================
 
-// ---------- КОНФИГУРАЦИЯ ----------
-const CONFIG = {
-  textures: {
-    day: '//cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
-    bump: '//cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png',
-    night: '//cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
-    clouds: '//cdn.jsdelivr.net/npm/three-globe/example/img/clouds.png',
-    stars: '//cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png',
-  },
-  data: {
-    countriesTopo: 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
-    countriesApi: 'https://restcountries.com/v3.1/all?fields=name,translations,capital,region,subregion,population,area,languages,currencies,cca2,cca3,flags,borders,latlng,timezones,tld',
-    cities: 'https://raw.githubusercontent.com/Kerrick/cities15k.json/master/cities.json',
-  },
-  defaultRotationSpeed: 0.5,
-  maxSearchResults: 12,
-};
-
-// ---------- СОСТОЯНИЕ ----------
-const State = {
-  globe: null,
-  countries: [],
-  countriesByIso: {},
-  countriesGeo: null,
-  cities: [],
-  cityMarkers: [],
-  selectedCountry: null,
-  selectedCity: null,
-  autoRotate: true,
-  rotationSpeed: CONFIG.defaultRotationSpeed,
-  showBorders: true,
-  showCities: true,
-  showStars: true,
-  surfaceMode: 'realistic',
-  quality: 'medium',
-  exploreMode: false,
-  searchTimeout: null,
-  settings: {},
-  statsOpen: false,
-  listOpen: false,
-};
-
-// ---------- DOM ----------
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => document.querySelectorAll(s);
-
-const dom = {
-  globeContainer: $('#globe-container'),
-  loader: $('#loader'),
-  loaderText: $('#loader-text'),
-  loaderError: $('#loader-error'),
-  searchBar: $('#search-bar'),
-  searchInput: $('#search-input'),
-  searchResults: $('#search-results'),
-  infoPanel: $('#info-panel'),
-  infoContent: $('#info-content'),
-  infoClose: $('#info-close'),
-  settingsPanel: $('#settings-panel'),
-  statsPanel: $('#stats-panel'),
-  toolbar: $('#toolbar'),
-  bottomBar: $('#bottom-bar'),
-};
-
-// ---------- УТИЛИТЫ ----------
-function safeStorage(key, val) {
-  try {
-    if (val === undefined) {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : null;
+  const VERTEX_SRC = `
+    attribute vec2 a_position;
+    void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
     }
-    localStorage.setItem(key, JSON.stringify(val));
-  } catch (e) { /* приватный режим Safari */ }
-}
+  `;
 
-function debounce(fn, ms) {
-  return function(...args) {
-    clearTimeout(State.searchTimeout);
-    State.searchTimeout = setTimeout(() => fn.apply(this, args), ms);
-  };
-}
+  const COMMON = `
+    precision highp float;
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform float u_quality;
 
-function escapeHtml(str) {
-  if (!str) return '';
-  const d = document.createElement('div');
-  d.textContent = String(str);
-  return d.innerHTML;
-}
-
-function formatNumber(n) {
-  if (n == null || isNaN(n)) return 'Нет данных';
-  return Number(n).toLocaleString('ru-RU');
-}
-
-async function fetchWithTimeout(url, opts = {}, timeoutMs = 15000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...opts, signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status} для ${url}`);
-    return res;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// ---------- ИНИЦИАЛИЗАЦИЯ 3D-СЦЕНЫ ----------
-class GlobeEngine {
-  constructor(container) {
-    this.container = container;
-    this.globe = null;
-    this.rotationAnim = null;
-    this.init();
-  }
-
-  init() {
-    const el = this.container;
-    this.globe = new Globe(el)
-      .globeImageUrl(CONFIG.textures.day)
-      .bumpImageUrl(CONFIG.textures.bump)
-      .backgroundImageUrl(CONFIG.textures.stars)
-      .atmosphereColor('#4da6ff')
-      .atmosphereAltitude(0.22);
-
-    // Материал: блики океанов
-    const mat = this.globe.globeMaterial();
-    mat.bumpScale = 8;
-    mat.specular = new THREE.Color('grey');
-    mat.shininess = 12;
-
-    // Размеры и камера
-    this.globe.width(el.clientWidth || window.innerWidth);
-    this.globe.height(el.clientHeight || window.innerHeight);
-    this.globe.camera().position.set(0, 0, 280);
-    this.globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, 0);
-
-    // Сенсорное управление: Globe.gl уже поддерживает OrbitControls с touch.
-    // Настроим скорость и инерцию.
-    const controls = this.globe.controls();
-    if (controls) {
-      controls.autoRotate = false; // управляем вручную
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
-      controls.rotateSpeed = 0.9;
-      controls.zoomSpeed = 0.9;
-      controls.minDistance = 110;
-      controls.maxDistance = 600;
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
     }
 
-    // Анимация вращения
-    this.startRotation();
-
-    window.addEventListener('resize', () => this.resize());
-    window.addEventListener('orientationchange', () => {
-      setTimeout(() => this.resize(), 250);
-    });
-    this.resize();
-  }
-
-  resize() {
-    const w = this.container.clientWidth || window.innerWidth;
-    const h = this.container.clientHeight || window.innerHeight;
-    this.globe.width(w).height(h);
-    const cam = this.globe.camera();
-    if (cam) {
-      cam.aspect = w / h;
-      cam.updateProjectionMatrix();
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+      return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
     }
-  }
 
-  startRotation() {
-    if (this.rotationAnim) cancelAnimationFrame(this.rotationAnim);
-    const step = () => {
-      if (State.autoRotate && State.rotationSpeed > 0) {
-        const pov = this.globe.pointOfView();
-        const lng = (pov.lng || 0) + State.rotationSpeed * 0.15;
-        this.globe.pointOfView({ ...pov, lng }, 0);
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      for (int i = 0; i < 6; i++) {
+        v += a * noise(p);
+        p *= 2.02;
+        a *= 0.5;
       }
-      this.rotationAnim = requestAnimationFrame(step);
-    };
-    step();
-  }
-
-  stopRotation() {
-    if (this.rotationAnim) {
-      cancelAnimationFrame(this.rotationAnim);
-      this.rotationAnim = null;
+      return v;
     }
-  }
+  `;
 
-  flyTo(lat, lng, altitude = 0.6, duration = 1200) {
-    State.autoRotate = false;
-    this.globe.pointOfView({ lat, lng, altitude }, duration);
-    // Через duration снова включим, если нужно
-    setTimeout(() => {
-      if (State.autoRotate !== false) State.autoRotate = true;
-    }, duration + 100);
-  }
+  // -------- 1. FIREPLACE --------
+  const FIRE_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
 
-  setSurface(mode) {
-    switch (mode) {
-      case 'realistic':
-        this.globe.globeImageUrl(CONFIG.textures.day);
-        break;
-      case 'political':
-        // Политический режим: слегка приглушаем текстуру, границы остаются
-        this.globe.globeImageUrl(CONFIG.textures.day);
-        break;
-      case 'physical':
-        this.globe.globeImageUrl(CONFIG.textures.day);
-        break;
-      case 'night':
-        this.globe.globeImageUrl(CONFIG.textures.night);
-        break;
+      vec3 col = vec3(0.010, 0.005, 0.003);
+
+      float d = length((uv - vec2(0.5, 0.20)) * vec2(aspect, 1.0));
+      float ambient = exp(-d * 4.5);
+      col += vec3(0.19, 0.065, 0.012) * ambient * (0.82 + 0.18 * sin(t * 4.1 + uv.y * 7.0 + uv.x * 3.0));
+
+      // Logs
+      float logRegion = smoothstep(0.22, 0.17, uv.y);
+      if (logRegion > 0.0) {
+        vec2 logUV = uv;
+        float wood = fbm(logUV * vec2(28.0, 7.0) + vec2(t * 0.03, 0.0));
+        float wood2 = fbm(logUV * vec2(14.0, 4.0) + 5.0);
+        vec3 logColor = vec3(0.055, 0.028, 0.014) * (0.45 + wood * 0.9);
+        logColor *= (0.65 + wood2 * 0.7);
+
+        float ember = pow(fbm(logUV * vec2(45.0, 22.0) + vec2(t * 0.35, 0.0)), 4.0) * 3.2;
+        ember *= smoothstep(0.2, 0.0, uv.y);
+        ember *= 0.7 + 0.3 * sin(t * 8.0 + uv.x * 34.0);
+        logColor += vec3(1.0, 0.28, 0.06) * ember;
+
+        col = mix(col, logColor, logRegion);
+      }
+
+      // Flames
+      float flameBaseY = 0.18;
+      float flameTopY = 0.93;
+      if (uv.y > flameBaseY) {
+        float fy = clamp((uv.y - flameBaseY) / (flameTopY - flameBaseY), 0.0, 1.0);
+
+        vec2 nUV = vec2(uv.x * 3.0, uv.y * 5.0 - t * 2.1);
+        float n1 = fbm(nUV + vec2(0.0, -t * 0.85));
+        float n2 = fbm(nUV * 2.0 + vec2(t * 0.32, -t * 1.6) + 3.7);
+        float n3 = fbm(nUV * 4.0 + vec2(-t * 0.22, -t * 2.6) + 7.1);
+        float n = n1 * 0.55 + n2 * 0.30 + n3 * 0.15;
+
+        float warpX = (n - 0.5) * 0.20 * fy;
+        float dx = abs(uv.x - 0.5 - warpX) * aspect;
+        float taper = mix(0.44, 0.055, pow(fy, 0.75));
+        float shape = clamp(1.0 - dx / taper, 0.0, 1.0);
+        shape = pow(shape, 1.3);
+
+        float vFade = smoothstep(1.0, 0.42, fy) * smoothstep(0.0, 0.14, fy);
+        float intensity = max(shape * (n * 1.75 + 0.22) * vFade * 1.35, 0.0);
+
+        vec3 flame = vec3(0.0);
+        flame.r = smoothstep(0.02, 0.30, intensity);
+        flame.g = smoothstep(0.30, 0.60, intensity) * 0.9;
+        flame.b = smoothstep(0.68, 1.02, intensity) * 0.7;
+        flame = mix(flame, vec3(1.0, 0.95, 0.75), smoothstep(0.84, 1.10, intensity) * 0.82);
+
+        col = mix(col, col + flame * 1.55, shape * vFade);
+        col += vec3(1.0, 0.42, 0.10) * intensity * 0.5 * (1.0 - fy);
+      }
+
+      // Sparks
+      for (int i = 0; i < 25; i++) {
+        float fi = float(i);
+        float h1 = hash(vec2(fi, 1.7));
+        float h2 = hash(vec2(fi, 3.3));
+        float h3 = hash(vec2(fi, 5.9));
+        float h4 = hash(vec2(fi, 7.1));
+
+        float lifeTime = 2.2 + h1 * 3.0;
+        float phase = mod(t / lifeTime + h2, 1.0);
+
+        float px = 0.26 + h3 * 0.48 + 0.028 * sin(t * (1.0 + h4 * 3.2) + fi * 10.0);
+        float py = flameBaseY + phase * 0.76;
+
+        vec2 sp = vec2(px, py);
+        float dist = length((uv - sp) * vec2(aspect, 1.0));
+        float size = 0.0022 + h4 * 0.0042;
+        float spark = smoothstep(size, 0.0, dist);
+        spark *= smoothstep(0.0, 0.14, phase) * smoothstep(1.0, 0.65, phase);
+
+        vec3 sparkCol = mix(vec3(1.0, 0.58, 0.18), vec3(1.0, 1.0, 0.72), h1);
+        col += sparkCol * spark * 2.0;
+      }
+
+      vec2 vc = uv - 0.5;
+      float vig = 1.0 - dot(vc, vc) * 0.85;
+      col *= vig;
+
+      gl_FragColor = vec4(col, 1.0);
     }
-  }
+  `;
 
-  setQuality(q) {
-    const dpr = q === 'high' ? Math.min(3, window.devicePixelRatio) : q === 'low' ? 1 : Math.min(2, window.devicePixelRatio);
-    const renderer = this.globe.renderer();
-    if (renderer) renderer.setPixelRatio(dpr);
-    this.resize();
-  }
+  // -------- 2. RAIN WINDOW --------
+  const RAIN_WINDOW_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
 
-  dispose() {
-    this.stopRotation();
-    if (this.globe) {
-      // Globe.gl не предоставляет явного dispose, но мы можем очистить контейнер
-      this.container.innerHTML = '';
-      this.globe = null;
+      // Blurred background: dark city at night
+      vec3 bg = vec3(0.02, 0.03, 0.055);
+      bg += vec3(0.04, 0.05, 0.09) * smoothstep(0.8, 0.2, uv.y);
+
+      // Distant lights (bokeh)
+      for (int i = 0; i < 12; i++) {
+        float fi = float(i);
+        vec2 lp = vec2(
+          fract(hash(vec2(fi, 1.3)) * 1.3),
+          0.25 + hash(vec2(fi, 2.7)) * 0.45
+        );
+        float ld = length((uv - lp) * vec2(aspect, 1.0));
+        float bokeh = smoothstep(0.09, 0.0, ld);
+        vec3 lc = mix(vec3(0.6, 0.5, 0.9), vec3(0.9, 0.7, 0.4), hash(vec2(fi, 4.1)));
+        bg += lc * bokeh * 0.4;
+      }
+
+      // Glass fog / condensation
+      float fog = fbm(uv * 3.0 + vec2(0.0, t * 0.05));
+      bg += vec3(0.06, 0.07, 0.10) * smoothstep(0.4, 0.7, fog);
+
+      // Raindrops on glass
+      vec3 drops = vec3(0.0);
+      for (int i = 0; i < 40; i++) {
+        float fi = float(i);
+        float hx = hash(vec2(fi, 1.1));
+        float hy = hash(vec2(fi, 2.3));
+        float hs = hash(vec2(fi, 3.7));
+        float hv = hash(vec2(fi, 4.9));
+
+        float fallSpeed = 0.02 + hv * 0.06;
+        float dy = mod(hy + t * fallSpeed, 1.2) - 0.1;
+
+        vec2 dp = vec2(hx, 1.0 - dy);
+
+        // Distortion around drop
+        float dist = length((uv - dp) * vec2(aspect, 1.0));
+        float radius = 0.004 + hs * 0.008;
+        float drop = smoothstep(radius, radius * 0.6, dist);
+
+        // Refraction highlight
+        vec2 refr = (uv - dp) / radius;
+        float refrPow = 1.0 - length(refr);
+        vec3 dropCol = vec3(0.5, 0.6, 0.75) * refrPow * 0.6;
+        dropCol += vec3(0.9, 0.95, 1.0) * smoothstep(0.15, 0.0, abs(length(refr) - 0.7)) * 0.3;
+
+        drops += dropCol * drop * 0.7;
+      }
+
+      // Rain streaks on glass
+      for (int i = 0; i < 18; i++) {
+        float fi = float(i);
+        float hx = hash(vec2(fi, 6.1));
+        float hy = hash(vec2(fi, 8.3));
+        float hs = hash(vec2(fi, 9.7));
+
+        float speed = 0.08 + hs * 0.15;
+        float y = mod(hy + t * speed, 1.4) - 0.2;
+        float xWobble = hx + 0.02 * sin(t * 0.8 + fi);
+
+        float dx = abs(uv.x - xWobble);
+        float streakWidth = 0.0015 + hs * 0.0015;
+        float streak = smoothstep(streakWidth, 0.0, dx);
+        streak *= smoothstep(y + 0.001, y + 0.12, uv.y) * smoothstep(y - 0.01, y + 0.005, uv.y);
+        streak *= 0.4 + 0.6 * hs;
+
+        vec3 streakCol = vec3(0.55, 0.65, 0.78) * 0.5;
+        drops += streakCol * streak;
+      }
+
+      vec3 col = bg * (0.7 + fbm(uv * 8.0 + t * 0.2) * 0.4) + drops;
+
+      // Subtle overall cool tint
+      col *= vec3(0.88, 0.94, 1.05);
+
+      // Vignette
+      vec2 vc = uv - 0.5;
+      col *= 1.0 - dot(vc, vc) * 0.7;
+
+      gl_FragColor = vec4(col, 1.0);
     }
-  }
-}
+  `;
 
-// ---------- ЗАГРУЗКА ДАННЫХ ----------
-class DataLoader {
-  static async loadAll() {
-    const results = { countries: null, geo: null, cities: null };
-    try {
-      dom.loaderText.textContent = 'Загрузка границ стран…';
-      const topoRes = await fetchWithTimeout(CONFIG.data.countriesTopo);
-      const topo = await topoRes.json();
-      // Преобразуем TopoJSON в GeoJSON
-      const countriesGeo = topojson.feature(topo, topo.objects.countries);
-      results.geo = countriesGeo;
+  // -------- 3. NIGHT RAIN STREET --------
+  const NIGHT_RAIN_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
 
-      dom.loaderText.textContent = 'Загрузка данных о странах…';
-      const apiRes = await fetchWithTimeout(CONFIG.data.countriesApi);
-      results.countries = await apiRes.json();
+      // Sky (upper portion)
+      vec3 col = mix(vec3(0.02, 0.025, 0.06), vec3(0.008, 0.012, 0.03), uv.y);
 
-      dom.loaderText.textContent = 'Загрузка городов…';
-      const citiesRes = await fetchWithTimeout(CONFIG.data.cities);
-      results.cities = await citiesRes.json();
-    } catch (err) {
-      console.error('Ошибка загрузки данных:', err);
-      dom.loaderError.style.display = 'block';
-      dom.loaderError.textContent =
-        'Не удалось загрузить часть данных. Проверьте интернет-соединение и обновите страницу.';
+      // Distant building silhouettes
+      float buildings = 0.0;
+      for (int i = 0; i < 12; i++) {
+        float fi = float(i);
+        float bx = fi / 12.0 + hash(vec2(fi, 1.0)) * 0.05;
+        float bw = 0.06 + hash(vec2(fi, 2.0)) * 0.08;
+        float bh = 0.15 + hash(vec2(fi, 3.0)) * 0.35;
+        float inX = smoothstep(bx - bw * 0.02, bx, uv.x) * smoothstep(bx + bw, bx + bw * 0.98, uv.x);
+        float inY = smoothstep(0.55, 0.56, uv.y) * smoothstep(0.55 + bh, 0.55 + bh * 0.98, uv.y);
+        // Windows (tiny lit rectangles)
+        float wx = fract((uv.x - bx) / bw * 8.0);
+        float wy = fract((uv.y - 0.55) / bh * 12.0);
+        float lit = step(0.65, hash(vec2(floor((uv.x - bx) / bw * 8.0), floor((uv.y - 0.55) / bh * 12.0)) + fi * 100.0));
+        lit *= step(0.2, wx) * step(wx, 0.8) * step(0.2, wy) * step(wy, 0.8);
+        col += vec3(0.9, 0.75, 0.4) * inX * inY * lit * 0.6;
+        buildings = max(buildings, inX * inY);
+      }
+
+      // Street lamps
+      vec3 lamps = vec3(0.0);
+      for (int i = 0; i < 3; i++) {
+        float fi = float(i);
+        float lx = 0.2 + fi * 0.3;
+        vec2 lp = vec2(lx, 0.42);
+        float ld = length((uv - lp) * vec2(aspect, 1.0));
+        float halo = exp(-ld * 12.0);
+        lamps += vec3(1.0, 0.75, 0.35) * halo * 0.7;
+        float core = smoothstep(0.012, 0.0, ld);
+        lamps += vec3(1.0, 0.95, 0.8) * core * 1.4;
+      }
+
+      // Wet road (lower portion)
+      float roadStart = 0.45;
+      if (uv.y < roadStart) {
+        float roadY = (roadStart - uv.y) / roadStart;
+        vec3 road = vec3(0.03, 0.035, 0.045);
+
+        // Reflections of street lamps on wet surface
+        vec3 refl = vec3(0.0);
+        for (int i = 0; i < 3; i++) {
+          float fi = float(i);
+          float lx = 0.2 + fi * 0.3;
+          float dx = uv.x - lx;
+          float stretched = exp(-abs(dx) * 5.0 - roadY * 2.0);
+          float flicker = 0.85 + 0.15 * sin(t * 3.0 + fi);
+          refl += vec3(1.0, 0.65, 0.28) * stretched * flicker * 0.9;
+        }
+
+        // Puddle distortions (using noise)
+        vec2 pn = vec2(uv.x * 6.0, roadY * 6.0);
+        float ripple = fbm(pn + vec2(0.0, t * 0.3)) - 0.5;
+        refl *= 1.0 + ripple * 0.6;
+
+        col = mix(col, road + refl, smoothstep(0.0, 0.05, roadStart - uv.y));
+      }
+
+      // Rain drops (falling, perspective)
+      for (int i = 0; i < 180; i++) {
+        float fi = float(i);
+        float hx = hash(vec2(fi, 1.0));
+        float hy = hash(vec2(fi, 2.0));
+        float hs = hash(vec2(fi, 3.0));
+        float hv = hash(vec2(fi, 4.0));
+
+        // Depth: closer = bigger and faster
+        float depth = 0.2 + hv * 0.8;
+        float speed = (0.8 + hs * 0.5) * (0.5 + depth);
+        float dropY = mod(hy + t * speed, 1.4) - 0.2;
+        float dropX = hx + 0.03 * (0.5 - uv.y);
+
+        float dx = abs(uv.x - dropX) * aspect;
+        float dy = abs(uv.y - (1.0 - dropY));
+        float streakLen = 0.015 + depth * 0.04;
+        float w = 0.0006 + depth * 0.0012;
+        float streak = smoothstep(w, 0.0, dx) * smoothstep(streakLen, streakLen * 0.2, dy) * smoothstep(0.0, 0.02, dy);
+        streak *= depth * 0.9;
+
+        col += vec3(0.6, 0.7, 0.85) * streak;
+      }
+
+      // Add lamps overlay
+      col += lamps;
+
+      // Vignette
+      vec2 vc = uv - 0.5;
+      col *= 1.0 - dot(vc, vc) * 0.6;
+
+      gl_FragColor = vec4(col, 1.0);
     }
-    return results;
-  }
-}
+  `;
 
-// ---------- ПОИСК ----------
-class SearchEngine {
-  static search(query) {
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
-    const results = [];
-    const seen = new Set();
+  // -------- 4. LIGHTNING STORM --------
+  const LIGHTNING_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
 
-    // Страны
-    for (const c of State.countries) {
-      const names = [
-        c.name?.common,
-        c.name?.official,
-        c.translations?.rus?.common,
-        c.translations?.rus?.official,
-      ].filter(Boolean);
-      for (const n of names) {
-        if (n.toLowerCase().includes(q) && !seen.has('c:' + c.cca2)) {
-          seen.add('c:' + c.cca2);
-          results.push({
-            type: 'country',
-            label: c.translations?.rus?.common || c.name?.common || c.cca2,
-            sub: c.name?.common !== (c.translations?.rus?.common) ? c.name?.common : '',
-            country: c,
-          });
-          break;
+      // Sky with dark clouds
+      vec2 cloudUV = vec2(uv.x * 3.0, uv.y * 2.0 + t * 0.05);
+      float clouds = fbm(cloudUV);
+      float clouds2 = fbm(cloudUV * 2.0 + 5.0);
+      vec3 col = mix(vec3(0.02, 0.02, 0.04), vec3(0.08, 0.08, 0.14), clouds * 0.6 + clouds2 * 0.4);
+
+      // Lightning flashes
+      float flash = 0.0;
+      // Multiple independent flashes
+      float c1 = mod(t, 7.3);
+      if (c1 < 0.15) flash = max(flash, sin(c1 / 0.15 * 3.14159));
+      if (c1 > 0.35 && c1 < 0.45) flash = max(flash, sin((c1 - 0.35) / 0.10 * 3.14159) * 0.6);
+
+      float c2 = mod(t + 3.1, 11.7);
+      if (c2 < 0.12) flash = max(flash, sin(c2 / 0.12 * 3.14159) * 0.9);
+
+      float c3 = mod(t + 6.5, 17.2);
+      if (c3 < 0.25) flash = max(flash, sin(c3 / 0.25 * 3.14159) * 0.8);
+
+      // Lightning bolt shape (occasional)
+      float bolt = 0.0;
+      float c4 = mod(t, 7.3);
+      if (c4 < 0.2) {
+        float bx = 0.3 + hash(vec2(floor(t * 10.0), 1.0)) * 0.4;
+        float boltNoise = noise(vec2(uv.y * 30.0 + t * 20.0, 1.0)) * 0.3;
+        float bdx = abs(uv.x - bx - boltNoise);
+        bolt = smoothstep(0.005, 0.0, bdx) * smoothstep(0.0, 0.4, uv.y) * smoothstep(0.8, 0.5, uv.y);
+        bolt *= 1.0 - c4 / 0.2;
+      }
+
+      col += vec3(0.8, 0.85, 1.0) * flash * 0.9;
+      col += vec3(1.0, 0.95, 0.85) * bolt * 2.0;
+
+      // Rain
+      for (int i = 0; i < 150; i++) {
+        float fi = float(i);
+        float hx = hash(vec2(fi, 1.0));
+        float hy = hash(vec2(fi, 2.0));
+        float hs = hash(vec2(fi, 3.0));
+        float hv = hash(vec2(fi, 4.0));
+
+        float speed = (0.9 + hs * 0.6);
+        float dropY = mod(hy + t * speed, 1.3) - 0.15;
+        float dropX = hx + 0.04 * (0.5 - uv.y) + 0.01 * sin(t * 0.5 + fi);
+
+        float dx = abs(uv.x - dropX) * aspect;
+        float dy = abs(uv.y - (1.0 - dropY));
+        float streakLen = 0.012 + hv * 0.035;
+        float w = 0.0005 + hv * 0.0010;
+        float streak = smoothstep(w, 0.0, dx) * smoothstep(streakLen, streakLen * 0.2, dy) * smoothstep(0.0, 0.02, dy);
+        streak *= 0.7 + hv * 0.4;
+
+        col += vec3(0.55, 0.65, 0.85) * streak * (0.7 + flash * 2.0);
+      }
+
+      // Ground (dark wet)
+      if (uv.y < 0.15) {
+        vec3 ground = vec3(0.02, 0.025, 0.035) + vec3(0.15, 0.16, 0.22) * flash * 0.4;
+        col = mix(col, ground, smoothstep(0.15, 0.05, uv.y));
+      }
+
+      vec2 vc = uv - 0.5;
+      col *= 1.0 - dot(vc, vc) * 0.55;
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  // -------- 5. SNOW --------
+  const SNOW_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
+
+      // Cold night sky
+      vec3 col = mix(vec3(0.03, 0.04, 0.09), vec3(0.01, 0.02, 0.05), uv.y);
+
+      // Distant mountain silhouettes
+      float mountain = 0.5 + 0.15 * sin(uv.x * 3.0) + 0.08 * sin(uv.x * 7.0 + 1.3);
+      if (uv.y < mountain) {
+        float layer = smoothstep(mountain, mountain - 0.02, uv.y);
+        vec3 mColor = vec3(0.04, 0.06, 0.12) * (0.6 + 0.4 * fbm(vec2(uv.x * 8.0, uv.y * 8.0)));
+        col = mix(col, mColor, layer);
+      }
+
+      // Moon glow
+      vec2 moonPos = vec2(0.75, 0.78);
+      float moonDist = length((uv - moonPos) * vec2(aspect, 1.0));
+      col += vec3(0.6, 0.7, 0.9) * exp(-moonDist * 5.0) * 0.35;
+      col += vec3(0.9, 0.95, 1.0) * smoothstep(0.035, 0.025, moonDist) * 0.9;
+
+      // Snowflakes (three layers for parallax)
+      for (int layer = 0; layer < 3; layer++) {
+        float flayer = float(layer);
+        float density = 40.0 + flayer * 30.0;
+        float speedBase = 0.04 + flayer * 0.05;
+        float sizeBase = 0.0015 + flayer * 0.002;
+
+        for (int i = 0; i < 60; i++) {
+          float fi = float(i);
+          float hx = hash(vec2(fi, 1.0 + flayer));
+          float hy = hash(vec2(fi, 2.0 + flayer));
+          float hs = hash(vec2(fi, 3.0 + flayer));
+          float hv = hash(vec2(fi, 4.0 + flayer));
+
+          float speed = speedBase * (0.7 + hs * 0.6);
+          float y = mod(hy + t * speed, 1.3) - 0.15;
+          float x = hx + 0.03 * sin(t * (0.3 + hv) + fi * 2.0);
+
+          float d = length((uv - vec2(x, y)) * vec2(aspect, 1.0));
+          float size = sizeBase * (0.6 + hs * 0.8);
+          float flake = smoothstep(size, 0.0, d);
+
+          vec3 flakeCol = mix(vec3(0.85, 0.92, 1.0), vec3(1.0, 1.0, 1.0), hs);
+          col += flakeCol * flake * (0.6 + flayer * 0.2);
         }
       }
-    }
 
-    // Города
-    for (const city of State.cities) {
-      if (city.name.toLowerCase().includes(q)) {
-        const key = 'city:' + city.name + ':' + city.lat + ':' + city.lng;
-        if (!seen.has(key)) {
-          seen.add(key);
-          results.push({
-            type: 'city',
-            label: city.name,
-            sub: city.country,
-            city,
-          });
-        }
+      // Ground snow
+      if (uv.y < 0.15) {
+        vec3 ground = vec3(0.25, 0.30, 0.42);
+        float gnoise = fbm(vec2(uv.x * 20.0, uv.y * 8.0));
+        ground *= 0.8 + gnoise * 0.4;
+        col = mix(col, ground, smoothstep(0.15, 0.05, uv.y));
       }
-      if (results.length > 200) break;
+
+      vec2 vc = uv - 0.5;
+      col *= 1.0 - dot(vc, vc) * 0.55;
+
+      gl_FragColor = vec4(col, 1.0);
     }
+  `;
 
-    return results.slice(0, CONFIG.maxSearchResults);
-  }
-}
+  // -------- 6. FOREST --------
+  const FOREST_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
 
-// ---------- UI ----------
-class UI {
-  static showLoaderError(msg) {
-    dom.loaderError.style.display = 'block';
-    dom.loaderError.textContent = msg;
-  }
+      // Sky through trees (filtered green/gold)
+      vec3 col = mix(vec3(0.22, 0.30, 0.18), vec3(0.14, 0.20, 0.12), uv.y);
 
-  static hideLoader() {
-    dom.loader.classList.add('hidden');
-  }
+      // Distant fog
+      float fog = fbm(vec2(uv.x * 2.0, uv.y * 1.5 + t * 0.02));
+      col = mix(col, vec3(0.35, 0.40, 0.30), fog * 0.4 * smoothstep(0.7, 0.2, uv.y));
 
-  static renderSearchResults(results) {
-    const el = dom.searchResults;
-    if (!results.length) {
-      el.innerHTML = '<div class="search-result-item">Ничего не найдено</div>';
-      el.classList.add('active');
-      return;
-    }
-    el.innerHTML = results.map((r, i) => `
-      <div class="search-result-item" data-idx="${i}">
-        ${escapeHtml(r.label)}
-        <span class="result-type">${r.type === 'country' ? 'страна' : 'город'}</span>
-        ${r.sub ? `<span class="result-type">${escapeHtml(r.sub)}</span>` : ''}
-      </div>
-    `).join('');
-    el.classList.add('active');
-
-    el.querySelectorAll('.search-result-item').forEach((item) => {
-      item.addEventListener('click', () => {
-        const idx = Number(item.dataset.idx);
-        const r = results[idx];
-        if (!r) return;
-        el.classList.remove('active');
-        dom.searchInput.value = '';
-        if (r.type === 'country') {
-          App.selectCountry(r.country, true);
-        } else if (r.type === 'city') {
-          App.selectCity(r.city, true);
-        }
-      });
-    });
-  }
-
-  static renderInfoCountry(country) {
-    const c = country;
-    const flag = c.flags?.svg || c.flags?.png || '';
-    const capital = c.capital?.[0] || 'Нет данных';
-    const languages = c.languages ? Object.values(c.languages).join(', ') : 'Нет данных';
-    const currencies = c.currencies
-      ? Object.values(c.currencies).map((cur) => `${cur.name} (${cur.symbol || ''})`).join(', ')
-      : 'Нет данных';
-    const borders = c.borders?.length ? c.borders.join(', ') : 'Нет данных';
-    const tld = c.tld?.join(', ') || 'Нет данных';
-    const region = c.region || 'Нет данных';
-    const subregion = c.subregion || '';
-
-    dom.infoContent.innerHTML = `
-      ${flag ? `<img class="flag-img" src="${flag}" alt="Флаг" onerror="this.style.display='none'">` : ''}
-      <h2>${escapeHtml(c.translations?.rus?.common || c.name?.common || 'Неизвестно')}</h2>
-      <div class="subtitle">${escapeHtml(c.name?.official || '')}</div>
-      <div class="info-row"><span class="label">Столица</span><span class="value">${escapeHtml(capital)}</span></div>
-      <div class="info-row"><span class="label">Регион</span><span class="value">${escapeHtml(region)}${subregion ? ' / ' + escapeHtml(subregion) : ''}</span></div>
-      <div class="info-row"><span class="label">Население</span><span class="value">${formatNumber(c.population)}</span></div>
-      <div class="info-row"><span class="label">Площадь</span><span class="value">${formatNumber(c.area)} км²</span></div>
-      <div class="info-row"><span class="label">Языки</span><span class="value">${escapeHtml(languages)}</span></div>
-      <div class="info-row"><span class="label">Валюта</span><span class="value">${escapeHtml(currencies)}</span></div>
-      <div class="info-row"><span class="label">Код</span><span class="value">${escapeHtml(c.cca2 || '')} / ${escapeHtml(c.cca3 || '')}</span></div>
-      <div class="info-row"><span class="label">Домен</span><span class="value">${escapeHtml(tld)}</span></div>
-      <div class="info-row"><span class="label">Границы</span><span class="value">${escapeHtml(borders)}</span></div>
-    `;
-    dom.infoPanel.classList.add('active');
-  }
-
-  static renderInfoCity(city) {
-    const country = State.countriesByIso[city.country] || {};
-    dom.infoContent.innerHTML = `
-      <h2>${escapeHtml(city.name)}</h2>
-      <div class="subtitle">${escapeHtml(country.translations?.rus?.common || country.name?.common || city.country || '')}</div>
-      <div class="info-row"><span class="label">Координаты</span><span class="value">${city.lat.toFixed(4)}, ${city.lng.toFixed(4)}</span></div>
-      ${country.capital ? `<div class="info-row"><span class="label">Столица страны</span><span class="value">${escapeHtml(country.capital[0] || '')}</span></div>` : ''}
-      ${country.population ? `<div class="info-row"><span class="label">Население страны</span><span class="value">${formatNumber(country.population)}</span></div>` : ''}
-    `;
-    dom.infoPanel.classList.add('active');
-  }
-
-  static renderStats() {
-    const totalArea = 510072000; // км², справочное значение
-    const landArea = 148940000;
-    const waterPct = ((totalArea - landArea) / totalArea * 100).toFixed(1);
-    const countryCount = State.countries.length;
-
-    dom.statsPanel.innerHTML = `
-      <strong>О Земле</strong><br>
-      Средний радиус: 6 371 км<br>
-      Экваториальный диаметр: 12 742 км<br>
-      Площадь поверхности: ${formatNumber(totalArea)} км²<br>
-      Вода: ~${waterPct}% поверхности<br>
-      Материков: 6 (модель)<br>
-      Государств в наборе: ${countryCount}
-    `;
-    dom.statsPanel.classList.add('active');
-  }
-
-  static toggleSettings(force) {
-    const isActive = dom.settingsPanel.classList.contains('active');
-    if (force === undefined) {
-      dom.settingsPanel.classList.toggle('active');
-    } else {
-      dom.settingsPanel.classList.toggle('active', force);
-    }
-  }
-
-  static toggleStats() {
-    State.statsOpen = !State.statsOpen;
-    if (State.statsOpen) {
-      UI.renderStats();
-    } else {
-      dom.statsPanel.classList.remove('active');
-    }
-  }
-
-  static closeInfo() {
-    dom.infoPanel.classList.remove('active');
-    State.selectedCountry = null;
-    State.selectedCity = null;
-    // Убираем выделение
-    if (State.globe) {
-      State.globe.polygonsData([]);
-    }
-  }
-
-  static setToggle(el, on) {
-    el.classList.toggle('on', on);
-    el.setAttribute('aria-checked', String(on));
-  }
-}
-
-// ---------- ОСНОВНОЙ КЛАСС ПРИЛОЖЕНИЯ ----------
-class App {
-  static engine = null;
-
-  static async init() {
-    // Загрузка настроек
-    App.loadSettings();
-
-    // 3D-сцена
-    try {
-      App.engine = new GlobeEngine(dom.globeContainer);
-      State.globe = App.engine.globe;
-    } catch (e) {
-      console.error('Не удалось создать 3D-сцену:', e);
-      UI.showLoaderError('WebGL не поддерживается или произошла ошибка инициализации 3D.');
-      return;
-    }
-
-    // Данные
-    const data = await DataLoader.loadAll();
-    if (data.geo) {
-      State.countriesGeo = data.geo;
-      App.buildCountriesLayer(data.geo);
-    }
-    if (data.countries) {
-      State.countries = data.countries.filter((c) => c.cca2 && c.name?.common);
-      State.countries.forEach((c) => { State.countriesByIso[c.cca2] = c; });
-    }
-    if (data.cities) {
-      State.cities = data.cities.filter((c) => c.lat && c.lng && c.name);
-      App.buildCitiesLayer();
-    }
-
-    // Настройки UI
-    App.applySettingsToUI();
-    App.bindEvents();
-
-    UI.hideLoader();
-    setTimeout(() => UI.renderStats(), 500);
-  }
-
-  // ---------- СЛОИ ----------
-  static buildCountriesLayer(geo) {
-    if (!State.globe) return;
-    const polygons = geo.features
-      .filter((f) => f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'))
-      .map((f) => ({
-        type: 'Feature',
-        properties: f.properties,
-        geometry: f.geometry,
-      }));
-
-    State.globe
-      .polygonsData(polygons)
-      .polygonCapColor(() => 'rgba(77,166,255,0.04)')
-      .polygonSideColor(() => 'rgba(77,166,255,0.02)')
-      .polygonStrokeColor(() => 'rgba(77,166,255,0.35)')
-      .polygonAltitude(0.004)
-      .onPolygonClick((polygon) => {
-        if (!State.exploreMode && !State.selectedCountry) return;
-        const iso = polygon.properties?.ISO_A2 || polygon.properties?.iso_a2;
-        if (iso && State.countriesByIso[iso]) {
-          App.selectCountry(State.countriesByIso[iso], true);
-        }
-      });
-  }
-
-  static buildCitiesLayer() {
-    if (!State.globe) return;
-    // Показываем только крупные города, чтобы не перегружать
-    const majorCities = State.cities
-      .filter((c) => c.population && c.population > 500000)
-      .slice(0, 800)
-      .map((c) => ({
-        lat: c.lat,
-        lng: c.lng,
-        name: c.name,
-        country: c.country,
-        population: c.population,
-      }));
-
-    State.globe
-      .pointsData(majorCities)
-      .pointLat('lat')
-      .pointLng('lng')
-      .pointRadius(0.15)
-      .pointAltitude(0.01)
-      .pointColor(() => '#4da6ff')
-      .pointLabel((d) => `<div style="font-size:12px;padding:4px 8px;background:rgba(0,0,0,0.7);border-radius:6px">${d.name}</div>`)
-      .onPointClick((point) => {
-        App.selectCity(point, true);
-      });
-
-    State.cityMarkers = majorCities;
-  }
-
-  // ---------- ВЫБОР ----------
-  static selectCountry(country, fly = false) {
-    State.selectedCountry = country;
-    State.selectedCity = null;
-    UI.renderInfoCountry(country);
-
-    if (fly && country.latlng) {
-      App.engine.flyTo(country.latlng[0], country.latlng[1], 0.8);
-    }
-
-    // Визуальное выделение: подсветим границы
-    if (State.globe) {
-      const iso = country.cca2;
-      // Можно выделить через фильтр полигонов
-      const features = State.countriesGeo?.features || [];
-      const target = features.filter((f) => {
-        const code = f.properties?.ISO_A2 || f.properties?.iso_a2;
-        return code === iso;
-      });
-      if (target.length) {
-        State.globe.polygonsData(target)
-          .polygonCapColor(() => 'rgba(77,166,255,0.18)')
-          .polygonStrokeColor(() => '#4da6ff')
-          .polygonAltitude(0.008);
+      // Sun rays through canopy
+      vec3 rays = vec3(0.0);
+      for (int i = 0; i < 5; i++) {
+        float fi = float(i);
+        float rayX = 0.2 + fi * 0.15 + 0.03 * sin(t * 0.3 + fi);
+        float ray = smoothstep(0.05, 0.0, abs(uv.x - rayX - uv.y * 0.15));
+        ray *= smoothstep(0.4, 0.9, uv.y);
+        rays += vec3(1.0, 0.85, 0.4) * ray * 0.12;
       }
+      col += rays;
+
+      // Tree trunks (vertical lines)
+      for (int i = 0; i < 8; i++) {
+        float fi = float(i);
+        float hx = hash(vec2(fi, 1.0));
+        float tx = hx;
+        float tw = 0.02 + hash(vec2(fi, 2.0)) * 0.04;
+        float tHeight = 0.9 + hash(vec2(fi, 3.0)) * 0.1;
+
+        float dx = abs(uv.x - tx);
+        float trunk = smoothstep(tw, tw * 0.7, dx);
+        trunk *= smoothstep(tHeight, tHeight - 0.3, uv.y) * smoothstep(0.0, 0.05, uv.y);
+        trunk *= 0.6 + 0.4 * noise(vec2(uv.y * 20.0, fi * 10.0));
+
+        // Darker closer to camera
+        float depth = 0.5 + hx * 0.5;
+        vec3 trunkCol = vec3(0.08, 0.07, 0.05) * depth;
+
+        col = mix(col, trunkCol, trunk * 0.9);
+      }
+
+      // Leaves (bottom corners, swaying)
+      float leafIntensity = 0.0;
+      float leafColor = 0.0;
+      for (int i = 0; i < 3; i++) {
+        float fi = float(i);
+        vec2 lp = vec2(fi == 0.0 ? 0.05 : fi == 1.0 ? 0.95 : 0.5, fi == 0.0 ? 0.85 : fi == 1.0 ? 0.85 : 0.0);
+        float d = length((uv - lp) * vec2(aspect, 1.0));
+        float sway = 0.01 * sin(t * 1.2 + fi * 3.0);
+        d += sway;
+        float leaves = smoothstep(0.25 + fi * 0.05, 0.1, d);
+        float leafTex = fbm(uv * 15.0 + vec2(t * 0.1, 0.0) + fi * 10.0);
+        leaves *= 0.6 + 0.6 * leafTex;
+
+        vec3 leafCol = mix(vec3(0.10, 0.20, 0.08), vec3(0.25, 0.35, 0.10), leafTex);
+        col = mix(col, leafCol, leaves * 0.85);
+      }
+
+      // Ambient fog overlay
+      col = mix(col, vec3(0.4, 0.45, 0.35), smoothstep(0.5, 0.0, uv.y) * 0.15);
+
+      vec2 vc = uv - 0.5;
+      col *= 1.0 - dot(vc, vc) * 0.5;
+
+      gl_FragColor = vec4(col, 1.0);
     }
-  }
+  `;
 
-  static selectCity(city, fly = false) {
-    State.selectedCity = city;
-    State.selectedCountry = null;
-    UI.renderInfoCity(city);
-    if (fly) {
-      App.engine.flyTo(city.lat, city.lng, 0.4);
-    }
-  }
+  // -------- 7. OCEAN --------
+  const OCEAN_FRAG = COMMON + `
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float aspect = u_resolution.x / u_resolution.y;
+      float t = u_time;
 
-  // ---------- СЛУЧАЙНАЯ СТРАНА ----------
-  static randomCountry() {
-    if (!State.countries.length) return;
-    const idx = Math.floor(Math.random() * State.countries.length);
-    const c = State.countries[idx];
-    App.selectCountry(c, true);
-  }
+      float horizon = 0.42;
 
-  // ---------- НАСТРОЙКИ ----------
-  static loadSettings() {
-    const saved = safeStorage('earth3d_settings');
-    if (saved) {
-      State.autoRotate = saved.autoRotate !== undefined ? saved.autoRotate : true;
-      State.rotationSpeed = saved.rotationSpeed !== undefined ? saved.rotationSpeed : CONFIG.defaultRotationSpeed;
-      State.showBorders = saved.showBorders !== undefined ? saved.showBorders : true;
-      State.showCities = saved.showCities !== undefined ? saved.showCities : true;
-      State.showStars = saved.showStars !== undefined ? saved.showStars : true;
-      State.surfaceMode = saved.surfaceMode || 'realistic';
-      State.quality = saved.quality || 'medium';
-    }
-  }
+      // Sky
+      vec3 sky = mix(vec3(0.35, 0.45, 0.60), vec3(0.75, 0.72, 0.68), smoothstep(0.42, 1.0, uv.y));
+      // Sunset tint
+      sky = mix(sky, vec3(0.95, 0.65, 0.42), smoothstep(0.42, 0.55, uv.y) * 0.5);
 
-  static saveSettings() {
-    safeStorage('earth3d_settings', {
-      autoRotate: State.autoRotate,
-      rotationSpeed: State.rotationSpeed,
-      showBorders: State.showBorders,
-      showCities: State.showCities,
-      showStars: State.showStars,
-      surfaceMode: State.surfaceMode,
-      quality: State.quality,
-    });
-  }
+      // Sun glow near horizon
+      float sun = exp(-length((uv - vec2(0.7, 0.46)) * vec2(aspect, 1.0)) * 8.0);
+      sky += vec3(1.0, 0.7, 0.4) * sun * 0.6;
 
-  static applySettingsToUI() {
-    // Режим поверхности
-    const selSurface = $('#surface-mode');
-    if (selSurface) selSurface.value = State.surfaceMode;
+      // Ocean below horizon
+      if (uv.y < horizon) {
+        float depthFactor = (horizon - uv.y) / horizon;
+        vec3 water = mix(vec3(0.10, 0.22, 0.32), vec3(0.04, 0.08, 0.15), depthFactor);
 
-    // Качество
-    const selQuality = $('#quality-mode');
-    if (selQuality) selQuality.value = State.quality;
+        // Waves (multiple layers, perspective)
+        float wave = 0.0;
+        float foam = 0.0;
+        for (int i = 0; i < 4; i++) {
+          float fi = float(i);
+          float scale = pow(2.0, fi);
+          vec2 wuv = vec2(uv.x * scale * 2.0, uv.y * scale * 4.0 + t * 0.3);
+          float n = fbm(wuv);
+          wave += n / scale;
 
-    // Скорость
-    const rangeSpeed = $('#rotation-speed');
-    if (rangeSpeed) rangeSpeed.value = State.rotationSpeed;
+          // Foam on peaks
+          foam += smoothstep(0.7, 0.9, n) / scale;
+        }
 
-    // Переключатели
-    const tRot = $('#toggle-rotation');
-    if (tRot) UI.setToggle(tRot, State.autoRotate);
-    const tBorders = $('#toggle-borders');
-    if (tBorders) UI.setToggle(tBorders, State.showBorders);
-    const tCities = $('#toggle-cities');
-    if (tCities) UI.setToggle(tCities, State.showCities);
-    const tStars = $('#toggle-stars');
-    if (tStars) UI.setToggle(tStars, State.showStars);
+        // Add wave highlights
+        float highlight = pow(wave, 2.0) * (1.0 - depthFactor * 0.6);
+        water += vec3(0.4, 0.55, 0.7) * highlight * 0.5;
+        water += vec3(0.9, 0.95, 1.0) * foam * 0.3;
 
-    // Применяем
-    if (App.engine) {
-      App.engine.setSurface(State.surfaceMode);
-      App.engine.setQuality(State.quality);
-    }
-    if (State.globe) {
-      State.globe.showAtmosphere(State.showStars);
-      // Границы: если скрыты, убираем обводку
-      if (!State.showBorders) {
-        State.globe.polygonStrokeColor(() => 'rgba(77,166,255,0)');
+        // Horizon glow
+        float horizonGlow = exp(-abs(uv.y - horizon) * 40.0);
+        water += vec3(1.0, 0.6, 0.3) * horizonGlow * 0.4;
+
+        col = water;
       } else {
-        State.globe.polygonStrokeColor(() => 'rgba(77,166,255,0.35)');
+        col = sky;
       }
+
+      // Sun reflection on water
+      if (uv.y < horizon) {
+        float reflX = abs(uv.x - 0.7);
+        float reflY = horizon - uv.y;
+        float refl = exp(-reflX * reflX * 15.0 - reflY * 3.0);
+        refl *= 0.7 + 0.3 * sin(uv.y * 40.0 + t * 2.0);
+        col += vec3(1.0, 0.7, 0.4) * refl * 0.5;
+      }
+
+      vec2 vc = uv - 0.5;
+      col *= 1.0 - dot(vc, vc) * 0.55;
+
+      gl_FragColor = vec4(col, 1.0);
     }
+  `;
+
+  // ============================================================
+  // 2. SCENE REGISTRY
+  // ============================================================
+
+  const SCENES = [
+    { name: 'Камин',           frag: FIRE_FRAG,         audio: 'fire'  },
+    { name: 'Дождь за окном',  frag: RAIN_WINDOW_FRAG,  audio: 'rain'  },
+    { name: 'Ночной дождь',    frag: NIGHT_RAIN_FRAG,   audio: 'rain'  },
+    { name: 'Гроза',           frag: LIGHTNING_FRAG,    audio: 'storm' },
+    { name: 'Снегопад',        frag: SNOW_FRAG,         audio: 'snow'  },
+    { name: 'Лес',             frag: FOREST_FRAG,       audio: 'forest'},
+    { name: 'Океан',           frag: OCEAN_FRAG,        audio: 'ocean' }
+  ];
+
+  // ============================================================
+  // 3. WEBGL SETUP
+  // ============================================================
+
+  const canvasA = document.getElementById('canvasA');
+  const canvasB = document.getElementById('canvasB');
+
+  function getGL(canvas) {
+    const opts = { antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: false };
+    return canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts);
   }
 
-  // ---------- СОБЫТИЯ ----------
-  static bindEvents() {
-    // Поиск
-    const doSearch = debounce(() => {
-      const q = dom.searchInput.value;
-      if (q.trim().length < 2) {
-        dom.searchResults.classList.remove('active');
+  const glA = getGL(canvasA);
+  const glB = getGL(canvasB);
+
+  if (!glA || !glB) {
+    document.body.innerHTML = '<div class="fallback">WebGL не поддерживается на этом устройстве.<br>Попробуйте обновить браузер.</div>';
+    return;
+  }
+
+  function compileShader(gl, type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(sh));
+      console.error(src);
+      gl.deleteShader(sh);
+      return null;
+    }
+    return sh;
+  }
+
+  function createProgram(gl, fragSrc) {
+    const vs = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SRC);
+    const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragSrc);
+    if (!vs || !fs) return null;
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.error('Link error:', gl.getProgramInfoLog(prog));
+      gl.deleteProgram(prog);
+      return null;
+    }
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    return prog;
+  }
+
+  class SceneRenderer {
+    constructor(gl) {
+      this.gl = gl;
+      this.programs = {};
+      this.buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+      gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.BLEND);
+    }
+
+    getProgram(index) {
+      if (!this.programs[index]) {
+        const gl = this.gl;
+        const prog = createProgram(gl, SCENES[index].frag);
+        if (!prog) return null;
+        this.programs[index] = {
+          program: prog,
+          u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
+          u_time: gl.getUniformLocation(prog, 'u_time'),
+          u_quality: gl.getUniformLocation(prog, 'u_quality'),
+          a_position: gl.getAttribLocation(prog, 'a_position')
+        };
+      }
+      return this.programs[index];
+    }
+
+    render(sceneIndex, time) {
+      const gl = this.gl;
+      const p = this.getProgram(sceneIndex);
+      if (!p) {
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
         return;
       }
-      const results = SearchEngine.search(q);
-      UI.renderSearchResults(results);
-    }, 300);
 
-    dom.searchInput.addEventListener('input', doSearch);
-    dom.searchInput.addEventListener('focus', () => {
-      if (dom.searchInput.value.trim().length >= 2) doSearch();
-    });
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      gl.useProgram(p.program);
 
-    // Закрыть результаты при клике вне
-    document.addEventListener('click', (e) => {
-      if (!dom.searchBar.contains(e.target) && !dom.searchResults.contains(e.target)) {
-        dom.searchResults.classList.remove('active');
-      }
-    });
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+      gl.enableVertexAttribArray(p.a_position);
+      gl.vertexAttribPointer(p.a_position, 2, gl.FLOAT, false, 0, 0);
 
-    // Информационная панель
-    dom.infoClose.addEventListener('click', UI.closeInfo);
+      gl.uniform2f(p.u_resolution, gl.canvas.width, gl.canvas.height);
+      gl.uniform1f(p.u_time, time);
+      gl.uniform1f(p.u_quality, QUALITY);
 
-    // Инструменты
-    $('#btn-countries').addEventListener('click', () => App.toggleCountryList());
-    $('#btn-cities').addEventListener('click', () => App.toggleCities());
-    $('#btn-random').addEventListener('click', () => App.randomCountry());
-    $('#btn-settings').addEventListener('click', () => UI.toggleSettings());
-    $('#btn-stats').addEventListener('click', () => UI.toggleStats());
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
 
-    // Нижняя панель
-    $('#btn-reset').addEventListener('click', () => {
-      State.autoRotate = true;
-      App.engine.flyTo(20, 0, 2.2, 1000);
-    });
-    $('#btn-rotate').addEventListener('click', () => {
-      State.autoRotate = !State.autoRotate;
-      $('#btn-rotate').classList.toggle('active', State.autoRotate);
-      UI.setToggle($('#toggle-rotation'), State.autoRotate);
-      App.saveSettings();
-    });
-    $('#btn-explore').addEventListener('click', () => {
-      State.exploreMode = !State.exploreMode;
-      $('#btn-explore').classList.toggle('active', State.exploreMode);
-    });
-
-    // Настройки
-    $('#surface-mode').addEventListener('change', (e) => {
-      State.surfaceMode = e.target.value;
-      App.engine.setSurface(State.surfaceMode);
-      App.saveSettings();
-    });
-    $('#quality-mode').addEventListener('change', (e) => {
-      State.quality = e.target.value;
-      App.engine.setQuality(State.quality);
-      App.saveSettings();
-    });
-    $('#rotation-speed').addEventListener('input', (e) => {
-      State.rotationSpeed = Number(e.target.value);
-      App.saveSettings();
-    });
-
-    // Переключатели
-    App.bindToggle('#toggle-rotation', (on) => {
-      State.autoRotate = on;
-      $('#btn-rotate').classList.toggle('active', on);
-      App.saveSettings();
-    });
-    App.bindToggle('#toggle-borders', (on) => {
-      State.showBorders = on;
-      if (State.globe) {
-        State.globe.polygonStrokeColor(() => on ? 'rgba(77,166,255,0.35)' : 'rgba(77,166,255,0)');
-      }
-      App.saveSettings();
-    });
-    App.bindToggle('#toggle-cities', (on) => {
-      State.showCities = on;
-      if (State.globe) {
-        State.globe.pointsData(on ? State.cityMarkers : []);
-      }
-      App.saveSettings();
-    });
-    App.bindToggle('#toggle-stars', (on) => {
-      State.showStars = on;
-      if (State.globe) State.globe.showAtmosphere(on);
-      App.saveSettings();
-    });
-
-    // Сброс поиска
-    dom.searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        dom.searchInput.value = '';
-        dom.searchResults.classList.remove('active');
-        dom.searchInput.blur();
-      }
-    });
-  }
-
-  static bindToggle(selector, onChange) {
-    const el = $(selector);
-    if (!el) return;
-    el.addEventListener('click', () => {
-      const on = !el.classList.contains('on');
-      UI.setToggle(el, on);
-      onChange(on);
-    });
-  }
-
-  static toggleCountryList() {
-    // Простой список стран в информационной панели
-    if (!State.countries.length) return;
-    State.listOpen = !State.listOpen;
-    if (State.listOpen) {
-      const items = State.countries
-        .sort((a, b) => (a.translations?.rus?.common || a.name.common).localeCompare(b.translations?.rus?.common || b.name.common))
-        .map((c) => `<div class="info-row" data-iso="${c.cca2}" style="cursor:pointer">
-          <span class="label">${escapeHtml(c.translations?.rus?.common || c.name.common)}</span>
-          <span class="value">${escapeHtml(c.cca2)}</span>
-        </div>`)
-        .join('');
-      dom.infoContent.innerHTML = `<h2>Страны (${State.countries.length})</h2>${items}`;
-      dom.infoPanel.classList.add('active');
-      dom.infoContent.querySelectorAll('[data-iso]').forEach((row) => {
-        row.addEventListener('click', () => {
-          const c = State.countriesByIso[row.dataset.iso];
-          if (c) App.selectCountry(c, true);
-        });
+    dispose() {
+      const gl = this.gl;
+      Object.keys(this.programs).forEach(k => {
+        gl.deleteProgram(this.programs[k].program);
       });
+      this.programs = {};
+      gl.deleteBuffer(this.buffer);
+    }
+  }
+
+  const rendererA = new SceneRenderer(glA);
+  const rendererB = new SceneRenderer(glB);
+
+  // ============================================================
+  // 4. STATE
+  // ============================================================
+
+  let QUALITY = 1.0; // 0..1 multiplier for shader detail (also affects resolution scale)
+  let resolutionScale = 1.0;
+
+  let activeCanvas = canvasA;
+  let activeRenderer = rendererA;
+  let inactiveCanvas = canvasB;
+  let inactiveRenderer = rendererB;
+
+  let currentScene = 0;
+  let nextSceneIndex = 0;
+
+  let sceneStartTime = performance.now() / 1000;
+  let globalStartTime = sceneStartTime;
+
+  let transitioning = false;
+  let transitionKind = null; // 'quick' | 'cinematic'
+  let transitionStartTime = 0;
+  let transitionDuration = 0;
+  let queuedScene = null;
+
+  let lastNavTime = 0;
+  const NAV_COOLDOWN = 250;
+
+  // Canvas sizes
+  let dpr = 1;
+
+  function resizeCanvases() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const scale = resolutionScale * dpr;
+    const w = Math.max(1, Math.floor(window.innerWidth * scale));
+    const h = Math.max(1, Math.floor(window.innerHeight * scale));
+
+    [canvasA, canvasB].forEach(c => {
+      if (c.width !== w || c.height !== h) {
+        c.width = w;
+        c.height = h;
+      }
+    });
+  }
+
+  // ============================================================
+  // 5. UI ELEMENTS
+  // ============================================================
+
+  const hud = document.getElementById('hud');
+  const sceneName = document.getElementById('sceneName');
+  const sceneCounter = document.getElementById('sceneCounter');
+  const clockTimeEl = document.getElementById('clockTime');
+  const clockDateEl = document.getElementById('clockDate');
+  const hint = document.getElementById('hint');
+  const audioBadge = document.getElementById('audioBadge');
+
+  let hudHideTimer = null;
+  let hintHideTimer = null;
+
+  function updateSceneLabels() {
+    sceneName.textContent = SCENES[currentScene].name;
+    sceneCounter.textContent = (currentScene + 1) + ' / ' + SCENES.length;
+  }
+
+  function showHudTemporarily() {
+    hud.classList.remove('hidden');
+    if (hudHideTimer) clearTimeout(hudHideTimer);
+    hudHideTimer = setTimeout(() => {
+      if (!transitioning) hud.classList.add('hidden');
+    }, 6000);
+  }
+
+  function showHintTemporarily() {
+    hint.classList.remove('hidden');
+    if (hintHideTimer) clearTimeout(hintHideTimer);
+    hintHideTimer = setTimeout(() => {
+      hint.classList.add('hidden');
+    }, 6000);
+  }
+
+  // Clock
+  const WEEKDAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+  function updateClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    clockTimeEl.textContent = hh + ':' + mm + ':' + ss;
+    clockDateEl.textContent = WEEKDAYS[now.getDay()] + ', ' + now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+  }
+
+  function updateAudioBadge() {
+    audioBadge.textContent = audioEnabled ? '· звук вкл' : '· звук выкл';
+  }
+
+  // ============================================================
+  // 6. AUDIO (procedural, optional)
+  // ============================================================
+
+  let audioCtx = null;
+  let audioSource = null;
+  let audioFilter = null;
+  let audioGain = null;
+  let audioEnabled = false;
+
+  function ensureAudioCtx() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      audioCtx = null;
+    }
+  }
+
+  function stopSceneSound() {
+    if (audioSource) {
+      try { audioSource.stop(); } catch (e) {}
+      audioSource = null;
+    }
+    if (audioFilter) { try { audioFilter.disconnect(); } catch (e) {} audioFilter = null; }
+    if (audioGain) { try { audioGain.disconnect(); } catch (e) {} audioGain = null; }
+  }
+
+  function startSceneSound(kind) {
+    if (!audioCtx) return;
+    stopSceneSound();
+
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+
+    const filter = audioCtx.createBiquadFilter();
+    const gain = audioCtx.createGain();
+
+    switch (kind) {
+      case 'fire':
+        filter.type = 'lowpass';
+        filter.frequency.value = 700;
+        gain.gain.value = 0.035;
+        break;
+      case 'rain':
+      case 'storm':
+        filter.type = 'lowpass';
+        filter.frequency.value = 3200;
+        gain.gain.value = 0.055;
+        break;
+      case 'snow':
+        filter.type = 'lowpass';
+        filter.frequency.value = 1800;
+        gain.gain.value = 0.012;
+        break;
+      case 'forest':
+        filter.type = 'lowpass';
+        filter.frequency.value = 1400;
+        gain.gain.value = 0.022;
+        break;
+      case 'ocean':
+        filter.type = 'lowpass';
+        filter.frequency.value = 350;
+        gain.gain.value = 0.07;
+        break;
+      default:
+        filter.frequency.value = 1000;
+        gain.gain.value = 0.03;
+    }
+
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start();
+
+    audioSource = src;
+    audioFilter = filter;
+    audioGain = gain;
+  }
+
+  function toggleAudio() {
+    ensureAudioCtx();
+    if (!audioCtx) {
+      audioBadge.textContent = '· звук недоступен';
+      return;
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    audioEnabled = !audioEnabled;
+    if (audioEnabled) {
+      startSceneSound(SCENES[currentScene].audio);
     } else {
-      UI.closeInfo();
+      stopSceneSound();
+    }
+    updateAudioBadge();
+  }
+
+  function restartSceneSoundIfNeeded() {
+    if (audioEnabled) {
+      startSceneSound(SCENES[currentScene].audio);
     }
   }
 
-  static toggleCities() {
-    State.showCities = !State.showCities;
-    if (State.globe) {
-      State.globe.pointsData(State.showCities ? State.cityMarkers : []);
-    }
-    UI.setToggle($('#toggle-cities'), State.showCities);
-    App.saveSettings();
-  }
-}
+  // ============================================================
+  // 7. SCENE SWITCHING
+  // ============================================================
 
-// ---------- ЗАПУСК ----------
-document.addEventListener('DOMContentLoaded', () => {
-  App.init().catch((err) => {
-    console.error('Критическая ошибка инициализации:', err);
-    UI.showLoaderError('Не удалось запустить приложение. Проверьте подключение к интернету и обновите страницу.');
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function swapRoles() {
+    const tmpC = activeCanvas;
+    activeCanvas = inactiveCanvas;
+    inactiveCanvas = tmpC;
+    const tmpR = activeRenderer;
+    activeRenderer = inactiveRenderer;
+    inactiveRenderer = tmpR;
+  }
+
+  function applySceneInstant(sceneIndex) {
+    currentScene = sceneIndex;
+    sceneStartTime = performance.now() / 1000;
+    updateSceneLabels();
+    restartSceneSoundIfNeeded();
+    showHudTemporarily();
+  }
+
+  // Quick crossfade transition (used for Left/Right)
+  function doQuickTransition(targetScene) {
+    if (transitioning) {
+      queuedScene = targetScene;
+      return;
+    }
+    transitioning = true;
+    transitionKind = 'quick';
+    transitionStartTime = performance.now();
+    transitionDuration = 380;
+
+    // Prepare next canvas
+    inactiveCanvas.style.transform = 'translateY(0)';
+    inactiveCanvas.style.opacity = '0';
+    inactiveCanvas.style.zIndex = '3';
+    activeCanvas.style.zIndex = '2';
+    nextSceneIndex = targetScene;
+
+    function tick() {
+      const elapsed = performance.now() - transitionStartTime;
+      const t = Math.min(1, elapsed / transitionDuration);
+      const eased = easeInOutCubic(t);
+
+      inactiveCanvas.style.opacity = String(eased);
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        // Finalize
+        swapRoles();
+        activeCanvas.style.opacity = '1';
+        activeCanvas.style.zIndex = '2';
+        inactiveCanvas.style.opacity = '1';
+        inactiveCanvas.style.zIndex = '1';
+        currentScene = targetScene;
+        sceneStartTime = performance.now() / 1000;
+        transitioning = false;
+        transitionKind = null;
+
+        updateSceneLabels();
+        restartSceneSoundIfNeeded();
+        showHudTemporarily();
+
+        if (queuedScene !== null && queuedScene !== currentScene) {
+          const q = queuedScene;
+          queuedScene = null;
+          doQuickTransition(q);
+        } else {
+          queuedScene = null;
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Cinematic slide transition (used for Up/Down)
+  function doCinematicTransition(targetScene, direction) {
+    // direction: +1 = down key (next), -1 = up key (previous)
+    // Both scenes slide downward: current exits bottom, next enters from top.
+    if (transitioning) {
+      queuedScene = targetScene;
+      return;
+    }
+    transitioning = true;
+    transitionKind = 'cinematic';
+    transitionStartTime = performance.now();
+    transitionDuration = 1500;
+
+    // Set up next canvas
+    inactiveCanvas.style.transform = 'translateY(-100%)';
+    inactiveCanvas.style.opacity = '1';
+    inactiveCanvas.style.zIndex = '3';
+    activeCanvas.style.zIndex = '2';
+    nextSceneIndex = targetScene;
+
+    function tick() {
+      const elapsed = performance.now() - transitionStartTime;
+      const t = Math.min(1, elapsed / transitionDuration);
+      const eased = easeInOutCubic(t);
+
+      activeCanvas.style.transform = 'translateY(' + (eased * 100) + '%)';
+      inactiveCanvas.style.transform = 'translateY(' + ((eased - 1) * 100) + '%)';
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        // Finalize
+        swapRoles();
+        activeCanvas.style.transform = 'translateY(0)';
+        activeCanvas.style.zIndex = '2';
+        inactiveCanvas.style.transform = 'translateY(100%)';
+        inactiveCanvas.style.zIndex = '1';
+        currentScene = targetScene;
+        sceneStartTime = performance.now() / 1000;
+        transitioning = false;
+        transitionKind = null;
+
+        updateSceneLabels();
+        restartSceneSoundIfNeeded();
+        showHudTemporarily();
+
+        if (queuedScene !== null && queuedScene !== currentScene) {
+          const q = queuedScene;
+          queuedScene = null;
+          doCinematicTransition(q, direction);
+        } else {
+          queuedScene = null;
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function navigate(delta, kind) {
+    if (transitioning) return;
+    const now = performance.now();
+    if (now - lastNavTime < NAV_COOLDOWN) return;
+    lastNavTime = now;
+
+    let target = currentScene + delta;
+    if (target < 0) target = SCENES.length - 1;
+    if (target >= SCENES.length) target = 0;
+
+    if (kind === 'cinematic') {
+      doCinematicTransition(target, delta);
+    } else {
+      doQuickTransition(target);
+    }
+  }
+
+  // ============================================================
+  // 8. RENDER LOOP
+  // ============================================================
+
+  function renderFrame() {
+    requestAnimationFrame(renderFrame);
+
+    const now = performance.now() / 1000;
+    const sceneTime = now - sceneStartTime;
+
+    if (transitioning) {
+      activeRenderer.render(currentScene, sceneTime);
+      // Next scene time starts fresh
+      const nextSceneTime = (performance.now() - transitionStartTime) / 1000;
+      inactiveRenderer.render(nextSceneIndex, nextSceneTime);
+    } else {
+      activeRenderer.render(currentScene, sceneTime);
+    }
+  }
+
+  // ============================================================
+  // 9. INPUT HANDLING
+  // ============================================================
+
+  function onKeyDown(e) {
+    const key = e.key;
+    const isNav = key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown' || key === ' ' || key === 'Spacebar';
+    if (isNav) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (e.repeat) return;
+
+    // First user action can unlock audio if desired
+    if (key === 'm' || key === 'M' || key === 'ь' || key === 'Ь') {
+      e.preventDefault();
+      toggleAudio();
+      showHudTemporarily();
+      return;
+    }
+
+    if (key === 'f' || key === 'F' || key === 'а' || key === 'А') {
+      e.preventDefault();
+      toggleFullscreen();
+      return;
+    }
+
+    switch (key) {
+      case 'ArrowLeft':
+        showHintTemporarily();
+        navigate(-1, 'quick');
+        break;
+      case 'ArrowRight':
+        showHintTemporarily();
+        navigate(1, 'quick');
+        break;
+      case 'ArrowUp':
+        showHintTemporarily();
+        navigate(-1, 'cinematic');
+        break;
+      case 'ArrowDown':
+        showHintTemporarily();
+        navigate(1, 'cinematic');
+        break;
+      case ' ':
+      case 'Spacebar':
+        // Toggle HUD visibility
+        if (hud.classList.contains('hidden')) {
+          showHudTemporarily();
+        } else {
+          hud.classList.add('hidden');
+        }
+        break;
+    }
+  }
+
+  window.addEventListener('keydown', onKeyDown, { passive: false });
+
+  // Prevent scrolling on TVs / arrow keys
+  window.addEventListener('keyup', (e) => {
+    if (e.key && e.key.indexOf('Arrow') === 0) e.preventDefault();
+  }, { passive: false });
+
+  // Prevent drag / context menu on TV
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+  window.addEventListener('dragstart', (e) => e.preventDefault());
+
+  // ============================================================
+  // 10. FULLSCREEN
+  // ============================================================
+
+  function toggleFullscreen() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  }
+
+  // ============================================================
+  // 11. RESIZE / QUALITY ADJUSTMENT
+  // ============================================================
+
+  function detectQuality() {
+    // Estimate device capability
+    const gl = glA;
+    let score = 1.0;
+
+    try {
+      const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      if (maxTex < 4096) score *= 0.7;
+    } catch (e) {}
+
+    const mem = navigator.deviceMemory || 4;
+    if (mem < 2) score *= 0.55;
+    else if (mem < 4) score *= 0.75;
+
+    const cores = navigator.hardwareConcurrency || 4;
+    if (cores < 3) score *= 0.7;
+    else if (cores < 5) score *= 0.85;
+
+    // Small screens (mobile) get reduced
+    if (window.innerWidth < 800) score *= 0.85;
+
+    QUALITY = Math.max(0.45, Math.min(1.0, score));
+    resolutionScale = 0.6 + QUALITY * 0.4;
+  }
+
+  function onResize() {
+    resizeCanvases();
+  }
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+  // ============================================================
+  // 12. BOOT
+  // ============================================================
+
+  function boot() {
+    detectQuality();
+    resizeCanvases();
+
+    // Initial canvas state
+    canvasA.style.transform = 'translateY(0)';
+    canvasA.style.zIndex = '2';
+    canvasA.style.opacity = '1';
+    canvasB.style.transform = 'translateY(100%)';
+    canvasB.style.zIndex = '1';
+    canvasB.style.opacity = '1';
+
+    activeCanvas = canvasA;
+    activeRenderer = rendererA;
+    inactiveCanvas = canvasB;
+    inactiveRenderer = rendererB;
+
+    currentScene = 0;
+    sceneStartTime = performance.now() / 1000;
+
+    updateSceneLabels();
+    updateAudioBadge();
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Precompile fire shader on both renderers to warm up
+    rendererA.getProgram(0);
+    rendererB.getProgram(0);
+
+    // Show HUD briefly on startup, then fade
+    showHudTemporarily();
+    showHintTemporarily();
+
+    renderFrame();
+  }
+
+  boot();
+
+  // Clean up on unload
+  window.addEventListener('beforeunload', () => {
+    stopSceneSound();
+    if (audioCtx && audioCtx.state !== 'closed') audioCtx.close().catch(() => {});
   });
-});
 
-// Предупреждение при потере WebGL-контекста
-document.addEventListener('webglcontextlost', (e) => {
-  e.preventDefault();
-  UI.showLoaderError('WebGL-контекст потерян. Перезагрузите страницу.');
-}, false);
+  // ============================================================
+  // 13. FPS monitor — adapt quality if needed
+  // ============================================================
+
+  let frameCount = 0;
+  let fpsMeasureStart = performance.now();
+  let fpsMeasured = 0;
+  let qualityAdapted = false;
+
+  function monitorFPS() {
+    if (qualityAdapted) return;
+    frameCount++;
+    const now = performance.now();
+    if (now - fpsMeasureStart >= 4000) {
+      fpsMeasured = frameCount / ((now - fpsMeasureStart) / 1000);
+      if (fpsMeasured < 24 && QUALITY > 0.55) {
+        QUALITY = Math.max(0.5, QUALITY - 0.2);
+        resolutionScale = 0.6 + QUALITY * 0.4;
+        resizeCanvases();
+        qualityAdapted = true;
+      } else if (fpsMeasured < 18) {
+        QUALITY = 0.45;
+        resolutionScale = 0.6;
+        resizeCanvases();
+        qualityAdapted = true;
+      } else {
+        qualityAdapted = true;
+      }
+    }
+    requestAnimationFrame(monitorFPS);
+  }
+  monitorFPS();
+
+})();
 </script>
 </body>
 </html>
